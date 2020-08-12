@@ -121,7 +121,7 @@ func Xabort(t *TLS)                           { C.abort() }
 func Xabs(t *TLS, j int32) int32              { return int32(C.abs(C.int(j))) }
 func Xacos(t *TLS, x float64) float64         { return float64(C.acos(C.double(x))) }
 func Xasin(t *TLS, x float64) float64         { return float64(C.asin(C.double(x))) }
-func Xatan2(t *TLS, x, y float64) float64     { return float64(C.atan2(C.double(x), C.double(x))) }
+func Xatan2(t *TLS, x, y float64) float64     { return float64(C.atan2(C.double(x), C.double(y))) }
 func Xceil(t *TLS, x float64) float64         { return float64(C.ceil(C.double(x))) }
 func Xcopysign(t *TLS, x, y float64) float64  { return float64(C.copysign(C.double(x), C.double(y))) }
 func Xcopysignf(t *TLS, x, y float32) float32 { return float32(C.copysignf(C.float(x), C.float(y))) }
@@ -133,6 +133,7 @@ func Xexp(t *TLS, x float64) float64          { return float64(C.exp(C.double(x)
 func Xfabs(t *TLS, x float64) float64         { return float64(C.fabs(C.double(x))) }
 func Xfabsf(t *TLS, x float32) float32        { return float32(C.fabsf(C.float(x))) }
 func Xfloor(t *TLS, x float64) float64        { return float64(C.floor(C.double(x))) }
+func Xfmod(t *TLS, x, y float64) float64      { return float64(C.fmod(C.double(x), C.double(y))) }
 func Xfree(t *TLS, p uintptr)                 { C.free(unsafe.Pointer(p)) }
 func Xlog(t *TLS, x float64) float64          { return float64(C.log(C.double(x))) }
 func Xlog10(t *TLS, x float64) float64        { return float64(C.log10(C.double(x))) }
@@ -146,7 +147,6 @@ func Xsinh(t *TLS, x float64) float64         { return float64(C.sinh(C.double(x
 func Xsqrt(t *TLS, x float64) float64         { return float64(C.sqrt(C.double(x))) }
 func Xtan(t *TLS, x float64) float64          { return float64(C.tan(C.double(x))) }
 func Xtanh(t *TLS, x float64) float64         { return float64(C.tanh(C.double(x))) }
-func Xfmod(t *TLS, x, y float64) float64      { return float64(C.fmod(C.double(x), C.double(x))) }
 
 func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
 	return uintptr(C.realloc(unsafe.Pointer(ptr), C.size_t(size)))
