@@ -12,4 +12,5 @@ type (
 	RawMem  [1<<50 - 1]byte
 	long    = int64
 	off64_t = types.Off_t
+	ulong   = uint64
 )

@@ -63,14 +63,13 @@ func todo(s string, args ...interface{}) string { //TODO-
 	return r
 }
 
-//func X__builtin_abort(t *TLS)                                        { Xabort(t) }
-//func X__builtin_abs(t *TLS, j int32) int32                           { return Xabs(t, j) }
-//func X__builtin_copysign(t *TLS, x, y float64) float64               { return Xcopysign(t, x, y) }
-//func X__builtin_copysignf(t *TLS, x, y float32) float32              { return Xcopysignf(t, x, y) }
-//func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, status) }
-func X__builtin_expect(t *TLS, exp, c long) long { return exp }
-
-//func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
+func X__builtin_abort(t *TLS)                                        { Xabort(t) }
+func X__builtin_abs(t *TLS, j int32) int32                           { return Xabs(t, j) }
+func X__builtin_copysign(t *TLS, x, y float64) float64               { return Xcopysign(t, x, y) }
+func X__builtin_copysignf(t *TLS, x, y float32) float32              { return Xcopysignf(t, x, y) }
+func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, status) }
+func X__builtin_expect(t *TLS, exp, c long) long                     { return exp }
+func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
 func X__builtin_free(t *TLS, ptr uintptr)                            { Xfree(t, ptr) }
 func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
 func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
@@ -80,15 +79,17 @@ func X__builtin_strchr(t *TLS, s uintptr, c int32) uintptr           { return Xs
 func X__builtin_strcmp(t *TLS, s1, s2 uintptr) int32                 { return Xstrcmp(t, s1, s2) }
 func X__builtin_strcpy(t *TLS, dest, src uintptr) uintptr            { return Xstrcpy(t, dest, src) }
 func X__builtin_strlen(t *TLS, s uintptr) types.Size_t               { return Xstrlen(t, s) }
+func X__builtin_trap(t *TLS)                                         { Xabort(t) }
+func X__isnan(t *TLS, arg float64) int32                             { return Xisnan(t, arg) }
+func X__isnanf(t *TLS, arg float32) int32                            { return Xisnanf(t, arg) }
+func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
+func Xvfprintf(t *TLS, stream, format, ap uintptr) int32             { return Xfprintf(t, stream, format, ap) }
 
-//func X__builtin_trap(t *TLS)                                         { Xabort(t) }
-func Xvfprintf(t *TLS, stream, format, ap uintptr) int32 { return Xfprintf(t, stream, format, ap) }
-
-// func X__builtin_unreachable(t *TLS) {
-// 	fmt.Fprintf(os.Stderr, "unrechable\n")
-// 	os.Stderr.Sync()
-// 	Xexit(t, 1)
-// }
+func X__builtin_unreachable(t *TLS) {
+	fmt.Fprintf(os.Stderr, "unrechable\n")
+	os.Stderr.Sync()
+	Xexit(t, 1)
+}
 
 func X__builtin_snprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) int32 {
 	return Xsnprintf(t, str, size, format, args)
@@ -117,6 +118,10 @@ func NewTLS() *TLS {
 	t := &TLS{ID: id}
 	t.errnop = mustCalloc(t, types.Size_t(unsafe.Sizeof(int32(0))))
 	return t
+}
+
+func (t *TLS) Close() {
+	Xfree(t, t.errnop)
 }
 
 func (t *TLS) Alloc(n int) (r uintptr) {
@@ -397,3 +402,21 @@ func X__assert_fail(t *TLS, assertion, file uintptr, line uint32, function uintp
 
 // int vprintf(const char *format, va_list ap);
 func Xvprintf(t *TLS, s, ap uintptr) int32 { return Xprintf(t, s, ap) }
+
+func CString(s string) (uintptr, error) {
+	n := len(s)
+	p := Xmalloc(nil, types.Size_t(n)+1)
+	if p == 0 {
+		return 0, fmt.Errorf("CString: cannot allocate %d bytes", n+1)
+	}
+
+	copy((*RawMem)(unsafe.Pointer(p))[:n], s)
+	*(*byte)(unsafe.Pointer(p + uintptr(n))) = 0
+	return p, nil
+}
+
+// int __isoc99_sscanf(const char *str, const char *format, ...);
+func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
+	return scanf(strings.NewReader(GoString(str)), format, va)
+
+}
