@@ -41,6 +41,20 @@ func origin(skip int) string {
 	return fmt.Sprintf("%s:%d:%s", filepath.Base(fn), fl, fns)
 }
 
+func trc(s string, args ...interface{}) string { //TODO-
+	switch {
+	case s == "":
+		s = fmt.Sprintf(strings.Repeat("%v ", len(args)), args...)
+	default:
+		s = fmt.Sprintf(s, args...)
+	}
+	_, fn, fl, _ := runtime.Caller(1)
+	r := fmt.Sprintf("\n%s:%d: TRC %s", fn, fl, s)
+	fmt.Fprintf(os.Stdout, "%s\n", r)
+	os.Stdout.Sync()
+	return r
+}
+
 func todo(s string, args ...interface{}) string { //TODO-
 	switch {
 	case s == "":

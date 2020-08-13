@@ -376,7 +376,7 @@ func X__errno_location(t *TLS) uintptr {
 
 // int chmod(const char *pathname, mode_t mode)
 func Xchmod(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
-	return int32(C.mkdir((*C.char)(unsafe.Pointer(pathname)), C.mode_t(mode)))
+	return int32(C.chmod((*C.char)(unsafe.Pointer(pathname)), C.mode_t(mode)))
 }
 
 // size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
