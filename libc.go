@@ -8,4 +8,5 @@
 //go:generate go run generate.go
 //go:generate go fmt ./...
 
+//
 package libc // import "modernc.org/libc"

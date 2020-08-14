@@ -4,13 +4,8 @@
 
 package libc // import "modernc.org/libc"
 
-import (
-	"modernc.org/libc/sys/types"
-)
-
 type (
-	RawMem  [1<<50 - 1]byte
-	long    = int64
-	off64_t = types.Off_t
-	ulong   = uint64
+	RawMem [1<<50 - 1]byte
+	long   = int64
+	ulong  = uint64
 )

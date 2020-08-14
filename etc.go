@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"sync/atomic"
+	"time"
 	"unsafe"
 
 	"modernc.org/libc/sys/types"
@@ -433,4 +434,16 @@ func CString(s string) (uintptr, error) {
 func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
 	return scanf(strings.NewReader(GoString(str)), format, va)
 
+}
+
+// unsigned int sleep(unsigned int seconds);
+func Xsleep(t *TLS, seconds uint32) uint32 {
+	time.Sleep(time.Second * time.Duration(seconds))
+	return 0
+}
+
+// int usleep(useconds_t usec);
+func Xusleep(t *TLS, usec types.X__useconds_t) int32 {
+	time.Sleep(time.Microsecond * time.Duration(usec))
+	return 0
 }

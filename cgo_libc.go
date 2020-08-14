@@ -452,6 +452,11 @@ func Xatoi(t *TLS, nptr uintptr) int32 {
 	return int32(C.atoi((*C.char)(unsafe.Pointer(nptr))))
 }
 
+// double atof(const char *nptr);
+func Xatof(t *TLS, nptr uintptr) float64 {
+	return float64(C.atof((*C.char)(unsafe.Pointer(nptr))))
+}
+
 // pid_t getpid(void);
 func Xgetpid(t *TLS) int32 {
 	return int32(C.getpid())
@@ -584,8 +589,8 @@ func Xstrerror(t *TLS, errnum int32) uintptr {
 }
 
 // off64_t lseek64(int fd, off64_t offset, int whence);
-func Xlseek64(t *TLS, fd int32, offset off64_t, whence int32) off64_t {
-	return off64_t(C.lseek(C.int(fd), C.long(offset), C.int(whence)))
+func Xlseek64(t *TLS, fd int32, offset types.X__off64_t, whence int32) types.X__off64_t {
+	return types.X__off64_t(C.lseek(C.int(fd), C.long(offset), C.int(whence)))
 }
 
 // off_t lseek(int fd, off_t offset, int whence);
@@ -655,11 +660,6 @@ func Xfcntl64(t *TLS, fd, cmd int32, args uintptr) int32 {
 	}
 
 	return int32(C.__ccgo_fcntl64(C.int(fd), C.int(cmd)))
-}
-
-// unsigned int sleep(unsigned int seconds);
-func Xsleep(t *TLS, seconds uint32) uint32 {
-	return uint32(C.sleep(C.uint(seconds)))
 }
 
 // ssize_t read(int fd, void *buf, size_t count);
@@ -1060,4 +1060,14 @@ func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
 // unsigned int alarm(unsigned int seconds);
 func Xalarm(t *TLS, seconds uint32) uint32 {
 	return uint32(C.alarm(C.uint(seconds)))
+}
+
+// int getrlimit(int resource, struct rlimit *rlim);
+func Xgetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
+	return int32(C.getrlimit(C.int(resource), (*C.struct_rlimit)(unsafe.Pointer(rlim))))
+}
+
+// int setrlimit(int resource, const struct rlimit *rlim);
+func Xsetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
+	return int32(C.setrlimit(C.int(resource), (*C.struct_rlimit)(unsafe.Pointer(rlim))))
 }
