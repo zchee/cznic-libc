@@ -32,6 +32,7 @@ out:
 		case ' ', '\t', '\n', '\r', '\v', '\f':
 			format = skipWhiteSpace(format)
 			ok = true
+		next:
 			for {
 				c, err := r.ReadByte()
 				if err != nil {
@@ -43,7 +44,7 @@ out:
 					// nop
 				default:
 					r.UnreadByte()
-					break out
+					break next
 				}
 			}
 		default:

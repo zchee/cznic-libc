@@ -212,10 +212,14 @@ func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
 }
 
 func Xabort(t *TLS)                          { C.abort() }
-func Xexit(t *TLS, status int32)             { C.exit(C.int(status)) }
 func Xfree(t *TLS, p uintptr)                { C.free(unsafe.Pointer(p)) }
 func Xmalloc(t *TLS, n types.Size_t) uintptr { return uintptr(C.malloc(C.size_t(n))) }
 func Xtzset(t *TLS)                          { C.tzset() }
+
+func Xexit(t *TLS, status int32) {
+	// trc("pid %v exiting with status %v", os.Getpid(), status)
+	C.exit(C.int(status))
+}
 
 func Start(main func(*TLS, int32, uintptr) int32) {
 	t := NewTLS()
@@ -227,6 +231,8 @@ func Start(main func(*TLS, int32, uintptr) int32) {
 		*(*uintptr)(unsafe.Pointer(p)) = s
 		p += uintptrSize
 	}
+	// wd, _ := os.Getwd()
+	// trc("pid %v start %d %q, wd %q TCL_LIBRARY %q", os.Getpid(), len(os.Args), os.Args, wd, os.Getenv("TCL_LIBRARY"))
 	Xexit(t, main(t, int32(len(os.Args)), argv))
 }
 
@@ -919,7 +925,14 @@ func Xexecvp(t *TLS, file, argv uintptr) int32 {
 
 // pid_t waitpid(pid_t pid, int *wstatus, int options);
 func Xwaitpid(t *TLS, pid types.Pid_t, wstatus uintptr, optname int32) int32 {
-	return types.Pid_t(C.waitpid(C.pid_t(pid), (*C.int)(unsafe.Pointer(wstatus)), C.int(optname)))
+	// trc("waitpid(%d, status %#x, optname %d)", pid, wstatus, optname)
+	r := types.Pid_t(C.waitpid(C.pid_t(pid), (*C.int)(unsafe.Pointer(wstatus)), C.int(optname)))
+	// var ws int32
+	// if wstatus != 0 {
+	// 	ws = *(*int32)(unsafe.Pointer(wstatus))
+	// }
+	// trc("waitpid(%d, status %#x(%d), optname %d): %v", pid, wstatus, ws, optname, r)
+	return r
 }
 
 // int uname(struct utsname *buf);
@@ -1070,4 +1083,8 @@ func Xgetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
 // int setrlimit(int resource, const struct rlimit *rlim);
 func Xsetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
 	return int32(C.setrlimit(C.int(resource), (*C.struct_rlimit)(unsafe.Pointer(rlim))))
+}
+
+func SetErrno(err int32) {
+	C.__ccgo_seterrno(C.int(err))
 }

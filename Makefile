@@ -26,7 +26,6 @@ all:
 	misspell *.go
 	staticcheck | grep -v 'lexer\.go\|parser\.go' || true
 	maligned || true
-	pcregrep -nM 'FAIL|false|<nil>|:\n}' ast_test.go || true
 	grep -n 'FAIL\|PASS' log 
 	go version
 	date 2>&1 | tee -a log

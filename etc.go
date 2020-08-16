@@ -27,6 +27,9 @@ const (
 
 var (
 	tid int32
+
+	_ = origin
+	_ = trc
 )
 
 func origin(skip int) string {

@@ -378,8 +378,6 @@ func parseFieldWidth(format uintptr) (_ uintptr, n int, ok bool) {
 		var digit int
 		switch c := *(*byte)(unsafe.Pointer(format)); {
 		case first && c == '0':
-			fallthrough
-		default:
 			return format, n, ok
 		case first && c == '*':
 			panic(todo(""))
@@ -388,7 +386,10 @@ func parseFieldWidth(format uintptr) (_ uintptr, n int, ok bool) {
 			ok = true
 			first = false
 			digit = int(c) - '0'
+		default:
+			return format, n, ok
 		}
+
 		n0 := n
 		n = 10*n + digit
 		if n < n0 {
