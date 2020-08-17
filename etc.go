@@ -450,3 +450,18 @@ func Xusleep(t *TLS, usec types.X__useconds_t) int32 {
 	time.Sleep(time.Microsecond * time.Duration(usec))
 	return 0
 }
+
+func Xabort(t *TLS) {
+	os.Exit(1)
+}
+
+func GetEnviron() (r []string) {
+	for p := Environ(); ; p += unsafe.Sizeof(p) {
+		q := *(*uintptr)(unsafe.Pointer(p))
+		if q == 0 {
+			return r
+		}
+
+		r = append(r, GoString(q))
+	}
+}

@@ -94,13 +94,7 @@ var CAPI = map[string]struct{}{`)
 }
 
 func libcHeaders(paths []string) error {
-	dir, err := ioutil.TempDir("", "go-generate-")
-	if err != nil {
-		return err
-	}
-
-	defer os.RemoveAll(dir)
-
+	const cfile = "gen.c"
 	return filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -110,10 +104,10 @@ func libcHeaders(paths []string) error {
 			return nil
 		}
 
-		inc := path
+		dir := path
 		ok := false
 		for _, v := range paths {
-			full := filepath.Join(v, inc+".h")
+			full := filepath.Join(v, dir+".h")
 			if fi, err := os.Stat(full); err == nil && !fi.IsDir() {
 				ok = true
 				break
@@ -125,15 +119,17 @@ func libcHeaders(paths []string) error {
 
 		src := fmt.Sprintf(`#include <%s.h>
 static char _;
-`, inc)
-		fn := filepath.Join(dir, "x.c")
+`, dir)
+		fn := filepath.Join(dir, cfile)
 		if err := ioutil.WriteFile(fn, []byte(src), 0660); err != nil {
 			return err
 		}
 
+		defer os.Remove(fn)
+
 		dest := filepath.Join(path, fmt.Sprintf("%s_%s_%s.go", filepath.Base(path), runtime.GOOS, runtime.GOARCH))
-		base := filepath.Base(inc)
-		out, err := exec.Command(
+		base := filepath.Base(dir)
+		cmd := exec.Command(
 			"ccgo", fn,
 			"-ccgo-crt-import-path", "",
 			"-ccgo-export-defines", "",
@@ -144,7 +140,8 @@ static char _;
 			"-ccgo-export-typedefs", "",
 			"-ccgo-pkgname", base,
 			"-o", dest,
-		).CombinedOutput()
+		)
+		out, err := cmd.CombinedOutput()
 		sout := strings.TrimSpace(string(out) + "\n")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %s%s\n", path, sout, err)

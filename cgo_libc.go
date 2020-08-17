@@ -57,6 +57,16 @@ import (
 #include <unistd.h>
 #include <utime.h>
 
+extern char **environ;
+
+FILE *__ccgo_stdout, *__ccgo_stderr, *__ccgo_stdin;
+
+void __ccgo_init() {
+	__ccgo_stdout = stdout;
+	__ccgo_stderr = stderr;
+	__ccgo_stderr = stderr;
+}
+
 int __ccgo_printf(char *s) {
 	return printf("%s", s);
 }
@@ -79,20 +89,6 @@ int __ccgo_fcntl64(int fd, int cmd) {
 
 int __ccgo_fcntl64b(int fd, int cmd, void *p) {
 	return fcntl(fd, cmd, p);
-}
-
-FILE *__ccgo_stdout, *__ccgo_stderr, *__ccgo_stdin;
-
-void __ccgo_init() {
-	__ccgo_stdout = stdout;
-	__ccgo_stderr = stderr;
-	__ccgo_stderr = stderr;
-}
-
-extern char **environ;
-
-char ***__ccgo_envirionp() {
-	return &environ;
 }
 
 int __ccgo_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout) {
@@ -120,10 +116,6 @@ func init() {
 	Xstderr = uintptr(unsafe.Pointer(C.__ccgo_stderr))
 	Xstdin = uintptr(unsafe.Pointer(C.__ccgo_stdin))
 	Xstdout = uintptr(unsafe.Pointer(C.__ccgo_stdout))
-}
-
-func X__ccgo_environp(t *TLS) uintptr {
-	return uintptr(unsafe.Pointer(C.__ccgo_envirionp()))
 }
 
 func X__ccgo_in6addr_anyp(t *TLS) uintptr {
@@ -211,7 +203,6 @@ func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
 	return uintptr(C.calloc(C.size_t(n), C.size_t(size)))
 }
 
-func Xabort(t *TLS)                          { C.abort() }
 func Xfree(t *TLS, p uintptr)                { C.free(unsafe.Pointer(p)) }
 func Xmalloc(t *TLS, n types.Size_t) uintptr { return uintptr(C.malloc(C.size_t(n))) }
 func Xtzset(t *TLS)                          { C.tzset() }
@@ -1087,4 +1078,22 @@ func Xsetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
 
 func SetErrno(err int32) {
 	C.__ccgo_seterrno(C.int(err))
+}
+
+// int fstat(int fd, struct stat *statbuf);
+func Xfstat(t *TLS, fd int32, statbuf uintptr) int32 {
+	return int32(C.fstat(C.int(fd), (*C.struct_stat)(unsafe.Pointer(statbuf))))
+}
+
+// int ferror(FILE *stream);
+func Xferror(t *TLS, stream uintptr) int32 {
+	return int32(C.ferror((*C.FILE)(unsafe.Pointer(stream))))
+}
+
+func Environ() uintptr {
+	return uintptr(unsafe.Pointer(C.environ))
+}
+
+func EnvironP() uintptr {
+	return uintptr(unsafe.Pointer(&C.environ))
 }
