@@ -11,6 +11,7 @@
 package libc // import "modernc.org/libc"
 
 import (
+	"bufio"
 	"os"
 	"unsafe"
 
@@ -208,6 +209,11 @@ func Xmalloc(t *TLS, n types.Size_t) uintptr { return uintptr(C.malloc(C.size_t(
 func Xtzset(t *TLS)                          { C.tzset() }
 
 func Xexit(t *TLS, status int32) {
+	if len(Covered) != 0 {
+		buf := bufio.NewWriter(os.Stdout)
+		CoverReport(buf)
+		buf.Flush()
+	}
 	// trc("pid %v exiting with status %v", os.Getpid(), status)
 	C.exit(C.int(status))
 }

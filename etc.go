@@ -6,6 +6,7 @@ package libc // import "modernc.org/libc"
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -26,7 +27,8 @@ const (
 )
 
 var (
-	tid int32
+	Covered = map[uintptr]struct{}{}
+	tid     int32
 
 	_ = origin
 	_ = trc
@@ -79,6 +81,27 @@ func todo(s string, args ...interface{}) string { //TODO-
 	fmt.Fprintf(os.Stdout, "%s\n", r)
 	os.Stdout.Sync()
 	return r
+}
+
+var coverPCs [1]uintptr //TODO not concurrent safe
+
+func Cover() {
+	runtime.Callers(2, coverPCs[:])
+	Covered[coverPCs[0]] = struct{}{}
+}
+
+func CoverReport(w io.Writer) error {
+	var a []string
+	pcs := make([]uintptr, 1)
+	for pc := range Covered {
+		pcs[0] = pc
+		frame, _ := runtime.CallersFrames(pcs).Next()
+		a = append(a, fmt.Sprintf("%s:%07d:%s", filepath.Base(frame.File), frame.Line, frame.Func.Name()))
+	}
+	fmt.Println()
+	sort.Strings(a)
+	_, err := fmt.Fprintf(w, "%s\n", strings.Join(a, "\n"))
+	return err
 }
 
 func X__builtin_abort(t *TLS)                                        { Xabort(t) }
