@@ -8,14 +8,18 @@ import (
 	"fmt"
 	"io"
 	"os"
+	gosignal "os/signal"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 	"unsafe"
 
+	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/types"
 )
 
@@ -29,6 +33,9 @@ const (
 var (
 	Covered = map[uintptr]struct{}{}
 	tid     int32
+
+	signals   [signal.NSIG]uintptr
+	signalsMu sync.Mutex
 
 	_ = origin
 	_ = trc
@@ -487,4 +494,48 @@ func GetEnviron() (r []string) {
 
 		r = append(r, GoString(q))
 	}
+}
+
+// sighandler_t signal(int signum, sighandler_t handler);
+func Xsignal(t *TLS, signum int32, handler uintptr) uintptr {
+	signalsMu.Lock()
+
+	defer signalsMu.Unlock()
+
+	r := signals[signum]
+	signals[signum] = handler
+	switch handler {
+	case signal.SIG_DFL:
+		panic(todo("%v %#x", syscall.Signal(signum), handler))
+	case signal.SIG_IGN:
+		switch r {
+		case signal.SIG_DFL:
+			gosignal.Ignore(syscall.Signal(signum))
+		case signal.SIG_IGN:
+			panic(todo("%v %#x", syscall.Signal(signum), handler))
+		default:
+			panic(todo("%v %#x", syscall.Signal(signum), handler))
+		}
+	default:
+		switch r {
+		case signal.SIG_DFL:
+			c := make(chan os.Signal, 1)
+			gosignal.Notify(c, syscall.Signal(signum))
+			go func() { //TODO mechanism to stop/cancel
+				for {
+					<-c
+					var f func(*TLS, int32)
+					*(*uintptr)(unsafe.Pointer(&f)) = handler
+					tls := NewTLS()
+					f(tls, signum)
+					tls.Close()
+				}
+			}()
+		case signal.SIG_IGN:
+			panic(todo("%v %#x", syscall.Signal(signum), handler))
+		default:
+			panic(todo("%v %#x", syscall.Signal(signum), handler))
+		}
+	}
+	return r
 }

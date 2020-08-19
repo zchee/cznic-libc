@@ -13,6 +13,7 @@ package libc // import "modernc.org/libc"
 import (
 	"bufio"
 	"os"
+	"runtime"
 	"unsafe"
 
 	"modernc.org/libc/errno"
@@ -219,6 +220,7 @@ func Xexit(t *TLS, status int32) {
 }
 
 func Start(main func(*TLS, int32, uintptr) int32) {
+	runtime.LockOSThread()
 	t := NewTLS()
 	argv := mustCalloc(t, types.Size_t((len(os.Args)+1)*int(uintptrSize)))
 	p := argv
@@ -528,11 +530,6 @@ func Xsetvbuf(t *TLS, stream, buf uintptr, mode int32, size types.Size_t) int32 
 // int isatty(int fd);
 func Xisatty(t *TLS, fd int32) int32 {
 	return int32(C.isatty(C.int(fd)))
-}
-
-// sighandler_t signal(int signum, sighandler_t handler);
-func Xsignal(t *TLS, signum int32, handler uintptr) uintptr {
-	return 0 //TODO
 }
 
 // int raise(int sig);
