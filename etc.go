@@ -536,7 +536,3 @@ func Xsignal(t *TLS, signum int32, handler uintptr) uintptr {
 	}
 	return r
 }
-
-func Xabort(t *TLS) {
-	os.Exit(1) //TODO
-}

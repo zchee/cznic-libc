@@ -19,6 +19,7 @@ import (
 	"modernc.org/libc/errno"
 	"modernc.org/libc/langinfo"
 	"modernc.org/libc/netinet/in"
+	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/types"
 	"modernc.org/libc/termios"
@@ -1107,4 +1108,9 @@ func Environ() uintptr {
 
 func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&C.environ))
+}
+
+func Xabort(t *TLS) {
+	C.signal(signal.SIGABRT, (*[0]byte)(unsafe.Pointer(uintptr(signal.SIG_DFL))))
+	C.abort()
 }
