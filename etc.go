@@ -230,8 +230,8 @@ type stackHeader struct {
 func cString(t *TLS, s string) uintptr {
 	n := len(s)
 	p := mustMalloc(t, types.Size_t(n)+1)
-	copy((*RawMem)(unsafe.Pointer(p))[:n], s)
-	(*RawMem)(unsafe.Pointer(p))[n] = 0
+	copy((*RawMem)(unsafe.Pointer(p))[:n:n], s)
+	*(*byte)(unsafe.Pointer(p + uintptr(n))) = 0
 	return p
 }
 
@@ -399,8 +399,9 @@ func Bool64(b bool) int64 {
 // int sprintf(char *str, const char *format, ...);
 func Xsprintf(t *TLS, str, format, args uintptr) (r int32) {
 	b := printf(format, args)
-	copy((*RawMem)(unsafe.Pointer(str))[:len(b)], b)
-	*(*byte)(unsafe.Pointer(str + uintptr(len(b)))) = 0
+	r = int32(len(b))
+	copy((*RawMem)(unsafe.Pointer(str))[:r:r], b)
+	*(*byte)(unsafe.Pointer(str + uintptr(r))) = 0
 	return int32(len(b))
 }
 
@@ -458,7 +459,7 @@ func CString(s string) (uintptr, error) {
 		return 0, fmt.Errorf("CString: cannot allocate %d bytes", n+1)
 	}
 
-	copy((*RawMem)(unsafe.Pointer(p))[:n], s)
+	copy((*RawMem)(unsafe.Pointer(p))[:n:n], s)
 	*(*byte)(unsafe.Pointer(p + uintptr(n))) = 0
 	return p, nil
 }
@@ -479,10 +480,6 @@ func Xsleep(t *TLS, seconds uint32) uint32 {
 func Xusleep(t *TLS, usec types.X__useconds_t) int32 {
 	time.Sleep(time.Microsecond * time.Duration(usec))
 	return 0
-}
-
-func Xabort(t *TLS) {
-	os.Exit(1)
 }
 
 func GetEnviron() (r []string) {
@@ -538,4 +535,8 @@ func Xsignal(t *TLS, signum int32, handler uintptr) uintptr {
 		}
 	}
 	return r
+}
+
+func Xabort(t *TLS) {
+	os.Exit(1) //TODO
 }
