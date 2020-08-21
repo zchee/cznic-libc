@@ -75,19 +75,14 @@ func todo(s string, args ...interface{}) string { //TODO-
 	default:
 		s = fmt.Sprintf(s, args...)
 	}
-	pc, fn, fl, _ := runtime.Caller(1)
-	f := runtime.FuncForPC(pc)
-	var fns string
-	if f != nil {
-		fns = f.Name()
-		if x := strings.LastIndex(fns, "."); x > 0 {
-			fns = fns[x+1:]
-		}
+	r := fmt.Sprintf("%s: TODOTODO %s", origin(2), s) //TODOOK
+	if dmesgs {
+		dmesg("%s", r)
 	}
-	r := fmt.Sprintf("%s:%d:%s: TODOTODO %s", fn, fl, fns, s) //TODOOK
 	fmt.Fprintf(os.Stdout, "%s\n", r)
 	os.Stdout.Sync()
-	return r
+	os.Exit(1)
+	panic("unrechable")
 }
 
 var coverPCs [1]uintptr //TODO not concurrent safe

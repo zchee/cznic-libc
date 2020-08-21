@@ -21,10 +21,16 @@ func scanf(r *strings.Reader, format, args uintptr) (nvalues int32) {
 	var ok bool
 out:
 	for {
-		switch c := *(*byte)(unsafe.Pointer(format)); c {
+		c := *(*byte)(unsafe.Pointer(format))
+		switch c {
 		case '%':
 			var n int
-			format, n = scanfConversion(r, format, &args)
+			var match bool
+			format, n, match = scanfConversion(r, format, &args)
+			if !match {
+				break out
+			}
+
 			nvalues += int32(n)
 			ok = true
 		case 0:
@@ -58,6 +64,7 @@ out:
 				break out
 			}
 
+			format++
 			ok = true
 		}
 	}
@@ -68,7 +75,7 @@ out:
 	return stdio.EOF
 }
 
-func scanfConversion(r *strings.Reader, format uintptr, args *uintptr) (_ uintptr, nvalues int) {
+func scanfConversion(r *strings.Reader, format uintptr, args *uintptr) (_ uintptr, nvalues int, match bool) {
 	format++ // '%'
 
 	// Each conversion specification in format begins with either the character '%'
@@ -138,7 +145,69 @@ flags:
 		// Matches an optionally signed decimal integer; the next pointer must be a
 		// pointer to int.
 		format++
-		panic(todo(""))
+		skipReaderWhiteSpace(r)
+		var digit, n uint64
+		allowSign := true
+		neg := false
+	dec:
+		for ; width != 0; width-- {
+			c, err := r.ReadByte()
+			if err != nil {
+				if match {
+					break dec
+				}
+
+				panic(todo("", err))
+			}
+
+			if allowSign {
+				switch c {
+				case '-':
+					allowSign = false
+					neg = true
+					continue
+				case '+':
+					allowSign = false
+					continue
+				}
+			}
+
+			switch {
+			case c >= '0' && c <= '9':
+				digit = uint64(c) - '0'
+			default:
+				r.UnreadByte()
+				break dec
+			}
+			match = true
+			n0 := n
+			n = n*10 + digit
+			if n < n0 {
+				panic(todo(""))
+			}
+		}
+		if !match {
+			break
+		}
+
+		arg := VaUintptr(args)
+		v := int64(n)
+		if neg {
+			v = -v
+		}
+		switch mod {
+		case modNone:
+			*(*int32)(unsafe.Pointer(arg)) = int32(v)
+		case modH:
+			*(*int16)(unsafe.Pointer(arg)) = int16(v)
+		case modHH:
+			*(*int8)(unsafe.Pointer(arg)) = int8(v)
+		case modL:
+			*(*long)(unsafe.Pointer(arg)) = long(n)
+		default:
+			panic(todo(""))
+		}
+		nvalues = 1
 	case 'D':
 		// Equivalent  to  ld;  this  exists  only for backward compatibility.  (Note:
 		// thus only in libc4.  In libc5 and glibc the %D is silently ignored, causing
@@ -166,9 +235,8 @@ flags:
 		// Matches an unsigned hexadecimal integer; the next pointer must be a pointer
 		// to unsigned int.
 		format++
-		format = skipWhiteSpace(format)
+		skipReaderWhiteSpace(r)
 		var digit, n uint64
-		match := false
 		allowPrefix := true
 		var b []byte
 	hex:
@@ -212,7 +280,7 @@ flags:
 			}
 		}
 		if !match {
-			panic(todo(""))
+			break
 		}
 
 		arg := VaUintptr(args)
@@ -273,7 +341,7 @@ flags:
 		// Matches a pointer value (as printed by %p in printf(3); the next pointer
 		// must be a pointer to a pointer to void.
 		format++
-		format = skipWhiteSpace(format)
+		skipReaderWhiteSpace(r)
 		c, err := r.ReadByte()
 		if err != nil {
 			panic(todo(""))
@@ -294,7 +362,6 @@ flags:
 		}
 
 		var digit, n uint64
-		match := false
 	ptr:
 		for ; width != 0; width-- {
 			c, err := r.ReadByte()
@@ -325,7 +392,7 @@ flags:
 			}
 		}
 		if !match {
-			panic(todo(""))
+			break
 		}
 
 		arg := VaUintptr(args)
@@ -344,7 +411,24 @@ flags:
 		panic(todo("%#U", c))
 	}
 
-	return format, nvalues
+	return format, nvalues, match
+}
+
+func skipReaderWhiteSpace(r *strings.Reader) error {
+	for {
+		c, err := r.ReadByte()
+		if err != nil {
+			return err
+		}
+
+		switch c {
+		case ' ', '\t', '\n', '\r', '\v', '\f':
+			// ok
+		default:
+			r.UnreadByte()
+			return nil
+		}
+	}
 }
 
 func skipWhiteSpace(s uintptr) uintptr {
