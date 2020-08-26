@@ -8,17 +8,18 @@ import (
 	"fmt"
 	"io"
 	"os"
-	gosignal "os/signal"
 	"path/filepath"
 	"runtime"
+	"runtime/debug" //TODO-
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 	"unsafe"
 
+	"modernc.org/libc/errno"
 	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/types"
 )
@@ -32,10 +33,15 @@ const (
 
 var (
 	Covered = map[uintptr]struct{}{}
+	fToken  uintptr
 	tid     int32
+	atExit  []func()
 
 	signals   [signal.NSIG]uintptr
 	signalsMu sync.Mutex
+
+	objectMu sync.Mutex
+	objects  = map[uintptr]interface{}{}
 
 	_ = origin
 	_ = trc
@@ -80,6 +86,7 @@ func todo(s string, args ...interface{}) string { //TODO-
 		dmesg("%s", r)
 	}
 	fmt.Fprintf(os.Stdout, "%s\n", r)
+	fmt.Fprintf(os.Stdout, "%s\n", debug.Stack()) //TODO-
 	os.Stdout.Sync()
 	os.Exit(1)
 	panic("unrechable")
@@ -106,48 +113,35 @@ func CoverReport(w io.Writer) error {
 	return err
 }
 
-func X__builtin_abort(t *TLS)                                        { Xabort(t) }
-func X__builtin_abs(t *TLS, j int32) int32                           { return Xabs(t, j) }
-func X__builtin_copysign(t *TLS, x, y float64) float64               { return Xcopysign(t, x, y) }
-func X__builtin_copysignf(t *TLS, x, y float32) float32              { return Xcopysignf(t, x, y) }
-func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, status) }
-func X__builtin_expect(t *TLS, exp, c long) long                     { return exp }
-func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
-func X__builtin_free(t *TLS, ptr uintptr)                            { Xfree(t, ptr) }
-func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
-func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
-func X__builtin_prefetch(t *TLS, addr, args uintptr)                 {}
-func X__builtin_printf(t *TLS, s, args uintptr) int32                { return Xprintf(t, s, args) }
-func X__builtin_strchr(t *TLS, s uintptr, c int32) uintptr           { return Xstrchr(t, s, c) }
-func X__builtin_strcmp(t *TLS, s1, s2 uintptr) int32                 { return Xstrcmp(t, s1, s2) }
-func X__builtin_strcpy(t *TLS, dest, src uintptr) uintptr            { return Xstrcpy(t, dest, src) }
-func X__builtin_strlen(t *TLS, s uintptr) types.Size_t               { return Xstrlen(t, s) }
-func X__builtin_trap(t *TLS)                                         { Xabort(t) }
-func X__isnan(t *TLS, arg float64) int32                             { return Xisnan(t, arg) }
-func X__isnanf(t *TLS, arg float32) int32                            { return Xisnanf(t, arg) }
-func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
-func Xvfprintf(t *TLS, stream, format, ap uintptr) int32             { return Xfprintf(t, stream, format, ap) }
+func token() uintptr { return atomic.AddUintptr(&fToken, 1) }
 
-func X__builtin_unreachable(t *TLS) {
-	fmt.Fprintf(os.Stderr, "unrechable\n")
-	os.Stderr.Sync()
-	Xexit(t, 1)
+func addObject(o interface{}) uintptr {
+	t := token()
+	objectMu.Lock()
+	objects[t] = o
+	objectMu.Unlock()
+	return t
 }
 
-func X__builtin_snprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) int32 {
-	return Xsnprintf(t, str, size, format, args)
+func getObject(t uintptr) interface{} {
+	objectMu.Lock()
+	o := objects[t]
+	if o == nil {
+		panic(todo("", t))
+	}
+
+	objectMu.Unlock()
+	return o
 }
 
-func X__builtin_sprintf(t *TLS, str, format, args uintptr) (r int32) {
-	return Xsprintf(t, str, format, args)
-}
+func removeObject(t uintptr) {
+	objectMu.Lock()
+	if _, ok := objects[t]; !ok {
+		panic(todo(""))
+	}
 
-func X__builtin_memcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
-	return Xmemcpy(t, dest, src, n)
-}
-
-func X__builtin_memset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
-	return Xmemset(t, s, c, n)
+	delete(objects, t)
+	objectMu.Unlock()
 }
 
 type TLS struct {
@@ -391,15 +385,6 @@ func Bool64(b bool) int64 {
 	return 0
 }
 
-// int sprintf(char *str, const char *format, ...);
-func Xsprintf(t *TLS, str, format, args uintptr) (r int32) {
-	b := printf(format, args)
-	r = int32(len(b))
-	copy((*RawMem)(unsafe.Pointer(str))[:r:r], b)
-	*(*byte)(unsafe.Pointer(str + uintptr(r))) = 0
-	return int32(len(b))
-}
-
 type sorter struct {
 	len  int
 	base uintptr
@@ -424,29 +409,6 @@ func (s *sorter) Swap(i, j int) {
 	}
 }
 
-// void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
-func Xqsort(t *TLS, base uintptr, nmemb, size types.Size_t, compar uintptr) {
-	sort.Sort(&sorter{
-		len:  int(nmemb),
-		base: base,
-		sz:   uintptr(size),
-		f: (*struct {
-			f func(*TLS, uintptr, uintptr) int32
-		})(unsafe.Pointer(&struct{ uintptr }{compar})).f,
-		t: t,
-	})
-}
-
-// void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function);
-func X__assert_fail(t *TLS, assertion, file uintptr, line uint32, function uintptr) {
-	fmt.Fprintf(os.Stderr, "assertion failure: %s:%d.%s: %s\n", GoString(file), line, GoString(function), GoString(assertion))
-	os.Stderr.Sync()
-	Xexit(t, 1)
-}
-
-// int vprintf(const char *format, va_list ap);
-func Xvprintf(t *TLS, s, ap uintptr) int32 { return Xprintf(t, s, ap) }
-
 func CString(s string) (uintptr, error) {
 	n := len(s)
 	p := Xmalloc(nil, types.Size_t(n)+1)
@@ -457,24 +419,6 @@ func CString(s string) (uintptr, error) {
 	copy((*RawMem)(unsafe.Pointer(p))[:n:n], s)
 	*(*byte)(unsafe.Pointer(p + uintptr(n))) = 0
 	return p, nil
-}
-
-// int __isoc99_sscanf(const char *str, const char *format, ...);
-func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
-	return scanf(strings.NewReader(GoString(str)), format, va)
-
-}
-
-// unsigned int sleep(unsigned int seconds);
-func Xsleep(t *TLS, seconds uint32) uint32 {
-	time.Sleep(time.Second * time.Duration(seconds))
-	return 0
-}
-
-// int usleep(useconds_t usec);
-func Xusleep(t *TLS, usec types.X__useconds_t) int32 {
-	time.Sleep(time.Microsecond * time.Duration(usec))
-	return 0
 }
 
 func GetEnviron() (r []string) {
@@ -488,46 +432,263 @@ func GetEnviron() (r []string) {
 	}
 }
 
-// sighandler_t signal(int signum, sighandler_t handler);
-func Xsignal(t *TLS, signum int32, handler uintptr) uintptr {
-	signalsMu.Lock()
-
-	defer signalsMu.Unlock()
-
-	r := signals[signum]
-	signals[signum] = handler
-	switch handler {
-	case signal.SIG_DFL:
-		panic(todo("%v %#x", syscall.Signal(signum), handler))
-	case signal.SIG_IGN:
-		switch r {
-		case signal.SIG_DFL:
-			gosignal.Ignore(syscall.Signal(signum))
-		case signal.SIG_IGN:
-			panic(todo("%v %#x", syscall.Signal(signum), handler))
+func strToUint64(t *TLS, s uintptr, base int32) (seenDigits, neg bool, next uintptr, n uint64, err int32) {
+	var c byte
+out:
+	for {
+		c = *(*byte)(unsafe.Pointer(s))
+		switch c {
+		case ' ', '\t', '\n', '\r', '\v', '\f':
+			s++
+		case '+':
+			s++
+			break out
+		case '-':
+			s++
+			neg = true
+			break out
 		default:
-			panic(todo("%v %#x", syscall.Signal(signum), handler))
-		}
-	default:
-		switch r {
-		case signal.SIG_DFL:
-			c := make(chan os.Signal, 1)
-			gosignal.Notify(c, syscall.Signal(signum))
-			go func() { //TODO mechanism to stop/cancel
-				for {
-					<-c
-					var f func(*TLS, int32)
-					*(*uintptr)(unsafe.Pointer(&f)) = handler
-					tls := NewTLS()
-					f(tls, signum)
-					tls.Close()
-				}
-			}()
-		case signal.SIG_IGN:
-			panic(todo("%v %#x", syscall.Signal(signum), handler))
-		default:
-			panic(todo("%v %#x", syscall.Signal(signum), handler))
+			break out
 		}
 	}
-	return r
+	for {
+		c = *(*byte)(unsafe.Pointer(s))
+		var digit uint64
+		switch base {
+		case 10:
+			switch {
+			case c >= '0' && c <= '9':
+				seenDigits = true
+				digit = uint64(c) - '0'
+			default:
+				return seenDigits, neg, s, n, 0
+			}
+		case 16:
+			if c >= 'A' && c <= 'F' {
+				c = c + ('a' - 'A')
+			}
+			switch {
+			case c >= '0' && c <= '9':
+				seenDigits = true
+				digit = uint64(c) - '0'
+			case c >= 'a' && c <= 'f':
+				seenDigits = true
+				digit = uint64(c) - 'a' + 10
+			default:
+				return seenDigits, neg, s, n, 0
+			}
+		default:
+			panic(todo("", base))
+		}
+		n0 := n
+		n = uint64(base)*n + digit
+		if n < n0 { // overflow
+			return seenDigits, neg, s, n0, errno.ERANGE
+		}
+
+		s++
+	}
+}
+
+func strToFloatt64(t *TLS, s uintptr, bits int) (n float64, errno int32) {
+	var c byte
+out:
+	for {
+		c = *(*byte)(unsafe.Pointer(s))
+		switch c {
+		case ' ', '\t', '\n', '\r', '\v', '\f':
+			s++
+		case '+':
+			s++
+			break out
+		case '-':
+			s++
+			break out
+		default:
+			break out
+		}
+	}
+	var b []byte
+	for {
+		c = *(*byte)(unsafe.Pointer(s))
+		switch {
+		case c >= '0' && c <= '9':
+			b = append(b, c)
+		case c == '.':
+			b = append(b, c)
+			s++
+			for {
+				c = *(*byte)(unsafe.Pointer(s))
+				switch {
+				case c >= '0' && c <= '9':
+					b = append(b, c)
+				case c == 'e' || c == 'E':
+					b = append(b, c)
+					s++
+					for {
+						c = *(*byte)(unsafe.Pointer(s))
+						switch {
+						case c == '+' || c == '-':
+							b = append(b, c)
+							s++
+							for {
+								c = *(*byte)(unsafe.Pointer(s))
+								switch {
+								case c >= '0' && c <= '9':
+									b = append(b, c)
+								default:
+									var err error
+									n, err = strconv.ParseFloat(string(b), bits)
+									if err != nil {
+										panic(todo(""))
+									}
+
+									return n, 0
+								}
+
+								s++
+							}
+						default:
+							panic(todo("%q %q", b, string(c)))
+						}
+
+						s++
+					}
+				default:
+					panic(todo("%q %q", b, string(c)))
+				}
+
+				s++
+			}
+		default:
+			panic(todo("%q %q", b, string(c)))
+		}
+
+		s++
+	}
+}
+
+func parseZone(s string) (name string, off int) {
+	s, name, off, _ = parseZoneOffset(s, false)
+	return name, off
+}
+
+func parseZoneOffset(s string, offOpt bool) (string, string, int, bool) {
+	name := s
+	for len(s) != 0 {
+		switch c := s[0]; {
+		case c >= 'A' && c <= 'Z':
+			s = s[1:]
+		default:
+			name = name[:len(name)-len(s)]
+			if len(name) < 3 {
+				panic(todo(""))
+			}
+
+			if offOpt {
+				if len(s) == 0 {
+					return "", name, 0, false
+				}
+
+				if c := s[0]; (c < '0' || c > '9') && c != '+' && c != '-' {
+					return s, name, 0, false
+				}
+			}
+
+			s, off := parseOffset(s)
+			return s, name, off, true
+		}
+	}
+	panic(todo(""))
+}
+
+//  [+|-]hh[:mm[:ss]]
+func parseOffset(s string) (string, int) {
+	if len(s) == 0 {
+		panic(todo(""))
+	}
+
+	k := 1
+	switch s[0] {
+	case '+':
+		// nop
+		s = s[1:]
+	case '-':
+		k = -1
+		s = s[1:]
+	}
+	s, hh, ok := parseUint(s)
+	if !ok {
+		panic(todo(""))
+	}
+
+	n := hh * 3600
+	if len(s) == 0 || s[0] != ':' {
+		return s, k * n
+	}
+
+	s = s[1:] // ':'
+	if len(s) == 0 {
+		panic(todo(""))
+	}
+
+	s, mm, ok := parseUint(s)
+	if !ok {
+		panic(todo(""))
+	}
+
+	n += mm * 60
+	if len(s) == 0 || s[0] != ':' {
+		return s, k * n
+	}
+
+	s = s[1:] // ':'
+	if len(s) == 0 {
+		panic(todo(""))
+	}
+
+	s, ss, ok := parseUint(s)
+	return s, k * (n + ss)
+}
+
+func parseUint(s string) (string, int, bool) {
+	var ok bool
+	var r int
+	for len(s) != 0 {
+		switch c := s[0]; {
+		case c >= '0' && c <= '9':
+			ok = true
+			r0 := r
+			r = 10*r + int(c) - '0'
+			if r < r0 {
+				panic(todo(""))
+			}
+
+			s = s[1:]
+		default:
+			return s, r, ok
+		}
+	}
+	return s, r, ok
+}
+
+// https://stackoverflow.com/a/53052382
+//
+// isTimeDST returns true if time t occurs within daylight saving time
+// for its time zone.
+func isTimeDST(t time.Time) bool {
+	// If the most recent (within the last year) clock change
+	// was forward then assume the change was from std to dst.
+	hh, mm, _ := t.UTC().Clock()
+	tClock := hh*60 + mm
+	for m := -1; m > -12; m-- {
+		// assume dst lasts for at least one month
+		hh, mm, _ := t.AddDate(0, m, 0).UTC().Clock()
+		clock := hh*60 + mm
+		if clock != tClock {
+			return clock > tClock
+		}
+	}
+	// assume no dst
+	return false
 }

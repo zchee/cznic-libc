@@ -2,10 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// +build libc.nofsync
+
 package libc // import "modernc.org/libc"
 
-type (
-	RawMem [1<<50 - 1]byte
-	long   = int64
-	ulong  = uint64
-)
+const noFsync = true

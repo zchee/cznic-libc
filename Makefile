@@ -2,7 +2,10 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-.PHONY:	all bench clean cover cpu editor internalError later mem nuke todo edit devbench
+.PHONY:	all bench clean cover cpu editor internalError later mem nuke todo edit devbench \
+	linux_386 \
+	linux_amd64 \
+
 
 grep=--include=*.go --include=*.l --include=*.y --include=*.yy --include=*.qbe --include=*.ssa
 ngrep='internalError\|TODOOK'
@@ -15,9 +18,9 @@ all:
 	go install -v ./...
 	go test -i
 	go test 2>&1 -timeout 1h | tee -a log
-	#TODO GOOS=linux GOARCH=arm go build
-	#GOOS=linux GOARCH=386 go build
+	GOOS=linux GOARCH=386 go build
 	GOOS=linux GOARCH=amd64 go build
+	# GOOS=linux GOARCH=arm go build
 	# GOOS=windows GOARCH=386 go build
 	# GOOS=windows GOARCH=amd64 go build
 	go vet 2>&1 | grep -v $(ngrep) || true
@@ -29,6 +32,14 @@ all:
 	grep -n 'FAIL\|PASS' log 
 	go version
 	date 2>&1 | tee -a log
+
+linux_386:
+	GO_GENERATE_CPP_OPTS=-m32 TARGET_GOOS=linux TARGET_GOARCH=386 go generate
+	GOOS=linux GOARCH=386 go build -v ./...
+
+linux_amd64:
+	GO_GENERATE_CPP_OPTS=-m64 TARGET_GOOS=linux TARGET_GOARCH=amd64 go generate
+	GOOS=linux GOARCH=amd64 go build -v ./...
 
 devbench:
 	date 2>&1 | tee log-devbench
@@ -61,7 +72,7 @@ editor:
 	gofmt -l -s -w *.go
 	go test -i
 	go test -short 2>&1 | tee log
-	go install
+	go install -v ./...
 
 later:
 	@grep -n $(grep) LATER * || true

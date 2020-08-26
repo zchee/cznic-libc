@@ -17,20 +17,37 @@ import (
 	"modernc.org/cc/v3"
 )
 
+var (
+	goos   = runtime.GOOS
+	goarch = runtime.GOARCH
+)
+
 func main() {
-	_, _, hostSysIncludes, err := cc.HostConfig("")
+	hostConfigCmd := os.Getenv("GO_GENERATE_CPP")
+	var hostConfigOpts []string
+	if s := os.Getenv("GO_GENERATE_CPP_OPTS"); s != "" {
+		hostConfigOpts = strings.Split(s, ",")
+	}
+	if s := os.Getenv("TARGET_GOOS"); s != "" {
+		goos = s
+	}
+	if s := os.Getenv("TARGET_GOARCH"); s != "" {
+		goarch = s
+	}
+	// fmt.Printf("%q %q %q\n", hostConfigOpts, goos, goarch)
+	_, _, hostSysIncludes, err := cc.HostConfig(hostConfigCmd, hostConfigOpts...)
 	if err != nil {
 		fail(err)
 	}
 
-	g := []string{"cgo_libc.go", "etc.go", "libc.go"}
-	x, err := filepath.Glob(fmt.Sprintf("*_%s.go", runtime.GOOS))
+	g := []string{"etc.go", "libc.go"} //TODO -etc.go
+	x, err := filepath.Glob(fmt.Sprintf("*_%s.go", goos))
 	if err != nil {
 		fail(err)
 	}
 
 	g = append(g, x...)
-	if x, err = filepath.Glob(fmt.Sprintf("*_%s_%s.go", runtime.GOOS, runtime.GOARCH)); err != nil {
+	if x, err = filepath.Glob(fmt.Sprintf("*_%s_%s.go", goos, goarch)); err != nil {
 		fail(err)
 	}
 
@@ -82,7 +99,7 @@ var CAPI = map[string]struct{}{`)
 		fmt.Fprintf(b, "\n\t%q: {},", v)
 	}
 	b.WriteString("\n}")
-	if err := ioutil.WriteFile(fmt.Sprintf("capi_%s_%s.go", runtime.GOOS, runtime.GOARCH), b.Bytes(), 0660); err != nil {
+	if err := ioutil.WriteFile(fmt.Sprintf("capi_%s_%s.go", goos, goarch), b.Bytes(), 0660); err != nil {
 		fail(err)
 	}
 
@@ -127,7 +144,7 @@ static char _;
 
 		defer os.Remove(fn)
 
-		dest := filepath.Join(path, fmt.Sprintf("%s_%s_%s.go", filepath.Base(path), runtime.GOOS, runtime.GOARCH))
+		dest := filepath.Join(path, fmt.Sprintf("%s_%s_%s.go", filepath.Base(path), goos, goarch))
 		base := filepath.Base(dir)
 		cmd := exec.Command(
 			"ccgo", fn,
@@ -138,6 +155,9 @@ static char _;
 			"-ccgo-export-fields", "F",
 			"-ccgo-export-structs", "",
 			"-ccgo-export-typedefs", "",
+			"-ccgo-host-config-cmd", os.Getenv("GO_GENERATE_CPP"),
+			"-ccgo-host-config-opts", os.Getenv("GO_GENERATE_CPP_OPTS"),
+			"-ccgo-long-double-is-double",
 			"-ccgo-pkgname", base,
 			"-o", dest,
 		)
