@@ -1349,3 +1349,8 @@ func Xfork(t *TLS) int32 {
 	t.setErrno(errno.ENOSYS)
 	return -1
 }
+
+// char *setlocale(int category, const char *locale);
+func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
+	return 0 //TODO
+}

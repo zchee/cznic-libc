@@ -258,11 +258,6 @@ func Xgetnameinfo(t *TLS, addr uintptr, addrlen socket.Socklen_t, host uintptr, 
 	))
 }
 
-// char *setlocale(int category, const char *locale);
-func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.setlocale(C.int(category), (*C.char)(unsafe.Pointer(locale)))))
-}
-
 // struct tm *gmtime_r(const time_t *timep, struct tm *result);
 func Xgmtime_r(t *TLS, timep, result uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.gmtime_r((*C.time_t)(unsafe.Pointer(timep)), (*C.struct_tm)(unsafe.Pointer(result)))))

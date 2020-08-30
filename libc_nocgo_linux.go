@@ -150,11 +150,6 @@ func Xgmtime_r(t *TLS, timep, result uintptr) uintptr {
 	panic(todo(""))
 }
 
-// char *setlocale(int category, const char *locale);
-func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
-	panic(todo(""))
-}
-
 // char *nl_langinfo(nl_item item);
 func Xnl_langinfo(t *TLS, item langinfo.Nl_item) uintptr {
 	panic(todo(""))
