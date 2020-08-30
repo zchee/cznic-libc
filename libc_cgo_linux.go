@@ -256,7 +256,15 @@ func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&C.environ))
 }
 
+var abortSigaction signal.Sigaction
+
 func Xabort(t *TLS) {
-	C.signal(signal.SIGABRT, (*[0]byte)(unsafe.Pointer(uintptr(signal.SIG_DFL))))
+	abortSigaction = signal.Sigaction{
+		F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: signal.SIG_DFL},
+	}
+	if C.sigaction(signal.SIGABRT, (*C.struct_sigaction)(unsafe.Pointer(&abortSigaction)), nil) != 0 {
+		panic(todo(""))
+	}
+
 	C.abort()
 }
