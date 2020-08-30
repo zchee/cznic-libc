@@ -22,6 +22,7 @@ import (
 	"modernc.org/libc/grp"
 	"modernc.org/libc/langinfo"
 	"modernc.org/libc/limits"
+	"modernc.org/libc/netinet/in"
 	"modernc.org/libc/pwd"
 	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/socket"
@@ -1395,5 +1396,10 @@ func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
 
 // struct tm *gmtime_r(const time_t *timep, struct tm *result);
 func Xgmtime_r(t *TLS, timep, result uintptr) uintptr {
+	panic(todo(""))
+}
+
+// char *inet_ntoa(struct in_addr in);
+func Xinet_ntoa(t *TLS, in1 in.In_addr) uintptr {
 	panic(todo(""))
 }

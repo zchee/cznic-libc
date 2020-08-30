@@ -14,7 +14,6 @@ import (
 
 	"golang.org/x/sys/unix"
 	"modernc.org/libc/errno"
-	"modernc.org/libc/netinet/in"
 	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/types"
@@ -151,11 +150,6 @@ func Xgethostbyaddr(t *TLS, addr uintptr, len socket.Socklen_t, type1 int32) uin
 
 // uint32_t htonl(uint32_t hostlong);
 func Xhtonl(t *TLS, hostlong uint32) uint32 {
-	panic(todo(""))
-}
-
-// char *inet_ntoa(struct in_addr in);
-func Xinet_ntoa(t *TLS, in1 in.In_addr) uintptr {
 	panic(todo(""))
 }
 

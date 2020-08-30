@@ -13,7 +13,6 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/unix"
-	"modernc.org/libc/netinet/in"
 	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/types"
@@ -245,11 +244,6 @@ func Xgetnameinfo(t *TLS, addr uintptr, addrlen socket.Socklen_t, host uintptr, 
 		C.socklen_t(servlen),
 		C.int(flags),
 	))
-}
-
-// char *inet_ntoa(struct in_addr in);
-func Xinet_ntoa(t *TLS, in1 in.In_addr) uintptr {
-	return uintptr(unsafe.Pointer(C.inet_ntoa(*(*C.struct_in_addr)(unsafe.Pointer(&in1)))))
 }
 
 // struct hostent *gethostbyname(const char *name);
