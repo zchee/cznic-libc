@@ -4,7 +4,6 @@
 
 // +build !cgo
 
-// Package libc provides a subset of functionality of C libc.
 package libc // import "modernc.org/libc"
 
 import (
@@ -189,21 +188,6 @@ func Xcfsetispeed(t *TLS, termios_p uintptr, speed uint32) int32 {
 
 // char *realpath(const char *path, char *resolved_path);
 func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
-	panic(todo(""))
-}
-
-// DIR *opendir(const char *name);
-func Xopendir(t *TLS, name uintptr) uintptr {
-	panic(todo(""))
-}
-
-// int closedir(DIR *dirp);
-func Xclosedir(t *TLS, dir uintptr) int32 {
-	panic(todo(""))
-}
-
-// struct dirent *readdir(DIR *dirp);
-func Xreaddir64(t *TLS, dirp uintptr) uintptr {
 	panic(todo(""))
 }
 

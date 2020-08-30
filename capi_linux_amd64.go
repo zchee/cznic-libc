@@ -70,6 +70,7 @@ var CAPI = map[string]struct{}{
 	"dlopen":                {},
 	"dlsym":                 {},
 	"dup2":                  {},
+	"environ":               {},
 	"execvp":                {},
 	"exit":                  {},
 	"exp":                   {},

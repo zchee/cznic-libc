@@ -40,7 +40,7 @@ func main() {
 		fail(err)
 	}
 
-	g := []string{"etc.go", "libc.go"} //TODO -etc.go
+	g := []string{"libc.go", "libc_nocgo.go"}
 	x, err := filepath.Glob(fmt.Sprintf("*_%s.go", goos))
 	if err != nil {
 		fail(err)

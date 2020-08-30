@@ -12,6 +12,8 @@
 // Some functions are implemented only when CGO_ENABLED=1 and panic otherwise.
 package libc // import "modernc.org/libc"
 
+//TODO use O_RDONLY etc. from fcntl header
+
 import (
 	"fmt"
 	"math"

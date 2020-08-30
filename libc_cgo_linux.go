@@ -199,21 +199,6 @@ func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) type
 	return types.Size_t(C.fwrite(unsafe.Pointer(ptr), C.size_t(size), C.size_t(nmemb), (*C.FILE)(unsafe.Pointer(stream))))
 }
 
-// int closedir(DIR *dirp);
-func Xclosedir(t *TLS, dir uintptr) int32 { //TODO Go version fails
-	return int32(C.closedir((*C.DIR)(unsafe.Pointer(dir))))
-}
-
-// DIR *opendir(const char *name);
-func Xopendir(t *TLS, name uintptr) uintptr { //TODO Go version fails
-	return uintptr(unsafe.Pointer(C.opendir((*C.char)(unsafe.Pointer(name)))))
-}
-
-// struct dirent *readdir(DIR *dirp);
-func Xreaddir64(t *TLS, dirp uintptr) uintptr { //TODO Go version fails
-	return uintptr(unsafe.Pointer(C.readdir((*C.DIR)(unsafe.Pointer(dirp)))))
-}
-
 // int fputc(int c, FILE *stream);
 func Xfputc(t *TLS, c int32, stream uintptr) int32 {
 	return int32(C.fputc(C.int(c), (*C.FILE)(unsafe.Pointer(stream))))
