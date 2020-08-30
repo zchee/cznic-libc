@@ -13,7 +13,6 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/unix"
-	"modernc.org/libc/langinfo"
 	"modernc.org/libc/netinet/in"
 	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/socket"
@@ -261,11 +260,6 @@ func Xgetnameinfo(t *TLS, addr uintptr, addrlen socket.Socklen_t, host uintptr, 
 // struct tm *gmtime_r(const time_t *timep, struct tm *result);
 func Xgmtime_r(t *TLS, timep, result uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.gmtime_r((*C.time_t)(unsafe.Pointer(timep)), (*C.struct_tm)(unsafe.Pointer(result)))))
-}
-
-// char *nl_langinfo(nl_item item);
-func Xnl_langinfo(t *TLS, item langinfo.Nl_item) uintptr {
-	return uintptr(unsafe.Pointer(C.nl_langinfo(C.nl_item(item))))
 }
 
 // char *inet_ntoa(struct in_addr in);

@@ -19,6 +19,7 @@ import (
 	"modernc.org/libc/errno"
 	"modernc.org/libc/fts"
 	"modernc.org/libc/grp"
+	"modernc.org/libc/langinfo"
 	"modernc.org/libc/pwd"
 	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/socket"
@@ -857,7 +858,7 @@ func Xgetpwuid(t *TLS, uid uint32) uintptr {
 
 			closePasswd(&staticGetpwuid)
 			gecos := a[4]
-			if strings.Index(gecos, ",") >= 0 {
+			if strings.Contains(gecos, ",") {
 				a := strings.Split(gecos, ",")
 				gecos = a[0]
 			}
@@ -955,7 +956,7 @@ func Xgetpwnam(t *TLS, name uintptr) uintptr {
 
 			closePasswd(&staticGetpwnam)
 			gecos := a[4]
-			if strings.Index(gecos, ",") >= 0 {
+			if strings.Contains(gecos, ",") {
 				a := strings.Split(gecos, ",")
 				gecos = a[0]
 			}
@@ -1353,4 +1354,9 @@ func Xfork(t *TLS) int32 {
 // char *setlocale(int category, const char *locale);
 func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
 	return 0 //TODO
+}
+
+// char *nl_langinfo(nl_item item);
+func Xnl_langinfo(t *TLS, item langinfo.Nl_item) uintptr {
+	panic(todo(""))
 }

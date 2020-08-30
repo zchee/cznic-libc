@@ -577,7 +577,7 @@ out:
 }
 
 func parseZone(s string) (name string, off int) {
-	s, name, off, _ = parseZoneOffset(s, false)
+	_, name, off, _ = parseZoneOffset(s, false)
 	return name, off
 }
 
@@ -655,7 +655,7 @@ func parseOffset(s string) (string, int) {
 		panic(todo(""))
 	}
 
-	s, ss, ok := parseUint(s)
+	s, ss, _ := parseUint(s)
 	return s, k * (n + ss)
 }
 

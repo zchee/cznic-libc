@@ -61,7 +61,7 @@ func Xopendir(t *TLS, name uintptr) uintptr {
 	//		return dir;
 	//	}
 	fd, _, err := unix.Syscall(unix.SYS_OPEN, name, fcntl.O_RDONLY|fcntl.O_DIRECTORY|fcntl.O_CLOEXEC, 0)
-	if fd < 0 {
+	if err != 0 {
 		t.setErrno(err)
 		return 0
 	}

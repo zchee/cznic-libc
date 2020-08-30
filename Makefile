@@ -18,7 +18,7 @@ all:
 	go install -v ./...
 	go test -i
 	go test 2>&1 -timeout 1h | tee -a log
-	GOOS=linux GOARCH=386 go build
+	# GOOS=linux GOARCH=386 go build
 	GOOS=linux GOARCH=amd64 go build
 	# GOOS=linux GOARCH=arm go build
 	# GOOS=windows GOARCH=386 go build
