@@ -152,11 +152,6 @@ func Xgai_strerror(t *TLS, errcode int32) uintptr {
 	panic(todo(""))
 }
 
-// char *strerror(int errnum);
-func Xstrerror(t *TLS, errnum int32) uintptr {
-	panic(todo(""))
-}
-
 // int tcgetattr(int fd, struct termios *termios_p);
 func Xtcgetattr(t *TLS, fd int32, termios_p uintptr) int32 {
 	panic(todo(""))

@@ -1268,3 +1268,8 @@ func Xfts_close(t *TLS, ftsp uintptr) int32 {
 func Xtzset(t *TLS) {
 	//TODO
 }
+
+// char *strerror(int errnum);
+func Xstrerror(t *TLS, errnum int32) uintptr {
+	panic(todo(""))
+}

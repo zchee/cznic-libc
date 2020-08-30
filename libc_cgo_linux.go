@@ -213,11 +213,6 @@ func Xpopen(t *TLS, command, type1 uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.popen((*C.char)(unsafe.Pointer(command)), (*C.char)(unsafe.Pointer(type1)))))
 }
 
-// char *strerror(int errnum);
-func Xstrerror(t *TLS, errnum int32) uintptr {
-	return uintptr(unsafe.Pointer(C.strerror(C.int(errnum))))
-}
-
 // void *dlopen(const char *filename, int flags);
 func Xdlopen(t *TLS, filename uintptr, flags int32) uintptr {
 	panic(todo(""))
