@@ -13,7 +13,6 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/unix"
-	"modernc.org/libc/errno"
 	"modernc.org/libc/langinfo"
 	"modernc.org/libc/netinet/in"
 	"modernc.org/libc/signal"
@@ -229,12 +228,6 @@ func Xfdopen(t *TLS, fd int32, mode uintptr) uintptr {
 // char *realpath(const char *path, char *resolved_path);
 func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.realpath((*C.char)(unsafe.Pointer(path)), (*C.char)(unsafe.Pointer(resolved_path)))))
-}
-
-// pid_t fork(void);
-func Xfork(t *TLS) int32 {
-	C.__ccgo_seterrno(errno.ENOSYS)
-	return -1
 }
 
 // void _exit(int status);

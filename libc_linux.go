@@ -1343,3 +1343,9 @@ func Xcfsetospeed(t *TLS, termios_p uintptr, speed uint32) int32 {
 func Xcfsetispeed(t *TLS, termios_p uintptr, speed uint32) int32 {
 	panic(todo(""))
 }
+
+// pid_t fork(void);
+func Xfork(t *TLS) int32 {
+	t.setErrno(errno.ENOSYS)
+	return -1
+}
