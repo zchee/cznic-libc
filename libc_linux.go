@@ -1273,3 +1273,28 @@ func Xtzset(t *TLS) {
 func Xstrerror(t *TLS, errnum int32) uintptr {
 	panic(todo(""))
 }
+
+// void *dlopen(const char *filename, int flags);
+func Xdlopen(t *TLS, filename uintptr, flags int32) uintptr {
+	panic(todo(""))
+}
+
+// char *dlerror(void);
+func Xdlerror(t *TLS) uintptr {
+	panic(todo(""))
+}
+
+// int dlclose(void *handle);
+func Xdlclose(t *TLS, handle uintptr) int32 {
+	panic(todo(""))
+}
+
+// void *dlsym(void *handle, const char *symbol);
+func Xdlsym(t *TLS, handle, symbol uintptr) uintptr {
+	panic(todo(""))
+}
+
+// int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
+func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
+	panic(todo(""))
+}

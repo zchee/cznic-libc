@@ -213,26 +213,6 @@ func Xpopen(t *TLS, command, type1 uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.popen((*C.char)(unsafe.Pointer(command)), (*C.char)(unsafe.Pointer(type1)))))
 }
 
-// void *dlopen(const char *filename, int flags);
-func Xdlopen(t *TLS, filename uintptr, flags int32) uintptr {
-	panic(todo(""))
-}
-
-// char *dlerror(void);
-func Xdlerror(t *TLS) uintptr {
-	panic(todo(""))
-}
-
-// int dlclose(void *handle);
-func Xdlclose(t *TLS, handle uintptr) int32 {
-	panic(todo(""))
-}
-
-// void *dlsym(void *handle, const char *symbol);
-func Xdlsym(t *TLS, handle, symbol uintptr) uintptr {
-	panic(todo(""))
-}
-
 // void perror(const char *s);
 func Xperror(t *TLS, s uintptr) {
 	C.perror((*C.char)(unsafe.Pointer(s)))
@@ -355,11 +335,6 @@ func Xgethostbyname(t *TLS, name uintptr) uintptr {
 // struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
 func Xgethostbyaddr(t *TLS, addr uintptr, len socket.Socklen_t, type1 int32) uintptr {
 	return uintptr(unsafe.Pointer(C.gethostbyaddr(unsafe.Pointer(addr), C.socklen_t(len), C.int(type1))))
-}
-
-// int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
-func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
-	panic(todo(""))
 }
 
 // int ferror(FILE *stream);
