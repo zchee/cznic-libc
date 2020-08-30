@@ -68,10 +68,6 @@ void __ccgo_init() {
 }
 
 
-int __ccgo_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout) {
-	return select(nfds, readfds, writefds, exceptfds, timeout);
-}
-
 void __ccgo_seterrno(int err) {
 	errno = err;
 }
@@ -109,8 +105,6 @@ func Xfree(t *TLS, p uintptr) { C.free(unsafe.Pointer(p)) }
 
 // void *malloc(size_t size);
 func Xmalloc(t *TLS, n types.Size_t) uintptr { return uintptr(C.malloc(C.size_t(n))) }
-
-func Xtzset(t *TLS) { C.tzset() } //TODO tcl fails if nop
 
 func Xexit(t *TLS, status int32) {
 	if len(Covered) != 0 {

@@ -1263,3 +1263,8 @@ func Xfts_close(t *TLS, ftsp uintptr) int32 {
 	removeObject(ftsp)
 	return 0
 }
+
+// void tzset (void);
+func Xtzset(t *TLS) {
+	//TODO
+}
