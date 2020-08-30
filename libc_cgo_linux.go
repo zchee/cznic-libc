@@ -203,19 +203,9 @@ func Xfgetc(t *TLS, stream uintptr) int32 {
 	return int32(C.fgetc((*C.FILE)(unsafe.Pointer(stream))))
 }
 
-// int pclose(FILE *stream);
-func Xpclose(t *TLS, stream uintptr) int32 {
-	return int32(C.pclose((*C.FILE)(unsafe.Pointer(stream))))
-}
-
 // FILE *popen(const char *command, const char *type);
 func Xpopen(t *TLS, command, type1 uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.popen((*C.char)(unsafe.Pointer(command)), (*C.char)(unsafe.Pointer(type1)))))
-}
-
-// void perror(const char *s);
-func Xperror(t *TLS, s uintptr) {
-	C.perror((*C.char)(unsafe.Pointer(s)))
 }
 
 // int fputs(const char *s, FILE *stream);
@@ -231,11 +221,6 @@ func Xgetservbyname(t *TLS, name, proto uintptr) uintptr {
 // int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
 func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 { //TODO not needed by sqlite
 	return int32(C.getaddrinfo((*C.char)(unsafe.Pointer(node)), (*C.char)(unsafe.Pointer(service)), (*C.struct_addrinfo)(unsafe.Pointer(hints)), (**C.struct_addrinfo)(unsafe.Pointer(res))))
-}
-
-// const char *gai_strerror(int errcode);
-func Xgai_strerror(t *TLS, errcode int32) uintptr {
-	return uintptr(unsafe.Pointer(C.gai_strerror(C.int(errcode))))
 }
 
 // int tcgetattr(int fd, struct termios *termios_p);

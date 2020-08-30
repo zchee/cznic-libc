@@ -127,11 +127,6 @@ func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 { //TODO not 
 	panic(todo(""))
 }
 
-// const char *gai_strerror(int errcode);
-func Xgai_strerror(t *TLS, errcode int32) uintptr {
-	panic(todo(""))
-}
-
 // int tcgetattr(int fd, struct termios *termios_p);
 func Xtcgetattr(t *TLS, fd int32, termios_p uintptr) int32 {
 	panic(todo(""))

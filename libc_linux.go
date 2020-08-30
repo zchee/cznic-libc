@@ -6,6 +6,7 @@ package libc // import "modernc.org/libc"
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
@@ -1297,4 +1298,22 @@ func Xdlsym(t *TLS, handle, symbol uintptr) uintptr {
 // int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
 func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
 	panic(todo(""))
+}
+
+// void perror(const char *s);
+func Xperror(t *TLS, s uintptr) {
+	panic(todo(""))
+}
+
+// int pclose(FILE *stream);
+func Xpclose(t *TLS, stream uintptr) int32 {
+	panic(todo(""))
+}
+
+var gai_strerrorBuf [100]byte
+
+// const char *gai_strerror(int errcode);
+func Xgai_strerror(t *TLS, errcode int32) uintptr {
+	copy(gai_strerrorBuf[:], fmt.Sprintf("gai error %d\x00", errcode))
+	return uintptr(unsafe.Pointer(&gai_strerrorBuf))
 }
