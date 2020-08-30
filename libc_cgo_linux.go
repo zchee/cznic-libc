@@ -19,7 +19,6 @@ import (
 	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/types"
-	"modernc.org/libc/termios"
 )
 
 /*
@@ -52,7 +51,6 @@ import (
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
-#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 #include <utime.h>
@@ -221,31 +219,6 @@ func Xgetservbyname(t *TLS, name, proto uintptr) uintptr {
 // int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
 func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 { //TODO not needed by sqlite
 	return int32(C.getaddrinfo((*C.char)(unsafe.Pointer(node)), (*C.char)(unsafe.Pointer(service)), (*C.struct_addrinfo)(unsafe.Pointer(hints)), (**C.struct_addrinfo)(unsafe.Pointer(res))))
-}
-
-// int tcgetattr(int fd, struct termios *termios_p);
-func Xtcgetattr(t *TLS, fd int32, termios_p uintptr) int32 {
-	return int32(C.tcgetattr(C.int(fd), (*C.struct_termios)(unsafe.Pointer(termios_p))))
-}
-
-// int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
-func Xtcsetattr(t *TLS, fd, optional_actions int32, termios_p uintptr) int32 {
-	return int32(C.tcsetattr(C.int(fd), C.int(optional_actions), (*C.struct_termios)(unsafe.Pointer(termios_p))))
-}
-
-// speed_t cfgetospeed(const struct termios *termios_p);
-func Xcfgetospeed(t *TLS, termios_p uintptr) termios.Speed_t {
-	return termios.Speed_t(C.cfgetospeed((*C.struct_termios)(unsafe.Pointer(termios_p))))
-}
-
-// int cfsetospeed(struct termios *termios_p, speed_t speed);
-func Xcfsetospeed(t *TLS, termios_p uintptr, speed uint32) int32 {
-	return int32(C.cfsetospeed((*C.struct_termios)(unsafe.Pointer(termios_p)), C.speed_t(speed)))
-}
-
-// int cfsetispeed(struct termios *termios_p, speed_t speed);
-func Xcfsetispeed(t *TLS, termios_p uintptr, speed uint32) int32 {
-	return int32(C.cfsetispeed((*C.struct_termios)(unsafe.Pointer(termios_p)), C.uint(speed)))
 }
 
 // FILE *fdopen(int fd, const char *mode);

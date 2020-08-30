@@ -24,6 +24,7 @@ import (
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/sys/types"
+	"modernc.org/libc/termios"
 	"modernc.org/libc/time"
 	"modernc.org/libc/unistd"
 )
@@ -1316,4 +1317,29 @@ var gai_strerrorBuf [100]byte
 func Xgai_strerror(t *TLS, errcode int32) uintptr {
 	copy(gai_strerrorBuf[:], fmt.Sprintf("gai error %d\x00", errcode))
 	return uintptr(unsafe.Pointer(&gai_strerrorBuf))
+}
+
+// int tcgetattr(int fd, struct termios *termios_p);
+func Xtcgetattr(t *TLS, fd int32, termios_p uintptr) int32 {
+	panic(todo(""))
+}
+
+// int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
+func Xtcsetattr(t *TLS, fd, optional_actions int32, termios_p uintptr) int32 {
+	panic(todo(""))
+}
+
+// speed_t cfgetospeed(const struct termios *termios_p);
+func Xcfgetospeed(t *TLS, termios_p uintptr) termios.Speed_t {
+	panic(todo(""))
+}
+
+// int cfsetospeed(struct termios *termios_p, speed_t speed);
+func Xcfsetospeed(t *TLS, termios_p uintptr, speed uint32) int32 {
+	panic(todo(""))
+}
+
+// int cfsetispeed(struct termios *termios_p, speed_t speed);
+func Xcfsetispeed(t *TLS, termios_p uintptr, speed uint32) int32 {
+	panic(todo(""))
 }

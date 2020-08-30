@@ -19,7 +19,6 @@ import (
 	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/types"
-	"modernc.org/libc/termios"
 )
 
 type file uintptr
@@ -124,31 +123,6 @@ func Xgetservbyname(t *TLS, name, proto uintptr) uintptr {
 
 // int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
 func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 { //TODO not needed by sqlite
-	panic(todo(""))
-}
-
-// int tcgetattr(int fd, struct termios *termios_p);
-func Xtcgetattr(t *TLS, fd int32, termios_p uintptr) int32 {
-	panic(todo(""))
-}
-
-// int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
-func Xtcsetattr(t *TLS, fd, optional_actions int32, termios_p uintptr) int32 {
-	panic(todo(""))
-}
-
-// speed_t cfgetospeed(const struct termios *termios_p);
-func Xcfgetospeed(t *TLS, termios_p uintptr) termios.Speed_t {
-	panic(todo(""))
-}
-
-// int cfsetospeed(struct termios *termios_p, speed_t speed);
-func Xcfsetospeed(t *TLS, termios_p uintptr, speed uint32) int32 {
-	panic(todo(""))
-}
-
-// int cfsetispeed(struct termios *termios_p, speed_t speed);
-func Xcfsetispeed(t *TLS, termios_p uintptr, speed uint32) int32 {
 	panic(todo(""))
 }
 
