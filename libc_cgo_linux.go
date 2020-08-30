@@ -338,16 +338,6 @@ func Xfts_close(t *TLS, ftsp uintptr) int32 {
 	return int32(C.fts_close((*C.FTS)(unsafe.Pointer(ftsp))))
 }
 
-// int mkstemps(char *template, int suffixlen);
-func Xmkstemps(t *TLS, template uintptr, suffixlen int32) int32 {
-	return int32(C.mkstemps((*C.char)(unsafe.Pointer(template)), C.int(suffixlen)))
-}
-
-// int mkstemp(char *template);
-func Xmkstemp(t *TLS, template uintptr) int32 {
-	return int32(C.mkstemp((*C.char)(unsafe.Pointer(template))))
-}
-
 // pid_t fork(void);
 func Xfork(t *TLS) int32 {
 	C.__ccgo_seterrno(errno.ENOSYS)

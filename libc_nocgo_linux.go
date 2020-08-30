@@ -222,16 +222,6 @@ func Xfts_close(t *TLS, ftsp uintptr) int32 {
 	panic(todo(""))
 }
 
-// int mkstemps(char *template, int suffixlen);
-func Xmkstemps(t *TLS, template uintptr, suffixlen int32) int32 {
-	panic(todo(""))
-}
-
-// int mkstemp(char *template);
-func Xmkstemp(t *TLS, template uintptr) int32 {
-	panic(todo(""))
-}
-
 // void freeaddrinfo(struct addrinfo *res);
 func Xfreeaddrinfo(t *TLS, res uintptr) {
 	panic(todo(""))

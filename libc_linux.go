@@ -1091,3 +1091,28 @@ func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
 
 	return types.Ssize_t(n)
 }
+
+// int mkstemps(char *template, int suffixlen);
+func Xmkstemps(t *TLS, template uintptr, suffixlen int32) int32 {
+	len := uintptr(Xstrlen(t, template))
+	x := template + uintptr(len-6) - uintptr(suffixlen)
+	for i := uintptr(0); i < 6; i++ {
+		if *(*byte)(unsafe.Pointer(x + i)) != 'X' {
+			t.setErrno(errno.EINVAL)
+			return -1
+		}
+	}
+
+	fd, err := tempFile(template, x)
+	if err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return int32(fd)
+}
+
+// int mkstemp(char *template);
+func Xmkstemp(t *TLS, template uintptr) int32 {
+	return Xmkstemps(t, template, 0)
+}
