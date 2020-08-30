@@ -33,6 +33,10 @@ import (
 	"modernc.org/libc/unistd"
 )
 
+var (
+	in6_addr_any in.In6_addr
+)
+
 type (
 	long  = types.X__syscall_slong_t
 	ulong = types.X__syscall_ulong_t
@@ -1402,4 +1406,8 @@ func Xgmtime_r(t *TLS, timep, result uintptr) uintptr {
 // char *inet_ntoa(struct in_addr in);
 func Xinet_ntoa(t *TLS, in1 in.In_addr) uintptr {
 	panic(todo(""))
+}
+
+func X__ccgo_in6addr_anyp(t *TLS) uintptr {
+	return uintptr(unsafe.Pointer(&in6_addr_any))
 }

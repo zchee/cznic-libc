@@ -67,10 +67,6 @@ void __ccgo_seterrno(int err) {
 	errno = err;
 }
 
-const struct in6_addr *__ccgo_in6addr_anyp() {
-	return &in6addr_any;
-}
-
 */
 import "C"
 
@@ -79,10 +75,6 @@ func init() {
 	Xstderr = uintptr(unsafe.Pointer(C.__ccgo_stderr))
 	Xstdin = uintptr(unsafe.Pointer(C.__ccgo_stdin))
 	Xstdout = uintptr(unsafe.Pointer(C.__ccgo_stdout))
-}
-
-func X__ccgo_in6addr_anyp(t *TLS) uintptr {
-	return uintptr(unsafe.Pointer(C.__ccgo_in6addr_anyp()))
 }
 
 // void *realloc(void *ptr, size_t size);
