@@ -219,11 +219,6 @@ func Xfdopen(t *TLS, fd int32, mode uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.fdopen(C.int(fd), (*C.char)(unsafe.Pointer(mode)))))
 }
 
-// char *realpath(const char *path, char *resolved_path);
-func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.realpath((*C.char)(unsafe.Pointer(path)), (*C.char)(unsafe.Pointer(resolved_path)))))
-}
-
 // void _exit(int status);
 func X_exit(t *TLS, status int32) {
 	C._exit(C.int(status))

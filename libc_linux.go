@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -20,6 +21,7 @@ import (
 	"modernc.org/libc/fts"
 	"modernc.org/libc/grp"
 	"modernc.org/libc/langinfo"
+	"modernc.org/libc/limits"
 	"modernc.org/libc/pwd"
 	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/socket"
@@ -1364,4 +1366,29 @@ func Xnl_langinfo(t *TLS, item langinfo.Nl_item) uintptr {
 // FILE *popen(const char *command, const char *type);
 func Xpopen(t *TLS, command, type1 uintptr) uintptr {
 	panic(todo(""))
+}
+
+// char *realpath(const char *path, char *resolved_path);
+func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
+	s, err := filepath.EvalSymlinks(GoString(path))
+	if err != nil {
+		if os.IsNotExist(err) {
+			t.setErrno(errno.ENOENT)
+			return 0
+		}
+
+		panic(todo("", err))
+	}
+
+	if resolved_path == 0 {
+		panic(todo(""))
+	}
+
+	if len(s) >= limits.PATH_MAX {
+		s = s[:limits.PATH_MAX-1]
+	}
+
+	copy((*RawMem)(unsafe.Pointer(resolved_path))[:len(s):len(s)], s)
+	(*RawMem)(unsafe.Pointer(resolved_path))[len(s)] = 0
+	return resolved_path
 }

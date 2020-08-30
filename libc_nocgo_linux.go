@@ -125,11 +125,6 @@ func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 { //TODO not 
 	panic(todo(""))
 }
 
-// char *realpath(const char *path, char *resolved_path);
-func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
-	panic(todo(""))
-}
-
 // void freeaddrinfo(struct addrinfo *res);
 func Xfreeaddrinfo(t *TLS, res uintptr) {
 	panic(todo(""))
