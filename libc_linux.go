@@ -1392,3 +1392,8 @@ func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
 	(*RawMem)(unsafe.Pointer(resolved_path))[len(s)] = 0
 	return resolved_path
 }
+
+// struct tm *gmtime_r(const time_t *timep, struct tm *result);
+func Xgmtime_r(t *TLS, timep, result uintptr) uintptr {
+	panic(todo(""))
+}

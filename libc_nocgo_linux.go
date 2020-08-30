@@ -139,11 +139,6 @@ func Xgetnameinfo(t *TLS, addr uintptr, addrlen socket.Socklen_t, host uintptr, 
 	panic(todo(""))
 }
 
-// struct tm *gmtime_r(const time_t *timep, struct tm *result);
-func Xgmtime_r(t *TLS, timep, result uintptr) uintptr {
-	panic(todo(""))
-}
-
 // struct hostent *gethostbyname(const char *name);
 func Xgethostbyname(t *TLS, name uintptr) uintptr {
 	panic(todo(""))

@@ -247,11 +247,6 @@ func Xgetnameinfo(t *TLS, addr uintptr, addrlen socket.Socklen_t, host uintptr, 
 	))
 }
 
-// struct tm *gmtime_r(const time_t *timep, struct tm *result);
-func Xgmtime_r(t *TLS, timep, result uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.gmtime_r((*C.time_t)(unsafe.Pointer(timep)), (*C.struct_tm)(unsafe.Pointer(result)))))
-}
-
 // char *inet_ntoa(struct in_addr in);
 func Xinet_ntoa(t *TLS, in1 in.In_addr) uintptr {
 	return uintptr(unsafe.Pointer(C.inet_ntoa(*(*C.struct_in_addr)(unsafe.Pointer(&in1)))))
