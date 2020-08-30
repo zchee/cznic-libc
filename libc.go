@@ -772,6 +772,16 @@ func Xhtons(t *TLS, hostshort uint16) uint16 {
 	return *(*uint16)(unsafe.Pointer(&a))
 }
 
+// uint32_t htonl(uint32_t hostlong);
+func Xhtonl(t *TLS, hostlong uint32) uint32 {
+	var a [4]byte
+	a[0] = byte(hostlong >> 24)
+	a[1] = byte(hostlong >> 16)
+	a[2] = byte(hostlong >> 8)
+	a[3] = byte(hostlong)
+	return *(*uint32)(unsafe.Pointer(&a))
+}
+
 // FILE *fopen(const char *pathname, const char *mode);
 func Xfopen(t *TLS, pathname, mode uintptr) uintptr {
 	return Xfopen64(t, pathname, mode)

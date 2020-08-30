@@ -228,11 +228,6 @@ func Xfreeaddrinfo(t *TLS, res uintptr) {
 	C.freeaddrinfo((*C.struct_addrinfo)(unsafe.Pointer(res)))
 }
 
-// uint32_t htonl(uint32_t hostlong);
-func Xhtonl(t *TLS, hostlong uint32) uint32 {
-	return uint32(C.htonl(C.uint(hostlong)))
-}
-
 // int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen, char *serv, socklen_t servlen, int flags);
 func Xgetnameinfo(t *TLS, addr uintptr, addrlen socket.Socklen_t, host uintptr, hostlen socket.Socklen_t, serv uintptr, servlen socket.Socklen_t, flags int32) int32 {
 	return int32(C.getnameinfo(

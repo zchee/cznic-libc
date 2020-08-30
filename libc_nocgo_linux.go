@@ -148,11 +148,6 @@ func Xgethostbyaddr(t *TLS, addr uintptr, len socket.Socklen_t, type1 int32) uin
 	panic(todo(""))
 }
 
-// uint32_t htonl(uint32_t hostlong);
-func Xhtonl(t *TLS, hostlong uint32) uint32 {
-	panic(todo(""))
-}
-
 // int fclose(FILE *stream);
 func Xfclose(t *TLS, stream uintptr) int32 {
 	return file(stream).close(t)
