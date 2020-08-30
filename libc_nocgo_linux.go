@@ -191,21 +191,6 @@ func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
 	panic(todo(""))
 }
 
-// FTS *fts_open(char * const *path_argv, int options, int (*compar)(const FTSENT **, const FTSENT **));
-func Xfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr {
-	panic(todo(""))
-}
-
-// FTSENT *fts_read(FTS *ftsp);
-func Xfts_read(t *TLS, ftsp uintptr) uintptr {
-	panic(todo(""))
-}
-
-// int fts_close(FTS *ftsp);
-func Xfts_close(t *TLS, ftsp uintptr) int32 {
-	panic(todo(""))
-}
-
 // void freeaddrinfo(struct addrinfo *res);
 func Xfreeaddrinfo(t *TLS, res uintptr) {
 	panic(todo(""))

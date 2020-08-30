@@ -10,11 +10,13 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 	gotime "time"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
 	"modernc.org/libc/errno"
+	"modernc.org/libc/fts"
 	"modernc.org/libc/grp"
 	"modernc.org/libc/pwd"
 	"modernc.org/libc/stdio"
@@ -1115,4 +1117,149 @@ func Xmkstemps(t *TLS, template uintptr, suffixlen int32) int32 {
 // int mkstemp(char *template);
 func Xmkstemp(t *TLS, template uintptr) int32 {
 	return Xmkstemps(t, template, 0)
+}
+
+func newFtsent(t *TLS, info int, path string, stat *unix.Stat_t, err syscall.Errno) (r *fts.FTSENT) {
+	var statp uintptr
+	if stat != nil {
+		statp = mustMalloc(t, types.Size_t(unsafe.Sizeof(unix.Stat_t{})))
+		*(*unix.Stat_t)(unsafe.Pointer(statp)) = *stat
+	}
+	return &fts.FTSENT{
+		Ffts_info:    uint16(info),
+		Ffts_path:    mustCString(path),
+		Ffts_pathlen: uint16(len(path)),
+		Ffts_statp:   statp,
+		Ffts_errno:   int32(err),
+	}
+}
+
+func newCFtsent(t *TLS, info int, path string, stat *unix.Stat_t, err syscall.Errno) uintptr {
+	p := mustCalloc(t, types.Size_t(unsafe.Sizeof(fts.FTSENT{})))
+	*(*fts.FTSENT)(unsafe.Pointer(p)) = *newFtsent(t, info, path, stat, err)
+	return p
+}
+
+func ftsentClose(t *TLS, p uintptr) {
+	Xfree(t, (*fts.FTSENT)(unsafe.Pointer(p)).Ffts_path)
+	Xfree(t, (*fts.FTSENT)(unsafe.Pointer(p)).Ffts_statp)
+}
+
+type ftstream struct {
+	s []uintptr
+	x int
+}
+
+func (f *ftstream) close(t *TLS) {
+	for _, p := range f.s {
+		ftsentClose(t, p)
+		Xfree(t, p)
+	}
+	*f = ftstream{}
+}
+
+// FTS *fts_open(char * const *path_argv, int options, int (*compar)(const FTSENT **, const FTSENT **));
+func Xfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr {
+	f := &ftstream{}
+
+	var walk func(string)
+	walk = func(path string) {
+		var fi os.FileInfo
+		var err error
+		switch {
+		case options&fts.FTS_LOGICAL != 0:
+			panic(todo(""))
+		case options&fts.FTS_PHYSICAL != 0:
+			fi, err = os.Lstat(path)
+		default:
+			panic(todo(""))
+		}
+
+		if err != nil {
+			panic(todo(""))
+		}
+
+		var statp *unix.Stat_t
+		if options&fts.FTS_NOSTAT == 0 {
+			var stat unix.Stat_t
+			if err := unix.Stat(path, &stat); err != nil {
+				t.setErrno(err)
+				f = nil
+				return
+			}
+
+			statp = &stat
+		}
+
+	out:
+		switch {
+		case fi.IsDir():
+			f.s = append(f.s, newCFtsent(t, fts.FTS_D, path, statp, 0))
+			g, err := os.Open(path)
+			switch x := err.(type) {
+			case nil:
+				// ok
+			case *os.PathError:
+				f.s = append(f.s, newCFtsent(t, fts.FTS_ERR, path, statp, x.Err.(syscall.Errno)))
+				break out
+			default:
+				panic(todo("%q: %v %T", path, x, x))
+			}
+
+			names, err := g.Readdirnames(-1)
+			g.Close()
+			if err != nil {
+				panic(todo(""))
+			}
+
+			for _, name := range names {
+				walk(path + "/" + name)
+				if f == nil {
+					break out
+				}
+			}
+
+			f.s = append(f.s, newCFtsent(t, fts.FTS_DP, path, statp, 0))
+		default:
+			f.s = append(f.s, newCFtsent(t, fts.FTS_F, path, statp, 0))
+		}
+	}
+
+	for {
+		p := *(*uintptr)(unsafe.Pointer(path_argv))
+		if p == 0 {
+			if f == nil {
+				return 0
+			}
+
+			if compar != 0 {
+				panic(todo(""))
+			}
+
+			return addObject(f)
+		}
+
+		walk(GoString(p))
+		path_argv += unsafe.Sizeof(uintptr(0))
+	}
+}
+
+// FTSENT *fts_read(FTS *ftsp);
+func Xfts_read(t *TLS, ftsp uintptr) uintptr {
+	f := getObject(ftsp).(*ftstream)
+	if f.x == len(f.s) {
+		t.setErrno(0)
+		return 0
+	}
+
+	r := f.s[f.x]
+	f.x++
+	return r
+}
+
+// int fts_close(FTS *ftsp);
+func Xfts_close(t *TLS, ftsp uintptr) int32 {
+	getObject(ftsp).(*ftstream).close(t)
+	removeObject(ftsp)
+	return 0
 }

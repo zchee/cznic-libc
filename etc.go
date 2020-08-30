@@ -421,6 +421,14 @@ func CString(s string) (uintptr, error) {
 	return p, nil
 }
 
+func mustCString(s string) uintptr {
+	p, err := CString(s)
+	if err != nil {
+		panic(todo("", err))
+	}
+	return p
+}
+
 func GetEnviron() (r []string) {
 	for p := Environ(); ; p += unsafe.Sizeof(p) {
 		q := *(*uintptr)(unsafe.Pointer(p))

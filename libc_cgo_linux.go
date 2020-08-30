@@ -304,25 +304,6 @@ func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.realpath((*C.char)(unsafe.Pointer(path)), (*C.char)(unsafe.Pointer(resolved_path)))))
 }
 
-// FTS *fts_open(char * const *path_argv, int options, int (*compar)(const FTSENT **, const FTSENT **));
-func Xfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr {
-	if compar != 0 {
-		panic(todo(""))
-	}
-
-	return uintptr(unsafe.Pointer(C.fts_open((**C.char)(unsafe.Pointer(path_argv)), C.int(options), nil)))
-}
-
-// FTSENT *fts_read(FTS *ftsp);
-func Xfts_read(t *TLS, ftsp uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.fts_read((*C.FTS)(unsafe.Pointer(ftsp)))))
-}
-
-// int fts_close(FTS *ftsp);
-func Xfts_close(t *TLS, ftsp uintptr) int32 {
-	return int32(C.fts_close((*C.FTS)(unsafe.Pointer(ftsp))))
-}
-
 // pid_t fork(void);
 func Xfork(t *TLS) int32 {
 	C.__ccgo_seterrno(errno.ENOSYS)
