@@ -172,11 +172,6 @@ func Xtcsetattr(t *TLS, fd, optional_actions int32, termios_p uintptr) int32 {
 	panic(todo(""))
 }
 
-// ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
-func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
-	panic(todo(""))
-}
-
 // speed_t cfgetospeed(const struct termios *termios_p);
 func Xcfgetospeed(t *TLS, termios_p uintptr) termios.Speed_t {
 	panic(todo(""))

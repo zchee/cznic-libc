@@ -1080,3 +1080,14 @@ func Xgetgrgid(t *TLS, gid uint32) uintptr {
 func Xreaddir(t *TLS, dirp uintptr) uintptr {
 	return Xreaddir64(t, dirp)
 }
+
+// ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
+func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
+	n, _, err := unix.Syscall(unix.SYS_READLINK, path, buf, uintptr(bufsize))
+	if err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return types.Ssize_t(n)
+}

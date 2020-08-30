@@ -214,11 +214,6 @@ func Xreaddir64(t *TLS, dirp uintptr) uintptr { //TODO Go version fails
 	return uintptr(unsafe.Pointer(C.readdir((*C.DIR)(unsafe.Pointer(dirp)))))
 }
 
-// ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
-func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
-	return types.Ssize_t(C.readlink((*C.char)(unsafe.Pointer(path)), (*C.char)(unsafe.Pointer(buf)), C.size_t(bufsize)))
-}
-
 // int fputc(int c, FILE *stream);
 func Xfputc(t *TLS, c int32, stream uintptr) int32 {
 	return int32(C.fputc(C.int(c), (*C.FILE)(unsafe.Pointer(stream))))
