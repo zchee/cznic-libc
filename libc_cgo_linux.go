@@ -199,11 +199,6 @@ func Xfgetc(t *TLS, stream uintptr) int32 {
 	return int32(C.fgetc((*C.FILE)(unsafe.Pointer(stream))))
 }
 
-// FILE *popen(const char *command, const char *type);
-func Xpopen(t *TLS, command, type1 uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.popen((*C.char)(unsafe.Pointer(command)), (*C.char)(unsafe.Pointer(type1)))))
-}
-
 // int fputs(const char *s, FILE *stream);
 func Xfputs(t *TLS, s, stream uintptr) int32 {
 	return int32(C.fputs((*C.char)(unsafe.Pointer(s)), (*C.FILE)(unsafe.Pointer(stream))))

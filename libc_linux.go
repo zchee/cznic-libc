@@ -1360,3 +1360,8 @@ func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
 func Xnl_langinfo(t *TLS, item langinfo.Nl_item) uintptr {
 	panic(todo(""))
 }
+
+// FILE *popen(const char *command, const char *type);
+func Xpopen(t *TLS, command, type1 uintptr) uintptr {
+	panic(todo(""))
+}
