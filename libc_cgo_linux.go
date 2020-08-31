@@ -22,35 +22,12 @@ import (
 
 #cgo LDFLAGS: -lm -ldl
 
-#include <arpa/inet.h>
-#include <ctype.h>
-#include <dirent.h>
-#include <dlfcn.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <fts.h>
-#include <grp.h>
-#include <langinfo.h>
-#include <locale.h>
-#include <math.h>
 #include <netdb.h>
-#include <pwd.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <sys/resource.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/utsname.h>
-#include <sys/wait.h>
-#include <time.h>
 #include <unistd.h>
-#include <utime.h>
 
 extern char **environ;
 
@@ -256,15 +233,12 @@ func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&C.environ))
 }
 
-var abortSigaction signal.Sigaction
-
 func Xabort(t *TLS) {
-	abortSigaction = signal.Sigaction{
+	p := mustMalloc(t, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
+	*(*signal.Sigaction)(unsafe.Pointer(p)) = signal.Sigaction{
 		F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: signal.SIG_DFL},
 	}
-	if C.sigaction(signal.SIGABRT, (*C.struct_sigaction)(unsafe.Pointer(&abortSigaction)), nil) != 0 {
-		panic(todo(""))
-	}
-
+	Xsigaction(t, signal.SIGABRT, p, 0)
+	Xfree(t, p)
 	C.abort()
 }

@@ -148,6 +148,7 @@ static char _;
 		base := filepath.Base(dir)
 		cmd := exec.Command(
 			"ccgo", fn,
+			"-D__signed__=signed", // <asm/signal.h>
 			"-ccgo-crt-import-path", "",
 			"-ccgo-export-defines", "",
 			"-ccgo-export-enums", "",

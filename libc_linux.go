@@ -17,6 +17,7 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/unix"
+	asmsignal "modernc.org/libc/asm/signal"
 	"modernc.org/libc/errno"
 	"modernc.org/libc/fts"
 	"modernc.org/libc/grp"
@@ -24,6 +25,7 @@ import (
 	"modernc.org/libc/limits"
 	"modernc.org/libc/netinet/in"
 	"modernc.org/libc/pwd"
+	"modernc.org/libc/signal"
 	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/stat"
@@ -1306,7 +1308,35 @@ func Xdlsym(t *TLS, handle, symbol uintptr) uintptr {
 
 // int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
 func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
-	panic(todo(""))
+	var kact, koldact uintptr
+	if act != 0 {
+		kact = mustMalloc(t, types.Size_t(unsafe.Sizeof(asmsignal.Sigaction{})))
+		defer Xfree(t, kact)
+		*(*asmsignal.Sigaction)(unsafe.Pointer(kact)) = asmsignal.Sigaction{
+			Fsa_handler:  (*signal.Sigaction)(unsafe.Pointer(act)).F__sigaction_handler.Fsa_handler,
+			Fsa_flags:    uint64((*signal.Sigaction)(unsafe.Pointer(act)).Fsa_flags),
+			Fsa_restorer: (*signal.Sigaction)(unsafe.Pointer(act)).Fsa_restorer,
+			Fsa_mask:     (*signal.Sigaction)(unsafe.Pointer(act)).Fsa_mask.F__val[0],
+		}
+	}
+	if oldact != 0 {
+		koldact = mustMalloc(t, types.Size_t(unsafe.Sizeof(asmsignal.Sigaction{})))
+		defer Xfree(t, koldact)
+	}
+	if _, _, err := unix.Syscall6(unix.SYS_RT_SIGACTION, uintptr(signal.SIGABRT), kact, koldact, unsafe.Sizeof(asmsignal.Sigset_t(0)), 0, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	if oldact != 0 {
+		*(*signal.Sigaction)(unsafe.Pointer(oldact)) = signal.Sigaction{
+			F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: (*asmsignal.Sigaction)(unsafe.Pointer(koldact)).Fsa_handler},
+			Fsa_mask:             struct{ F__val [16]uint64 }{F__val: [16]uint64{(*asmsignal.Sigaction)(unsafe.Pointer(koldact)).Fsa_mask}},
+			Fsa_flags:            int32((*asmsignal.Sigaction)(unsafe.Pointer(koldact)).Fsa_flags),
+			Fsa_restorer:         (*asmsignal.Sigaction)(unsafe.Pointer(koldact)).Fsa_restorer,
+		}
+	}
+	return 0
 }
 
 // void perror(const char *s);
