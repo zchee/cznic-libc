@@ -1441,3 +1441,14 @@ func Xinet_ntoa(t *TLS, in1 in.In_addr) uintptr {
 func X__ccgo_in6addr_anyp(t *TLS) uintptr {
 	return uintptr(unsafe.Pointer(&in6_addr_any))
 }
+
+func Xabort(t *TLS) {
+	p := mustMalloc(t, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
+	*(*signal.Sigaction)(unsafe.Pointer(p)) = signal.Sigaction{
+		F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: signal.SIG_DFL},
+	}
+	Xsigaction(t, signal.SIGABRT, p, 0)
+	Xfree(t, p)
+	unix.Kill(unix.Getpid(), syscall.Signal(signal.SIGABRT))
+	panic(todo("unrechable"))
+}

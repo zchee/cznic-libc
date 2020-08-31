@@ -13,7 +13,6 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/unix"
-	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/types"
 )
@@ -231,14 +230,4 @@ func Environ() uintptr {
 
 func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&C.environ))
-}
-
-func Xabort(t *TLS) {
-	p := mustMalloc(t, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
-	*(*signal.Sigaction)(unsafe.Pointer(p)) = signal.Sigaction{
-		F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: signal.SIG_DFL},
-	}
-	Xsigaction(t, signal.SIGABRT, p, 0)
-	Xfree(t, p)
-	C.abort()
 }

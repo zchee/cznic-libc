@@ -73,10 +73,6 @@ func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&Xenviron))
 }
 
-func Xabort(t *TLS) {
-	panic(todo(""))
-}
-
 func Xexit(t *TLS, status int32) {
 	if len(Covered) != 0 { //TODO -> etc.go
 		buf := bufio.NewWriter(os.Stdout)
