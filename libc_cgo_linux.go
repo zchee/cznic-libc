@@ -114,11 +114,6 @@ func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 {
 	return int32(C.getaddrinfo((*C.char)(unsafe.Pointer(node)), (*C.char)(unsafe.Pointer(service)), (*C.struct_addrinfo)(unsafe.Pointer(hints)), (**C.struct_addrinfo)(unsafe.Pointer(res))))
 }
 
-// void _exit(int status);
-func X_exit(t *TLS, status int32) {
-	C._exit(C.int(status))
-}
-
 // void freeaddrinfo(struct addrinfo *res);
 func Xfreeaddrinfo(t *TLS, res uintptr) {
 	C.freeaddrinfo((*C.struct_addrinfo)(unsafe.Pointer(res)))
