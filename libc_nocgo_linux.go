@@ -7,36 +7,14 @@
 package libc // import "modernc.org/libc"
 
 import (
-	"os"
 	"unsafe"
 
-	"golang.org/x/sys/unix"
 	"modernc.org/libc/sys/socket"
 )
 
 // int * __errno_location(void);
 func X__errno_location(t *TLS) uintptr {
 	return t.errnop
-}
-
-func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
-again:
-	switch x := err.(type) {
-	case int:
-		*(*int32)(unsafe.Pointer(X__errno_location(t))) = int32(x)
-	case int32:
-		*(*int32)(unsafe.Pointer(X__errno_location(t))) = x
-	case *os.PathError:
-		err = x.Err
-		goto again
-	case unix.Errno:
-		*(*int32)(unsafe.Pointer(X__errno_location(t))) = int32(x)
-	case *os.SyscallError:
-		err = x.Err
-		goto again
-	default:
-		panic(todo("%T", x))
-	}
 }
 
 func Environ() uintptr {

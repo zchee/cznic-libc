@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 	"unsafe"
 
@@ -155,6 +156,26 @@ func NewTLS() *TLS {
 	t := &TLS{ID: id}
 	t.errnop = mustCalloc(t, types.Size_t(unsafe.Sizeof(int32(0))))
 	return t
+}
+
+func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
+again:
+	switch x := err.(type) {
+	case int:
+		*(*int32)(unsafe.Pointer(X__errno_location(t))) = int32(x)
+	case int32:
+		*(*int32)(unsafe.Pointer(X__errno_location(t))) = x
+	case *os.PathError:
+		err = x.Err
+		goto again
+	case syscall.Errno:
+		*(*int32)(unsafe.Pointer(X__errno_location(t))) = int32(x)
+	case *os.SyscallError:
+		err = x.Err
+		goto again
+	default:
+		panic(todo("%T", x))
+	}
 }
 
 func (t *TLS) Close() {

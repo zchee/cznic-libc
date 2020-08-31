@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"unsafe"
 
-	"golang.org/x/sys/unix"
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/types"
 )
@@ -22,7 +21,6 @@ import (
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 extern char **environ;
 
@@ -32,11 +30,6 @@ void __ccgo_init() {
 	__ccgo_stdout = stdout;
 	__ccgo_stderr = stderr;
 	__ccgo_stderr = stderr;
-}
-
-
-void __ccgo_seterrno(int err) {
-	errno = err;
 }
 
 */
@@ -77,26 +70,6 @@ func Start(main func(*TLS, int32, uintptr) int32) {
 		p += uintptrSize
 	}
 	Xexit(t, main(t, int32(len(os.Args)), argv))
-}
-
-func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
-again:
-	switch x := err.(type) {
-	case int:
-		C.__ccgo_seterrno(C.int(x))
-	case int32:
-		C.__ccgo_seterrno(C.int(x))
-	case *os.PathError:
-		err = x.Err
-		goto again
-	case unix.Errno:
-		C.__ccgo_seterrno(C.int(x))
-	case *os.SyscallError:
-		err = x.Err
-		goto again
-	default:
-		panic(todo("%T", x))
-	}
 }
 
 // int * __errno_location(void);
