@@ -7,7 +7,6 @@
 package libc // import "modernc.org/libc"
 
 import (
-	"bufio"
 	"os"
 	"unsafe"
 
@@ -46,18 +45,6 @@ func Environ() uintptr {
 
 func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&Xenviron))
-}
-
-func Xexit(t *TLS, status int32) {
-	if len(Covered) != 0 { //TODO -> etc.go
-		buf := bufio.NewWriter(os.Stdout)
-		CoverReport(buf)
-		buf.Flush()
-	}
-	for _, v := range atExit {
-		v()
-	}
-	os.Exit(int(status))
 }
 
 // struct servent *getservbyname(const char *name, const char *proto);

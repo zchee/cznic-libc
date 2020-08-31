@@ -1598,3 +1598,15 @@ func Xfputs(t *TLS, s, stream uintptr) int32 {
 
 	return 0
 }
+
+func Xexit(t *TLS, status int32) {
+	if len(Covered) != 0 { //TODO -> etc.go
+		buf := bufio.NewWriter(os.Stdout)
+		CoverReport(buf)
+		buf.Flush()
+	}
+	for _, v := range atExit {
+		v()
+	}
+	os.Exit(int(status))
+}

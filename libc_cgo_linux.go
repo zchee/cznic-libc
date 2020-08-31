@@ -7,7 +7,6 @@
 package libc // import "modernc.org/libc"
 
 import (
-	"bufio"
 	"os"
 	"runtime"
 	"unsafe"
@@ -65,19 +64,6 @@ func Xfree(t *TLS, p uintptr) { C.free(unsafe.Pointer(p)) }
 
 // void *malloc(size_t size);
 func Xmalloc(t *TLS, n types.Size_t) uintptr { return uintptr(C.malloc(C.size_t(n))) }
-
-func Xexit(t *TLS, status int32) {
-	if len(Covered) != 0 {
-		buf := bufio.NewWriter(os.Stdout)
-		CoverReport(buf)
-		buf.Flush()
-	}
-	for _, v := range atExit {
-		v()
-	}
-	C.exit(C.int(status)) // CompCert mandelbrot.c
-	//TODO flush + os.Exit(int(status))
-}
 
 func Start(main func(*TLS, int32, uintptr) int32) {
 	runtime.LockOSThread()
