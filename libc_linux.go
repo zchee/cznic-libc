@@ -44,6 +44,31 @@ type (
 	ulong = types.X__syscall_ulong_t
 )
 
+type file uintptr
+
+func (f file) fd() int32      { return (*stdio.FILE)(unsafe.Pointer(f)).F_fileno }
+func (f file) setFd(fd int32) { (*stdio.FILE)(unsafe.Pointer(f)).F_fileno = fd }
+func (f file) err() bool      { return (*stdio.FILE)(unsafe.Pointer(f)).F_flags2&stdio.X_IO_ERR_SEEN != 0 }
+func (f file) setErr()        { (*stdio.FILE)(unsafe.Pointer(f)).F_flags2 |= stdio.X_IO_ERR_SEEN }
+
+func (f file) close(t *TLS) int32 {
+	r := Xclose(t, f.fd())
+	Xfree(t, uintptr(f))
+	if r < 0 {
+		return stdio.EOF
+	}
+	return 0
+}
+
+func newFile(t *TLS, fd int32) uintptr {
+	p := Xcalloc(t, 1, types.Size_t(unsafe.Sizeof(stdio.FILE{})))
+	if p == 0 {
+		return 0
+	}
+	file(p).setFd(fd)
+	return p
+}
+
 func fwrite(fd int32, b []byte) (int, error) {
 	if fd == unistd.STDOUT_FILENO {
 		return write(b)
@@ -1451,4 +1476,125 @@ func Xabort(t *TLS) {
 	Xfree(t, p)
 	unix.Kill(unix.Getpid(), syscall.Signal(signal.SIGABRT))
 	panic(todo("unrechable"))
+}
+
+// int fflush(FILE *stream);
+func Xfflush(t *TLS, stream uintptr) int32 {
+	return 0 //TODO
+}
+
+// FILE *fopen64(const char *pathname, const char *mode);
+func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
+	m := strings.ReplaceAll(GoString(mode), "b", "")
+	var flags int
+	switch m {
+	case "r":
+		flags = os.O_RDONLY
+	case "r+":
+		flags = os.O_RDWR
+	case "w":
+		flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	case "w+":
+		flags = os.O_RDWR | os.O_CREATE | os.O_TRUNC
+	case "a":
+		flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
+	case "a+":
+		flags = os.O_RDWR | os.O_CREATE | os.O_APPEND
+	default:
+		panic(m)
+	}
+	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
+	if err != 0 {
+		t.setErrno(err)
+		return 0
+	}
+
+	if p := newFile(t, int32(fd)); p != 0 {
+		return p
+	}
+
+	Xclose(t, int32(fd))
+	t.setErrno(errno.ENOMEM)
+	return 0
+}
+
+// size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
+	m, _, _ := unix.Syscall(unix.SYS_READ, uintptr(file(stream).fd()), ptr, uintptr(size*nmemb))
+	if m < 0 {
+		file(stream).setErr()
+		return 0
+	}
+
+	return types.Size_t(m) / size
+}
+
+// size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
+	m, _, _ := unix.Syscall(unix.SYS_WRITE, uintptr(file(stream).fd()), ptr, uintptr(size*nmemb))
+	if m < 0 {
+		file(stream).setErr()
+		return 0
+	}
+
+	return types.Size_t(m) / size
+}
+
+// int fclose(FILE *stream);
+func Xfclose(t *TLS, stream uintptr) int32 {
+	return file(stream).close(t)
+}
+
+// int fputc(int c, FILE *stream);
+func Xfputc(t *TLS, c int32, stream uintptr) int32 {
+	if _, err := fwrite(file(stream).fd(), []byte{byte(c)}); err != nil {
+		return stdio.EOF
+	}
+
+	return int32(byte(c))
+}
+
+// int fseek(FILE *stream, long offset, int whence);
+func Xfseek(t *TLS, stream uintptr, offset long, whence int32) int32 {
+	if n := Xlseek(t, int32(file(stream).fd()), offset, whence); n < 0 {
+		file(stream).setErr()
+		return -1
+	}
+
+	return 0
+}
+
+// long ftell(FILE *stream);
+func Xftell(t *TLS, stream uintptr) long {
+	n := Xlseek(t, file(stream).fd(), 0, stdio.SEEK_CUR)
+	if n < 0 {
+		file(stream).setErr()
+		return -1
+	}
+
+	return long(n)
+}
+
+// int ferror(FILE *stream);
+func Xferror(t *TLS, stream uintptr) int32 {
+	return Bool32(file(stream).err())
+}
+
+// int fgetc(FILE *stream);
+func Xfgetc(t *TLS, stream uintptr) int32 {
+	panic(todo(""))
+}
+
+// FILE *fdopen(int fd, const char *mode);
+func Xfdopen(t *TLS, fd int32, mode uintptr) uintptr {
+	panic(todo(""))
+}
+
+// int fputs(const char *s, FILE *stream);
+func Xfputs(t *TLS, s, stream uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_WRITE, uintptr(file(stream).fd()), s, uintptr(Xstrlen(t, s))); err != 0 {
+		return -1
+	}
+
+	return 0
 }

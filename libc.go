@@ -31,12 +31,13 @@ import (
 	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/types"
 	"modernc.org/libc/time"
+	"modernc.org/libc/unistd"
 )
 
 // Keep these outside of the var block otherwise go generate will miss them.
-var Xstderr uintptr
-var Xstdin uintptr
-var Xstdout uintptr
+var Xstdin = newFile(nil, unistd.STDIN_FILENO)
+var Xstdout = newFile(nil, unistd.STDOUT_FILENO)
+var Xstderr = newFile(nil, unistd.STDERR_FILENO)
 
 func write(b []byte) (int, error) {
 	if _, err := os.Stdout.Write(b); err != nil {
@@ -531,7 +532,9 @@ func Xstrstr(t *TLS, haystack, needle uintptr) uintptr {
 }
 
 // int putc(int c, FILE *stream);
-func Xputc(t *TLS, c int32, fp uintptr) int32 { return Xfputc(t, c, fp) }
+func Xputc(t *TLS, c int32, fp uintptr) int32 {
+	return Xfputc(t, c, fp)
+}
 
 // int atoi(const char *nptr);
 func Xatoi(t *TLS, nptr uintptr) int32 {
@@ -784,5 +787,5 @@ func Xhtonl(t *TLS, hostlong uint32) uint32 {
 
 // FILE *fopen(const char *pathname, const char *mode);
 func Xfopen(t *TLS, pathname, mode uintptr) uintptr {
-	return Xfopen64(t, pathname, mode)
+	return Xfopen64(t, pathname, mode) //TODO 32 bit
 }

@@ -19,11 +19,8 @@ import (
 
 /*
 
-#cgo LDFLAGS: -lm -ldl
-
 #include <errno.h>
 #include <netdb.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -116,59 +113,9 @@ again:
 	}
 }
 
-// int fflush(FILE *stream);
-func Xfflush(t *TLS, stream uintptr) int32 { //TODO Go version fails
-	return int32(C.fflush((*C.FILE)(unsafe.Pointer(stream))))
-}
-
-// FILE *fopen64(const char *pathname, const char *mode);
-func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.fopen((*C.char)(unsafe.Pointer(pathname)), (*C.char)(unsafe.Pointer(mode)))))
-}
-
-// int fseek(FILE *stream, long offset, int whence);
-func Xfseek(t *TLS, stream uintptr, offset long, whence int32) int32 { //TODO Go version fails
-	return int32(C.fseek((*C.FILE)(unsafe.Pointer(stream)), C.long(offset), C.int(whence)))
-}
-
-// long ftell(FILE *stream);
-func Xftell(t *TLS, stream uintptr) long { //TODO Go version fails
-	return long(C.ftell((*C.FILE)(unsafe.Pointer(stream))))
-}
-
-// int fclose(FILE *stream);
-func Xfclose(t *TLS, stream uintptr) int32 {
-	return int32(C.fclose((*C.FILE)(unsafe.Pointer(stream))))
-}
-
-// size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
-func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t { //TODO Go version fails
-	return types.Size_t(C.fread(unsafe.Pointer(ptr), C.size_t(size), C.size_t(nmemb), (*C.FILE)(unsafe.Pointer(stream))))
-}
-
 // int * __errno_location(void);
 func X__errno_location(t *TLS) uintptr {
 	return uintptr(unsafe.Pointer(C.__errno_location()))
-}
-
-// size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
-func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t { //TODO Go version fails
-	return types.Size_t(C.fwrite(unsafe.Pointer(ptr), C.size_t(size), C.size_t(nmemb), (*C.FILE)(unsafe.Pointer(stream))))
-}
-
-// int fputc(int c, FILE *stream);
-func Xfputc(t *TLS, c int32, stream uintptr) int32 {
-	return int32(C.fputc(C.int(c), (*C.FILE)(unsafe.Pointer(stream))))
-}
-
-// int fgetc(FILE *stream);
-func Xfgetc(t *TLS, stream uintptr) int32 {
-	return int32(C.fgetc((*C.FILE)(unsafe.Pointer(stream))))
-}
-
-// int fputs(const char *s, FILE *stream);
-func Xfputs(t *TLS, s, stream uintptr) int32 {
-	return int32(C.fputs((*C.char)(unsafe.Pointer(s)), (*C.FILE)(unsafe.Pointer(stream))))
 }
 
 // struct servent *getservbyname(const char *name, const char *proto);
@@ -177,13 +124,8 @@ func Xgetservbyname(t *TLS, name, proto uintptr) uintptr {
 }
 
 // int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
-func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 { //TODO not needed by sqlite
+func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 {
 	return int32(C.getaddrinfo((*C.char)(unsafe.Pointer(node)), (*C.char)(unsafe.Pointer(service)), (*C.struct_addrinfo)(unsafe.Pointer(hints)), (**C.struct_addrinfo)(unsafe.Pointer(res))))
-}
-
-// FILE *fdopen(int fd, const char *mode);
-func Xfdopen(t *TLS, fd int32, mode uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.fdopen(C.int(fd), (*C.char)(unsafe.Pointer(mode)))))
 }
 
 // void _exit(int status);
@@ -217,11 +159,6 @@ func Xgethostbyname(t *TLS, name uintptr) uintptr {
 // struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
 func Xgethostbyaddr(t *TLS, addr uintptr, len socket.Socklen_t, type1 int32) uintptr {
 	return uintptr(unsafe.Pointer(C.gethostbyaddr(unsafe.Pointer(addr), C.socklen_t(len), C.int(type1))))
-}
-
-// int ferror(FILE *stream);
-func Xferror(t *TLS, stream uintptr) int32 {
-	return int32(C.ferror((*C.FILE)(unsafe.Pointer(stream))))
 }
 
 func Environ() uintptr {
