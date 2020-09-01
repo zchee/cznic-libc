@@ -77,11 +77,6 @@ func X__errno_location(t *TLS) uintptr {
 	return uintptr(unsafe.Pointer(C.__errno_location()))
 }
 
-// struct servent *getservbyname(const char *name, const char *proto);
-func Xgetservbyname(t *TLS, name, proto uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.getservbyname((*C.char)(unsafe.Pointer(name)), (*C.char)(unsafe.Pointer(proto)))))
-}
-
 // int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
 func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 {
 	return int32(C.getaddrinfo((*C.char)(unsafe.Pointer(node)), (*C.char)(unsafe.Pointer(service)), (*C.struct_addrinfo)(unsafe.Pointer(hints)), (**C.struct_addrinfo)(unsafe.Pointer(res))))

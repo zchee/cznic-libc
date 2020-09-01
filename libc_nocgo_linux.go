@@ -25,11 +25,6 @@ func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&Xenviron))
 }
 
-// struct servent *getservbyname(const char *name, const char *proto);
-func Xgetservbyname(t *TLS, name, proto uintptr) uintptr {
-	panic(todo(""))
-}
-
 // int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
 func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 { //TODO not needed by sqlite
 	panic(todo(""))

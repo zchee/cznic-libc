@@ -17,12 +17,14 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/unix"
+	gonetdb "honnef.co/go/netdb"
 	asmsignal "modernc.org/libc/asm/signal"
 	"modernc.org/libc/errno"
 	"modernc.org/libc/fts"
 	"modernc.org/libc/grp"
 	"modernc.org/libc/langinfo"
 	"modernc.org/libc/limits"
+	"modernc.org/libc/netdb"
 	"modernc.org/libc/netinet/in"
 	"modernc.org/libc/pwd"
 	"modernc.org/libc/signal"
@@ -1635,4 +1637,84 @@ func Xexit(t *TLS, status int32) {
 // void _exit(int status);
 func X_exit(t *TLS, status int32) {
 	os.Exit(int(status))
+}
+
+var getservbynameStaticResult netdb.Servent
+
+// struct servent *getservbyname(const char *name, const char *proto);
+func Xgetservbyname(t *TLS, name, proto uintptr) uintptr {
+	var protoent *gonetdb.Protoent
+	if proto != 0 {
+		protoent = gonetdb.GetProtoByName(GoString(proto))
+	}
+	servent := gonetdb.GetServByName(GoString(name), protoent)
+	if servent == nil {
+		if dmesgs {
+			dmesg("%q %q: nil (protoent %+v)", GoString(name), GoString(proto), protoent)
+		}
+		return 0
+	}
+
+	Xfree(t, (*netdb.Servent)(unsafe.Pointer(&getservbynameStaticResult)).Fs_name)
+	if v := (*netdb.Servent)(unsafe.Pointer(&getservbynameStaticResult)).Fs_aliases; v != 0 {
+		for {
+			p := *(*uintptr)(unsafe.Pointer(v))
+			if p == 0 {
+				break
+			}
+
+			Xfree(t, p)
+			v += unsafe.Sizeof(uintptr(0))
+		}
+		Xfree(t, v)
+	}
+	Xfree(t, (*netdb.Servent)(unsafe.Pointer(&getservbynameStaticResult)).Fs_proto)
+	cname, err := CString(servent.Name)
+	if err != nil {
+		getservbynameStaticResult = netdb.Servent{}
+		return 0
+	}
+
+	var protoname uintptr
+	if protoent != nil {
+		if protoname, err = CString(protoent.Name); err != nil {
+			Xfree(t, cname)
+			getservbynameStaticResult = netdb.Servent{}
+			return 0
+		}
+	}
+	var a []uintptr
+	for _, v := range servent.Aliases {
+		cs, err := CString(v)
+		if err != nil {
+			for _, v := range a {
+				Xfree(t, v)
+			}
+			return 0
+		}
+
+		a = append(a, cs)
+	}
+	v := Xcalloc(t, types.Size_t(len(a)+1), types.Size_t(unsafe.Sizeof(uintptr(0))))
+	if v == 0 {
+		Xfree(t, cname)
+		Xfree(t, protoname)
+		for _, v := range a {
+			Xfree(t, v)
+		}
+		getservbynameStaticResult = netdb.Servent{}
+		return 0
+	}
+	for _, p := range a {
+		*(*uintptr)(unsafe.Pointer(v)) = p
+		v += unsafe.Sizeof(uintptr(0))
+	}
+
+	getservbynameStaticResult = netdb.Servent{
+		Fs_name:    cname,
+		Fs_aliases: v,
+		Fs_port:    int32(servent.Port),
+		Fs_proto:   protoname,
+	}
+	return uintptr(unsafe.Pointer(&getservbynameStaticResult))
 }
