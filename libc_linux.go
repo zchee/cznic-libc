@@ -1205,7 +1205,7 @@ func Xfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr
 		var err error
 		switch {
 		case options&fts.FTS_LOGICAL != 0:
-			panic(todo(""))
+			fi, err = os.Stat(path)
 		case options&fts.FTS_PHYSICAL != 0:
 			fi, err = os.Lstat(path)
 		default:
@@ -1219,10 +1219,17 @@ func Xfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr
 		var statp *unix.Stat_t
 		if options&fts.FTS_NOSTAT == 0 {
 			var stat unix.Stat_t
-			if err := unix.Stat(path, &stat); err != nil {
-				t.setErrno(err)
-				f = nil
-				return
+			switch {
+			case options&fts.FTS_LOGICAL != 0:
+				if err := unix.Stat(path, &stat); err != nil {
+					panic(todo(""))
+				}
+			case options&fts.FTS_PHYSICAL != 0:
+				if err := unix.Lstat(path, &stat); err != nil {
+					panic(todo(""))
+				}
+			default:
+				panic(todo(""))
 			}
 
 			statp = &stat
@@ -1237,7 +1244,7 @@ func Xfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr
 			case nil:
 				// ok
 			case *os.PathError:
-				f.s = append(f.s, newCFtsent(t, fts.FTS_ERR, path, statp, x.Err.(syscall.Errno)))
+				f.s = append(f.s, newCFtsent(t, fts.FTS_DNR, path, statp, errno.EACCES))
 				break out
 			default:
 				panic(todo("%q: %v %T", path, x, x))
@@ -1258,7 +1265,18 @@ func Xfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr
 
 			f.s = append(f.s, newCFtsent(t, fts.FTS_DP, path, statp, 0))
 		default:
-			f.s = append(f.s, newCFtsent(t, fts.FTS_F, path, statp, 0))
+			info := fts.FTS_F
+			if fi.Mode()&os.ModeSymlink != 0 {
+				info = fts.FTS_SL
+			}
+			switch {
+			case statp != nil:
+				f.s = append(f.s, newCFtsent(t, info, path, statp, 0))
+			case options&fts.FTS_NOSTAT != 0:
+				f.s = append(f.s, newCFtsent(t, fts.FTS_NSOK, path, nil, 0))
+			default:
+				panic(todo(""))
+			}
 		}
 	}
 
@@ -1290,6 +1308,9 @@ func Xfts_read(t *TLS, ftsp uintptr) uintptr {
 	}
 
 	r := f.s[f.x]
+	if e := (*fts.FTSENT)(unsafe.Pointer(r)).Ffts_errno; e != 0 {
+		t.setErrno(e)
+	}
 	f.x++
 	return r
 }
