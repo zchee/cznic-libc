@@ -17,6 +17,7 @@ import (
 
 /*
 
+#include <dirent.h>
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -116,4 +117,19 @@ func Environ() uintptr {
 
 func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&C.environ))
+}
+
+// DIR *opendir(const char *name);
+func Xopendir(t *TLS, name uintptr) uintptr {
+	return uintptr(unsafe.Pointer(C.opendir((*C.char)(unsafe.Pointer(name)))))
+}
+
+// struct dirent *readdir(DIR *dirp);
+func Xreaddir64(t *TLS, dirp uintptr) uintptr {
+	return uintptr(unsafe.Pointer(C.readdir((*C.DIR)(unsafe.Pointer(dirp)))))
+}
+
+// int closedir(DIR *dirp);
+func Xclosedir(t *TLS, dir uintptr) int32 {
+	return int32(C.closedir((*C.DIR)(unsafe.Pointer(dir))))
 }

@@ -33,13 +33,13 @@ all:
 	go version
 	date 2>&1 | tee -a log
 
-linux_386:
-	GO_GENERATE_CPP_OPTS=-m32 TARGET_GOOS=linux TARGET_GOARCH=386 go generate
-	GOOS=linux GOARCH=386 go build -v ./...
-
-linux_amd64:
-	GO_GENERATE_CPP_OPTS=-m64 TARGET_GOOS=linux TARGET_GOARCH=amd64 go generate
-	GOOS=linux GOARCH=amd64 go build -v ./...
+#TODO linux_386:
+#TODO 	GO_GENERATE_CPP_OPTS=-m32 TARGET_GOOS=linux TARGET_GOARCH=386 go generate
+#TODO 	GOOS=linux GOARCH=386 go build -v ./...
+#TODO 
+#TODO linux_amd64:
+#TODO 	GO_GENERATE_CPP_OPTS=-m64 TARGET_GOOS=linux TARGET_GOARCH=amd64 go generate
+#TODO 	GOOS=linux GOARCH=amd64 go build -v ./...
 
 devbench:
 	date 2>&1 | tee log-devbench

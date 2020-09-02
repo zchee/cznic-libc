@@ -49,3 +49,18 @@ func Xgethostbyname(t *TLS, name uintptr) uintptr {
 func Xgethostbyaddr(t *TLS, addr uintptr, len socket.Socklen_t, type1 int32) uintptr {
 	panic(todo(""))
 }
+
+// DIR *opendir(const char *name);
+func Xopendir(t *TLS, name uintptr) uintptr {
+	panic(todo(""))
+}
+
+// struct dirent *readdir(DIR *dirp);
+func Xreaddir64(t *TLS, dirp uintptr) uintptr {
+	panic(todo(""))
+}
+
+// int closedir(DIR *dirp);
+func Xclosedir(t *TLS, dir uintptr) int32 {
+	panic(todo(""))
+}
