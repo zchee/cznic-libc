@@ -1117,11 +1117,6 @@ func Xgetgrgid(t *TLS, gid uint32) uintptr {
 	return 0
 }
 
-// struct dirent *readdir(DIR *dirp);
-func Xreaddir(t *TLS, dirp uintptr) uintptr {
-	return Xreaddir64(t, dirp)
-}
-
 // ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
 func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
 	n, _, err := unix.Syscall(unix.SYS_READLINK, path, buf, uintptr(bufsize))
@@ -1717,4 +1712,28 @@ func Xgetservbyname(t *TLS, name, proto uintptr) uintptr {
 		Fs_proto:   protoname,
 	}
 	return uintptr(unsafe.Pointer(&getservbynameStaticResult))
+}
+
+func __syscall(r, _ uintptr, errno syscall.Errno) long {
+	if errno != 0 {
+		return long(-errno)
+	}
+
+	return long(r)
+}
+
+func Xreaddir64(t *TLS, dir uintptr) uintptr {
+	return Xreaddir(t, dir)
+}
+
+func X___errno_location(t *TLS) uintptr {
+	return X__errno_location(t)
+}
+
+func X__syscall1(t *TLS, trap, p1 long) long {
+	return __syscall(unix.Syscall(uintptr(trap), uintptr(p1), 0, 0))
+}
+
+func X__syscall3(t *TLS, trap, p1, p2, p3 long) long {
+	return __syscall(unix.Syscall(uintptr(trap), uintptr(p1), uintptr(p2), uintptr(p3)))
 }

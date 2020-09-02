@@ -3,6 +3,7 @@
 package libc // import "modernc.org/libc"
 
 var CAPI = map[string]struct{}{
+	"___errno_location":     {},
 	"__assert_fail":         {},
 	"__builtin_abort":       {},
 	"__builtin_abs":         {},
@@ -33,6 +34,8 @@ var CAPI = map[string]struct{}{
 	"__isnanf":              {},
 	"__isnanl":              {},
 	"__isoc99_sscanf":       {},
+	"__syscall1":            {},
+	"__syscall3":            {},
 	"_exit":                 {},
 	"abort":                 {},
 	"abs":                   {},

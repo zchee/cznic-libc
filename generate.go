@@ -34,7 +34,10 @@ func main() {
 	if s := os.Getenv("TARGET_GOARCH"); s != "" {
 		goarch = s
 	}
-	// fmt.Printf("%q %q %q\n", hostConfigOpts, goos, goarch)
+	switch goos {
+	case "linux":
+		makeMusl(goos, goarch)
+	}
 	_, _, hostSysIncludes, err := cc.HostConfig(hostConfigCmd, hostConfigOpts...)
 	if err != nil {
 		fail(err)
@@ -108,6 +111,71 @@ var CAPI = map[string]struct{}{`)
 	if err := libcHeaders(hostSysIncludes); err != nil {
 		fail(err)
 	}
+}
+
+func makeMusl(goos, goarch string) {
+	wd, err := os.Getwd()
+	if err != nil {
+		fail(err)
+	}
+
+	if err := os.Chdir("musl"); err != nil {
+		fail(err)
+	}
+
+	var arch string
+	switch goarch {
+	case "amd64":
+		arch = "x86_64"
+	default:
+		fail(fmt.Errorf("unknown/unsupported GOARCH: %q", goarch))
+	}
+	defer func() {
+		if err := os.Chdir(wd); err != nil {
+			fail(err)
+		}
+	}()
+
+	run("sh", "-c", fmt.Sprintf("sed -f ./tools/mkalltypes.sed ./arch/%s/bits/alltypes.h.in ./include/alltypes.h.in > obj/include/bits/alltypes.h", arch))
+	run("sh", "-c", fmt.Sprintf("cp arch/%s/bits/syscall.h.in obj/include/bits/syscall.h", arch))
+	run("sh", "-c", fmt.Sprintf("sed -n -e s/__NR_/SYS_/p < arch/%s/bits/syscall.h.in >> obj/include/bits/syscall.h", arch))
+	out := run(
+		"ccgo",
+		"-ccgo-export-externs", "X",
+		"-ccgo-hide", "__syscall0,__syscall1,__syscall2,__syscall3,__syscall4,__syscall5,__syscall6",
+		"-ccgo-libc",
+		"-ccgo-long-double-is-double",
+		"-ccgo-pkgname", "libc",
+		"-nostdinc",
+		"-o", fmt.Sprintf("../musl_%s_%s.go", goos, goarch),
+
+		// Keep the order below, don't sort!
+		fmt.Sprintf("-I%s", filepath.Join("arch", arch)),
+		fmt.Sprintf("-I%s", "arch/generic"),
+		fmt.Sprintf("-I%s", "obj/src/internal"),
+		fmt.Sprintf("-I%s", "src/include"),
+		fmt.Sprintf("-I%s", "src/internal"),
+		fmt.Sprintf("-I%s", "obj/include"),
+		fmt.Sprintf("-I%s", "include"),
+		// Keep the order above, don't sort!
+
+		"src/dirent/closedir.c",
+		"src/dirent/opendir.c",
+		"src/dirent/readdir.c",
+	)
+	fmt.Printf("%s\n", out)
+}
+
+func run(arg0 string, args ...string) []byte {
+	fmt.Printf("%s %q\n", arg0, args)
+	cmd := exec.Command(arg0, args...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		sout := strings.TrimSpace(string(out) + "\n")
+		fmt.Fprintf(os.Stderr, "==== FAIL\n%s\n%s\n", sout, err)
+		fail(err)
+	}
+	return out
 }
 
 func libcHeaders(paths []string) error {
