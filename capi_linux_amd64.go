@@ -28,6 +28,7 @@ var CAPI = map[string]struct{}{
 	"__builtin_trap":        {},
 	"__builtin_unreachable": {},
 	"__ccgo_in6addr_anyp":   {},
+	"__copyright":           {},
 	"__ctype_b_loc":         {},
 	"__errno_location":      {},
 	"__isnan":               {},

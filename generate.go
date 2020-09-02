@@ -136,6 +136,7 @@ func makeMusl(goos, goarch string) {
 		}
 	}()
 
+	run("mkdir", "-p", "obj/include/bits")
 	run("sh", "-c", fmt.Sprintf("sed -f ./tools/mkalltypes.sed ./arch/%s/bits/alltypes.h.in ./include/alltypes.h.in > obj/include/bits/alltypes.h", arch))
 	run("sh", "-c", fmt.Sprintf("cp arch/%s/bits/syscall.h.in obj/include/bits/syscall.h", arch))
 	run("sh", "-c", fmt.Sprintf("sed -n -e s/__NR_/SYS_/p < arch/%s/bits/syscall.h.in >> obj/include/bits/syscall.h", arch))
@@ -159,6 +160,9 @@ func makeMusl(goos, goarch string) {
 		fmt.Sprintf("-I%s", "include"),
 		// Keep the order above, don't sort!
 
+		"copyright.c", // Inject legalese first
+
+		// Keep the order below sorted.
 		"src/dirent/closedir.c",
 		"src/dirent/opendir.c",
 		"src/dirent/readdir.c",
