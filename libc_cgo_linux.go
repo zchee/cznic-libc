@@ -78,16 +78,6 @@ func X__errno_location(t *TLS) uintptr {
 	return uintptr(unsafe.Pointer(C.__errno_location()))
 }
 
-// int getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res);
-func Xgetaddrinfo(t *TLS, node, service, hints, res uintptr) int32 {
-	return int32(C.getaddrinfo((*C.char)(unsafe.Pointer(node)), (*C.char)(unsafe.Pointer(service)), (*C.struct_addrinfo)(unsafe.Pointer(hints)), (**C.struct_addrinfo)(unsafe.Pointer(res))))
-}
-
-// void freeaddrinfo(struct addrinfo *res);
-func Xfreeaddrinfo(t *TLS, res uintptr) {
-	C.freeaddrinfo((*C.struct_addrinfo)(unsafe.Pointer(res)))
-}
-
 // int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen, char *serv, socklen_t servlen, int flags);
 func Xgetnameinfo(t *TLS, addr uintptr, addrlen socket.Socklen_t, host uintptr, hostlen socket.Socklen_t, serv uintptr, servlen socket.Socklen_t, flags int32) int32 {
 	return int32(C.getnameinfo(

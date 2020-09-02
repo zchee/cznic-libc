@@ -18,25 +18,39 @@
 static int is_valid_hostname(const char *host)
 {
 	const unsigned char *s;
-	if (strnlen(host, 255)-1 >= 254 || mbstowcs(0, host, 0) == -1) return 0;
+	//TODO if (strnlen(host, 255)-1 >= 254 || mbstowcs(0, host, 0) == -1) return 0;
+	if (strnlen(host, 255)-1 >= 254) return 0;
 	for (s=(void *)host; *s>=0x80 || *s=='.' || *s=='-' || isalnum(*s); s++);
 	return !*s;
 }
+
+struct address zero_struct_address;
 
 static int name_from_null(struct address buf[static 2], const char *name, int family, int flags)
 {
 	int cnt = 0;
 	if (name) return 0;
 	if (flags & AI_PASSIVE) {
-		if (family != AF_INET6)
-			buf[cnt++] = (struct address){ .family = AF_INET };
-		if (family != AF_INET)
-			buf[cnt++] = (struct address){ .family = AF_INET6 };
+		//TODO if (family != AF_INET6)
+		//TODO 	buf[cnt++] = (struct address){ .family = AF_INET };
+		if (family != AF_INET6) {
+			struct address x = zero_struct_address;
+			x.family = AF_INET;
+			buf[cnt++] = x;
+		}
+		//TODO if (family != AF_INET)
+		//TODO 	buf[cnt++] = (struct address){ .family = AF_INET6 };
+		if (family != AF_INET) {
+			struct address x = zero_struct_address;
+			x.family = AF_INET6;
+			buf[cnt++] = x;
+		}
 	} else {
-		if (family != AF_INET6)
-			buf[cnt++] = (struct address){ .family = AF_INET, .addr = { 127,0,0,1 } };
-		if (family != AF_INET)
-			buf[cnt++] = (struct address){ .family = AF_INET6, .addr = { [15] = 1 } };
+		abort(); //TODO-
+	// 	if (family != AF_INET6)
+	// 		buf[cnt++] = (struct address){ .family = AF_INET, .addr = { 127,0,0,1 } };
+	// 	if (family != AF_INET)
+	// 		buf[cnt++] = (struct address){ .family = AF_INET6, .addr = { [15] = 1 } };
 	}
 	return cnt;
 }
@@ -52,7 +66,8 @@ static int name_from_hosts(struct address buf[static MAXADDRS], char canon[stati
 	size_t l = strlen(name);
 	int cnt = 0, badfam = 0;
 	unsigned char _buf[1032];
-	FILE _f, *f = __fopen_rb_ca("/etc/hosts", &_f, _buf, sizeof _buf);
+	//TODO FILE _f, *f = __fopen_rb_ca("/etc/hosts", &_f, _buf, sizeof _buf);
+	FILE _f, *f = fopen("/etc/hosts", "rb");
 	if (!f) switch (errno) {
 	case ENOENT:
 	case ENOTDIR:
@@ -89,7 +104,8 @@ static int name_from_hosts(struct address buf[static MAXADDRS], char canon[stati
 		*z = 0;
 		if (is_valid_hostname(p)) memcpy(canon, p, z-p+1);
 	}
-	__fclose_ca(f);
+	//TODO __fclose_ca(f);
+	fclose(f);
 	return cnt ? cnt : badfam;
 }
 
@@ -105,113 +121,117 @@ struct dpc_ctx {
 
 static int dns_parse_callback(void *c, int rr, const void *data, int len, const void *packet)
 {
-	char tmp[256];
-	struct dpc_ctx *ctx = c;
-	if (ctx->cnt >= MAXADDRS) return -1;
-	switch (rr) {
-	case RR_A:
-		if (len != 4) return -1;
-		ctx->addrs[ctx->cnt].family = AF_INET;
-		ctx->addrs[ctx->cnt].scopeid = 0;
-		memcpy(ctx->addrs[ctx->cnt++].addr, data, 4);
-		break;
-	case RR_AAAA:
-		if (len != 16) return -1;
-		ctx->addrs[ctx->cnt].family = AF_INET6;
-		ctx->addrs[ctx->cnt].scopeid = 0;
-		memcpy(ctx->addrs[ctx->cnt++].addr, data, 16);
-		break;
-	case RR_CNAME:
-		if (__dn_expand(packet, (const unsigned char *)packet + 512,
-		    data, tmp, sizeof tmp) > 0 && is_valid_hostname(tmp))
-			strcpy(ctx->canon, tmp);
-		break;
-	}
-	return 0;
+	abort(); //TODO-
+	// char tmp[256];
+	// struct dpc_ctx *ctx = c;
+	// if (ctx->cnt >= MAXADDRS) return -1;
+	// switch (rr) {
+	// case RR_A:
+	// 	if (len != 4) return -1;
+	// 	ctx->addrs[ctx->cnt].family = AF_INET;
+	// 	ctx->addrs[ctx->cnt].scopeid = 0;
+	// 	memcpy(ctx->addrs[ctx->cnt++].addr, data, 4);
+	// 	break;
+	// case RR_AAAA:
+	// 	if (len != 16) return -1;
+	// 	ctx->addrs[ctx->cnt].family = AF_INET6;
+	// 	ctx->addrs[ctx->cnt].scopeid = 0;
+	// 	memcpy(ctx->addrs[ctx->cnt++].addr, data, 16);
+	// 	break;
+	// case RR_CNAME:
+	// 	if (__dn_expand(packet, (const unsigned char *)packet + 512,
+	// 	    data, tmp, sizeof tmp) > 0 && is_valid_hostname(tmp))
+	// 		strcpy(ctx->canon, tmp);
+	// 	break;
+	// }
+	// return 0;
 }
 
 static int name_from_dns(struct address buf[static MAXADDRS], char canon[static 256], const char *name, int family, const struct resolvconf *conf)
 {
-	unsigned char qbuf[2][280], abuf[2][512];
-	const unsigned char *qp[2] = { qbuf[0], qbuf[1] };
-	unsigned char *ap[2] = { abuf[0], abuf[1] };
-	int qlens[2], alens[2];
-	int i, nq = 0;
-	struct dpc_ctx ctx = { .addrs = buf, .canon = canon };
-	static const struct { int af; int rr; } afrr[2] = {
-		{ .af = AF_INET6, .rr = RR_A },
-		{ .af = AF_INET, .rr = RR_AAAA },
-	};
+	abort(); //TODO-
+	// unsigned char qbuf[2][280], abuf[2][512];
+	// const unsigned char *qp[2] = { qbuf[0], qbuf[1] };
+	// unsigned char *ap[2] = { abuf[0], abuf[1] };
+	// int qlens[2], alens[2];
+	// int i, nq = 0;
+	// struct dpc_ctx ctx = { .addrs = buf, .canon = canon };
+	// static const struct { int af; int rr; } afrr[2] = {
+	// 	{ .af = AF_INET6, .rr = RR_A },
+	// 	{ .af = AF_INET, .rr = RR_AAAA },
+	// };
 
-	for (i=0; i<2; i++) {
-		if (family != afrr[i].af) {
-			qlens[nq] = __res_mkquery(0, name, 1, afrr[i].rr,
-				0, 0, 0, qbuf[nq], sizeof *qbuf);
-			if (qlens[nq] == -1)
-				return EAI_NONAME;
-			qbuf[nq][3] = 0; /* don't need AD flag */
-			nq++;
-		}
-	}
+	// for (i=0; i<2; i++) {
+	// 	if (family != afrr[i].af) {
+	// 		qlens[nq] = __res_mkquery(0, name, 1, afrr[i].rr,
+	// 			0, 0, 0, qbuf[nq], sizeof *qbuf);
+	// 		if (qlens[nq] == -1)
+	// 			return EAI_NONAME;
+	// 		qbuf[nq][3] = 0; /* don't need AD flag */
+	// 		nq++;
+	// 	}
+	// }
 
-	if (__res_msend_rc(nq, qp, qlens, ap, alens, sizeof *abuf, conf) < 0)
-		return EAI_SYSTEM;
+	// if (__res_msend_rc(nq, qp, qlens, ap, alens, sizeof *abuf, conf) < 0)
+	// 	return EAI_SYSTEM;
 
-	for (i=0; i<nq; i++) {
-		if (alens[i] < 4 || (abuf[i][3] & 15) == 2) return EAI_AGAIN;
-		if ((abuf[i][3] & 15) == 3) return 0;
-		if ((abuf[i][3] & 15) != 0) return EAI_FAIL;
-	}
+	// for (i=0; i<nq; i++) {
+	// 	if (alens[i] < 4 || (abuf[i][3] & 15) == 2) return EAI_AGAIN;
+	// 	if ((abuf[i][3] & 15) == 3) return 0;
+	// 	if ((abuf[i][3] & 15) != 0) return EAI_FAIL;
+	// }
 
-	for (i=0; i<nq; i++)
-		__dns_parse(abuf[i], alens[i], dns_parse_callback, &ctx);
+	// for (i=0; i<nq; i++)
+	// 	__dns_parse(abuf[i], alens[i], dns_parse_callback, &ctx);
 
-	if (ctx.cnt) return ctx.cnt;
-	return EAI_NONAME;
+	// if (ctx.cnt) return ctx.cnt;
+	// return EAI_NONAME;
 }
 
 static int name_from_dns_search(struct address buf[static MAXADDRS], char canon[static 256], const char *name, int family)
 {
-	char search[256];
-	struct resolvconf conf;
-	size_t l, dots;
-	char *p, *z;
+	return -1; //TODO-
+	abort(); //TODO-
+	// char search[256];
+	// struct resolvconf conf;
+	// size_t l, dots;
+	// char *p, *z;
 
-	if (__get_resolv_conf(&conf, search, sizeof search) < 0) return -1;
+	// if (__get_resolv_conf(&conf, search, sizeof search) < 0) return -1;
 
-	/* Count dots, suppress search when >=ndots or name ends in
-	 * a dot, which is an explicit request for global scope. */
-	for (dots=l=0; name[l]; l++) if (name[l]=='.') dots++;
-	if (dots >= conf.ndots || name[l-1]=='.') *search = 0;
+	// /* Count dots, suppress search when >=ndots or name ends in
+	//  * a dot, which is an explicit request for global scope. */
+	// for (dots=l=0; name[l]; l++) if (name[l]=='.') dots++;
+	// if (dots >= conf.ndots || name[l-1]=='.') *search = 0;
 
-	/* Strip final dot for canon, fail if multiple trailing dots. */
-	if (name[l-1]=='.') l--;
-	if (!l || name[l-1]=='.') return EAI_NONAME;
+	// /* Strip final dot for canon, fail if multiple trailing dots. */
+	// if (name[l-1]=='.') l--;
+	// if (!l || name[l-1]=='.') return EAI_NONAME;
 
-	/* This can never happen; the caller already checked length. */
-	if (l >= 256) return EAI_NONAME;
+	// /* This can never happen; the caller already checked length. */
+	// if (l >= 256) return EAI_NONAME;
 
-	/* Name with search domain appended is setup in canon[]. This both
-	 * provides the desired default canonical name (if the requested
-	 * name is not a CNAME record) and serves as a buffer for passing
-	 * the full requested name to name_from_dns. */
-	memcpy(canon, name, l);
-	canon[l] = '.';
+	// /* Name with search domain appended is setup in canon[]. This both
+	//  * provides the desired default canonical name (if the requested
+	//  * name is not a CNAME record) and serves as a buffer for passing
+	//  * the full requested name to name_from_dns. */
+	// memcpy(canon, name, l);
+	// canon[l] = '.';
 
-	for (p=search; *p; p=z) {
-		for (; isspace(*p); p++);
-		for (z=p; *z && !isspace(*z); z++);
-		if (z==p) break;
-		if (z-p < 256 - l - 1) {
-			memcpy(canon+l+1, p, z-p);
-			canon[z-p+1+l] = 0;
-			int cnt = name_from_dns(buf, canon, canon, family, &conf);
-			if (cnt) return cnt;
-		}
-	}
+	// for (p=search; *p; p=z) {
+	// 	for (; isspace(*p); p++);
+	// 	for (z=p; *z && !isspace(*z); z++);
+	// 	if (z==p) break;
+	// 	if (z-p < 256 - l - 1) {
+	// 		memcpy(canon+l+1, p, z-p);
+	// 		canon[z-p+1+l] = 0;
+	// 		int cnt = name_from_dns(buf, canon, canon, family, &conf);
+	// 		if (cnt) return cnt;
+	// 	}
+	// }
 
-	canon[l] = 0;
-	return name_from_dns(buf, canon, name, family, &conf);
+	// canon[l] = 0;
+	// return name_from_dns(buf, canon, name, family, &conf);
 }
 
 static const struct policy {
@@ -320,24 +340,25 @@ int __lookup_name(struct address buf[static MAXADDRS], char canon[static 256], c
 
 	/* Filter/transform results for v4-mapped lookup, if requested. */
 	if (flags & AI_V4MAPPED) {
-		if (!(flags & AI_ALL)) {
-			/* If any v6 results exist, remove v4 results. */
-			for (i=0; i<cnt && buf[i].family != AF_INET6; i++);
-			if (i<cnt) {
-				for (j=0; i<cnt; i++) {
-					if (buf[i].family == AF_INET6)
-						buf[j++] = buf[i];
-				}
-				cnt = i = j;
-			}
-		}
-		/* Translate any remaining v4 results to v6 */
-		for (i=0; i<cnt; i++) {
-			if (buf[i].family != AF_INET) continue;
-			memcpy(buf[i].addr+12, buf[i].addr, 4);
-			memcpy(buf[i].addr, "\0\0\0\0\0\0\0\0\0\0\xff\xff", 12);
-			buf[i].family = AF_INET6;
-		}
+		abort(); //TODO-
+	// 	if (!(flags & AI_ALL)) {
+	// 		/* If any v6 results exist, remove v4 results. */
+	// 		for (i=0; i<cnt && buf[i].family != AF_INET6; i++);
+	// 		if (i<cnt) {
+	// 			for (j=0; i<cnt; i++) {
+	// 				if (buf[i].family == AF_INET6)
+	// 					buf[j++] = buf[i];
+	// 			}
+	// 			cnt = i = j;
+	// 		}
+	// 	}
+	// 	/* Translate any remaining v4 results to v6 */
+	// 	for (i=0; i<cnt; i++) {
+	// 		if (buf[i].family != AF_INET) continue;
+	// 		memcpy(buf[i].addr+12, buf[i].addr, 4);
+	// 		memcpy(buf[i].addr, "\0\0\0\0\0\0\0\0\0\0\xff\xff", 12);
+	// 		buf[i].family = AF_INET6;
+	// 	}
 	}
 
 	/* No further processing is needed if there are fewer than 2
@@ -347,7 +368,7 @@ int __lookup_name(struct address buf[static MAXADDRS], char canon[static 256], c
 	if (i==cnt) return cnt;
 
 	int cs;
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cs);
+	//TODO pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cs);
 
 	/* The following implements a subset of RFC 3484/6724 destination
 	 * address selection by generating a single 31-bit sort key for
@@ -414,7 +435,7 @@ int __lookup_name(struct address buf[static MAXADDRS], char canon[static 256], c
 	}
 	qsort(buf, cnt, sizeof *buf, addrcmp);
 
-	pthread_setcancelstate(cs, 0);
+	//TODO pthread_setcancelstate(cs, 0);
 
 	return cnt;
 }

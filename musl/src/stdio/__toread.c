@@ -15,5 +15,6 @@ int __toread(FILE *f)
 
 hidden void __toread_needs_stdio_exit()
 {
-	__stdio_exit_needed();
+	abort(); //TODO-
+	// __stdio_exit_needed();
 }

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
@@ -1486,6 +1487,9 @@ func X__ccgo_in6addr_anyp(t *TLS) uintptr {
 }
 
 func Xabort(t *TLS) {
+	if dmesgs {
+		dmesg("%v:\n%s", origin(1), debug.Stack())
+	}
 	p := mustMalloc(t, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
 	*(*signal.Sigaction)(unsafe.Pointer(p)) = signal.Sigaction{
 		F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: signal.SIG_DFL},

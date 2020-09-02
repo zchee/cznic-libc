@@ -42,11 +42,12 @@ int __lookup_ipliteral(struct address buf[static 1], const char *name, int famil
 		if (isdigit(*++p)) scopeid = strtoull(p, &z, 10);
 		else z = p-1;
 		if (*z) {
-			if (!IN6_IS_ADDR_LINKLOCAL(&a6) &&
-			    !IN6_IS_ADDR_MC_LINKLOCAL(&a6))
-				return EAI_NONAME;
-			scopeid = if_nametoindex(p);
-			if (!scopeid) return EAI_NONAME;
+			abort(); //TODO-
+			// if (!IN6_IS_ADDR_LINKLOCAL(&a6) &&
+			//     !IN6_IS_ADDR_MC_LINKLOCAL(&a6))
+			// 	return EAI_NONAME;
+			// scopeid = if_nametoindex(p);
+			// if (!scopeid) return EAI_NONAME;
 		}
 		if (scopeid > UINT_MAX) return EAI_NONAME;
 	}

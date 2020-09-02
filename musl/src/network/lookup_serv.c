@@ -69,46 +69,49 @@ int __lookup_serv(struct service buf[static MAXSERVS], const char *name, int pro
 
 	size_t l = strlen(name);
 
-	unsigned char _buf[1032];
-	FILE _f, *f = __fopen_rb_ca("/etc/services", &_f, _buf, sizeof _buf);
-	if (!f) switch (errno) {
-	case ENOENT:
-	case ENOTDIR:
-	case EACCES:
-		return EAI_SERVICE;
-	default:
-		return EAI_SYSTEM;
-	}
+	abort(); //TODO-
+	// unsigned char _buf[1032];
+	// FILE _f, *f = __fopen_rb_ca("/etc/services", &_f, _buf, sizeof _buf);
+	// if (!f) switch (errno) {
+	// case ENOENT:
+	// case ENOTDIR:
+	// case EACCES:
+	// 	return EAI_SERVICE;
+	// default:
+	// 	return EAI_SYSTEM;
+	// }
 
-	while (fgets(line, sizeof line, f) && cnt < MAXSERVS) {
-		if ((p=strchr(line, '#'))) *p++='\n', *p=0;
+	abort(); //TODO-
+	// while (fgets(line, sizeof line, f) && cnt < MAXSERVS) {
+	// 	if ((p=strchr(line, '#'))) *p++='\n', *p=0;
 
-		/* Find service name */
-		for(p=line; (p=strstr(p, name)); p++) {
-			if (p>line && !isspace(p[-1])) continue;
-			if (p[l] && !isspace(p[l])) continue;
-			break;
-		}
-		if (!p) continue;
+	// 	/* Find service name */
+	// 	for(p=line; (p=strstr(p, name)); p++) {
+	// 		if (p>line && !isspace(p[-1])) continue;
+	// 		if (p[l] && !isspace(p[l])) continue;
+	// 		break;
+	// 	}
+	// 	if (!p) continue;
 
-		/* Skip past canonical name at beginning of line */
-		for (p=line; *p && !isspace(*p); p++);
+	// 	/* Skip past canonical name at beginning of line */
+	// 	for (p=line; *p && !isspace(*p); p++);
 
-		port = strtoul(p, &z, 10);
-		if (port > 65535 || z==p) continue;
-		if (!strncmp(z, "/udp", 4)) {
-			if (proto == IPPROTO_TCP) continue;
-			buf[cnt].port = port;
-			buf[cnt].socktype = SOCK_DGRAM;
-			buf[cnt++].proto = IPPROTO_UDP;
-		}
-		if (!strncmp(z, "/tcp", 4)) {
-			if (proto == IPPROTO_UDP) continue;
-			buf[cnt].port = port;
-			buf[cnt].socktype = SOCK_STREAM;
-			buf[cnt++].proto = IPPROTO_TCP;
-		}
-	}
-	__fclose_ca(f);
-	return cnt > 0 ? cnt : EAI_SERVICE;
+	// 	port = strtoul(p, &z, 10);
+	// 	if (port > 65535 || z==p) continue;
+	// 	if (!strncmp(z, "/udp", 4)) {
+	// 		if (proto == IPPROTO_TCP) continue;
+	// 		buf[cnt].port = port;
+	// 		buf[cnt].socktype = SOCK_DGRAM;
+	// 		buf[cnt++].proto = IPPROTO_UDP;
+	// 	}
+	// 	if (!strncmp(z, "/tcp", 4)) {
+	// 		if (proto == IPPROTO_UDP) continue;
+	// 		buf[cnt].port = port;
+	// 		buf[cnt].socktype = SOCK_STREAM;
+	// 		buf[cnt++].proto = IPPROTO_TCP;
+	// 	}
+	// }
+	// __fclose_ca(f);
+	// return cnt > 0 ? cnt : EAI_SERVICE;
+	abort(); //TODO-
 }

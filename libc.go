@@ -28,7 +28,6 @@ import (
 	"unsafe"
 
 	"github.com/mattn/go-isatty"
-	"modernc.org/libc/limits"
 	"modernc.org/libc/signal"
 	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/types"
@@ -553,66 +552,6 @@ func Xatoi(t *TLS, nptr uintptr) int32 {
 func Xatof(t *TLS, nptr uintptr) float64 {
 	n, _ := strToFloatt64(t, nptr, 64)
 	return n
-}
-
-// long int strtol(const char *nptr, char **endptr, int base);
-func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) (r long) {
-	seenDigits, neg, next, n, err := strToUint64(t, nptr, base)
-	if !seenDigits {
-		// If there were no digits at all, strtoul() stores the original value of nptr
-		// in *endptr  (and returns 0).
-		*(*uintptr)(unsafe.Pointer(endptr)) = nptr
-		return 0
-	}
-
-	switch {
-	case neg:
-		if n > -limits.LONG_MIN {
-			panic(todo(""))
-		}
-
-		r = long(-n)
-	default:
-		if n > limits.LONG_MAX {
-			panic(todo(""))
-		}
-
-		r = long(n)
-	}
-	if endptr != 0 {
-		*(*uintptr)(unsafe.Pointer(endptr)) = next
-	}
-	if err != 0 {
-		t.setErrno(err)
-	}
-	return r
-}
-
-// unsigned long int strtoul(const char *nptr, char **endptr, int base);
-func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
-	seenDigits, neg, next, n, err := strToUint64(t, nptr, base)
-	if !seenDigits {
-		// If there were no digits at all, strtoul() stores the original value of nptr
-		// in *endptr  (and returns 0).
-		*(*uintptr)(unsafe.Pointer(endptr)) = nptr
-		return 0
-	}
-
-	switch {
-	case neg:
-		panic(todo(""))
-	default:
-		if n > limits.ULONG_MAX {
-			panic(todo(""))
-		}
-	}
-	if endptr != 0 {
-		*(*uintptr)(unsafe.Pointer(endptr)) = next
-	}
-	if err != 0 {
-		t.setErrno(err)
-	}
-	return ulong(n)
 }
 
 // int tolower(int c);

@@ -162,10 +162,26 @@ func makeMusl(goos, goarch string) {
 
 		"copyright.c", // Inject legalese first
 
-		// Keep the order below sorted.
+		// Keep the below lines sorted.
+		"src/ctype/isalnum.c",
+		"src/ctype/isalpha.c",
+		"src/ctype/isdigit.c",
 		"src/dirent/closedir.c",
 		"src/dirent/opendir.c",
 		"src/dirent/readdir.c",
+		"src/internal/intscan.c",
+		"src/internal/shgetc.c",
+		"src/network/freeaddrinfo.c",
+		"src/network/getaddrinfo.c",
+		"src/network/inet_aton.c",
+		"src/network/inet_pton.c",
+		"src/network/lookup_ipliteral.c",
+		"src/network/lookup_name.c",
+		"src/network/lookup_serv.c",
+		"src/stdio/__toread.c",
+		"src/stdio/__uflow.c",
+		"src/stdlib/strtol.c",
+		"src/string/strnlen.c",
 	)
 	fmt.Printf("%s\n", out)
 }
