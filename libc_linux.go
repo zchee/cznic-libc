@@ -1718,20 +1718,16 @@ func Xgetservbyname(t *TLS, name, proto uintptr) uintptr {
 	return uintptr(unsafe.Pointer(&getservbynameStaticResult))
 }
 
+func Xreaddir64(t *TLS, dir uintptr) uintptr {
+	return Xreaddir(t, dir)
+}
+
 func __syscall(r, _ uintptr, errno syscall.Errno) long {
 	if errno != 0 {
 		return long(-errno)
 	}
 
 	return long(r)
-}
-
-func Xreaddir64(t *TLS, dir uintptr) uintptr {
-	return Xreaddir(t, dir)
-}
-
-func X___errno_location(t *TLS) uintptr {
-	return X__errno_location(t)
 }
 
 func X__syscall1(t *TLS, trap, p1 long) long {

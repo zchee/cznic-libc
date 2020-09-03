@@ -162,14 +162,14 @@ func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
 again:
 	switch x := err.(type) {
 	case int:
-		*(*int32)(unsafe.Pointer(X__errno_location(t))) = int32(x)
+		*(*int32)(unsafe.Pointer(t.errnop)) = int32(x)
 	case int32:
-		*(*int32)(unsafe.Pointer(X__errno_location(t))) = x
+		*(*int32)(unsafe.Pointer(t.errnop)) = x
 	case *os.PathError:
 		err = x.Err
 		goto again
 	case syscall.Errno:
-		*(*int32)(unsafe.Pointer(X__errno_location(t))) = int32(x)
+		*(*int32)(unsafe.Pointer(t.errnop)) = int32(x)
 	case *os.SyscallError:
 		err = x.Err
 		goto again
