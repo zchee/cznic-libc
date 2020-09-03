@@ -25,11 +25,6 @@ func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&Xenviron))
 }
 
-// struct hostent *gethostbyname(const char *name);
-func Xgethostbyname(t *TLS, name uintptr) uintptr {
-	panic(todo(""))
-}
-
 // struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
 func Xgethostbyaddr(t *TLS, addr uintptr, len socket.Socklen_t, type1 int32) uintptr {
 	panic(todo(""))

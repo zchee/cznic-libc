@@ -78,11 +78,6 @@ func X__errno_location(t *TLS) uintptr {
 	return uintptr(unsafe.Pointer(C.__errno_location()))
 }
 
-// struct hostent *gethostbyname(const char *name);
-func Xgethostbyname(t *TLS, name uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.gethostbyname((*C.char)(unsafe.Pointer(name)))))
-}
-
 // struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
 func Xgethostbyaddr(t *TLS, addr uintptr, len socket.Socklen_t, type1 int32) uintptr {
 	return uintptr(unsafe.Pointer(C.gethostbyaddr(unsafe.Pointer(addr), C.socklen_t(len), C.int(type1))))
