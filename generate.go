@@ -173,6 +173,8 @@ func makeMusl(goos, goarch string) {
 		"src/internal/shgetc.c",
 		"src/network/freeaddrinfo.c",
 		"src/network/getaddrinfo.c",
+		"src/network/gethostbyaddr.c",
+		"src/network/gethostbyaddr_r.c",
 		"src/network/gethostbyname.c",
 		"src/network/gethostbyname2.c",
 		"src/network/gethostbyname2_r.c",

@@ -8,8 +8,6 @@ package libc // import "modernc.org/libc"
 
 import (
 	"unsafe"
-
-	"modernc.org/libc/sys/socket"
 )
 
 // int * __errno_location(void);
@@ -23,9 +21,4 @@ func Environ() uintptr {
 
 func EnvironP() uintptr {
 	return uintptr(unsafe.Pointer(&Xenviron))
-}
-
-// struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
-func Xgethostbyaddr(t *TLS, addr uintptr, len socket.Socklen_t, type1 int32) uintptr {
-	panic(todo(""))
 }

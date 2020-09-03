@@ -135,6 +135,7 @@ var CAPI = map[string]struct{}{
 	"getgrgid":                  {},
 	"getgrnam":                  {},
 	"gethostbyaddr":             {},
+	"gethostbyaddr_r":           {},
 	"gethostbyname":             {},
 	"gethostbyname2":            {},
 	"gethostbyname2_r":          {},

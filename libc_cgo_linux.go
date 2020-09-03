@@ -11,15 +11,12 @@ import (
 	"runtime"
 	"unsafe"
 
-	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/types"
 )
 
 /*
 
-#include <dirent.h>
 #include <errno.h>
-#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -76,11 +73,6 @@ func Start(main func(*TLS, int32, uintptr) int32) {
 // int * __errno_location(void);
 func X__errno_location(t *TLS) uintptr {
 	return uintptr(unsafe.Pointer(C.__errno_location()))
-}
-
-// struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
-func Xgethostbyaddr(t *TLS, addr uintptr, len socket.Socklen_t, type1 int32) uintptr {
-	return uintptr(unsafe.Pointer(C.gethostbyaddr(unsafe.Pointer(addr), C.socklen_t(len), C.int(type1))))
 }
 
 func Environ() uintptr {

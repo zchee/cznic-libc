@@ -11,10 +11,15 @@ int gethostbyaddr_r(const void *a, socklen_t l, int af,
 	struct hostent *h, char *buf, size_t buflen,
 	struct hostent **res, int *err)
 {
-	union {
-		struct sockaddr_in sin;
-		struct sockaddr_in6 sin6;
-	} sa = { .sin.sin_family = af };
+	//TODO union {
+	//TODO 	struct sockaddr_in sin;
+	//TODO 	struct sockaddr_in6 sin6;
+	//TODO } sa = { .sin.sin_family = af };
+	union {					//TODO-
+		struct sockaddr_in sin;		//TODO-
+		struct sockaddr_in6 sin6;	//TODO-
+	} sa = {};				//TODO-
+	sa.sin.sin_family = af;			//TODO-
 	socklen_t sl = af==AF_INET6 ? sizeof sa.sin6 : sizeof sa.sin;
 	int i;
 
