@@ -609,13 +609,16 @@ func Xmemmove(t *TLS, dest, src uintptr, n types.Size_t) uintptr {
 	return dest
 }
 
+var getenvOnce sync.Once
+
 // char *getenv(const char *name);
 func Xgetenv(t *TLS, name uintptr) uintptr {
 	p := Environ()
 	if p == 0 {
-		panic(todo(""))
-		//TODO synchronization
-		// SetEnviron(os.Environ())
+		getenvOnce.Do(func() {
+			SetEnviron(t, os.Environ())
+			p = Environ()
+		})
 	}
 
 	return getenv(p, GoString(name))
