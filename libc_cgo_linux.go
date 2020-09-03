@@ -78,19 +78,6 @@ func X__errno_location(t *TLS) uintptr {
 	return uintptr(unsafe.Pointer(C.__errno_location()))
 }
 
-// int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen, char *serv, socklen_t servlen, int flags);
-func Xgetnameinfo(t *TLS, addr uintptr, addrlen socket.Socklen_t, host uintptr, hostlen socket.Socklen_t, serv uintptr, servlen socket.Socklen_t, flags int32) int32 {
-	return int32(C.getnameinfo(
-		(*C.struct_sockaddr)(unsafe.Pointer(addr)),
-		C.socklen_t(addrlen),
-		(*C.char)(unsafe.Pointer(host)),
-		C.socklen_t(hostlen),
-		(*C.char)(unsafe.Pointer(serv)),
-		C.socklen_t(servlen),
-		C.int(flags),
-	))
-}
-
 // struct hostent *gethostbyname(const char *name);
 func Xgethostbyname(t *TLS, name uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.gethostbyname((*C.char)(unsafe.Pointer(name)))))

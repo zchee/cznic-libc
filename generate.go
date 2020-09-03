@@ -173,7 +173,9 @@ func makeMusl(goos, goarch string) {
 		"src/internal/shgetc.c",
 		"src/network/freeaddrinfo.c",
 		"src/network/getaddrinfo.c",
+		"src/network/getnameinfo.c",
 		"src/network/inet_aton.c",
+		"src/network/inet_ntop.c",
 		"src/network/inet_pton.c",
 		"src/network/lookup_ipliteral.c",
 		"src/network/lookup_name.c",
@@ -182,6 +184,7 @@ func makeMusl(goos, goarch string) {
 		"src/stdio/__uflow.c",
 		"src/stdlib/strtol.c",
 		"src/string/strnlen.c",
+		"src/string/strspn.c",
 	)
 	fmt.Printf("%s\n", out)
 }
