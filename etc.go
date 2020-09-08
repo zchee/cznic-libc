@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"runtime/debug" //TODO-
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
@@ -33,10 +33,11 @@ const (
 )
 
 var (
-	Covered = map[uintptr]struct{}{}
-	fToken  uintptr
-	tid     int32
-	atExit  []func()
+	Covered  = map[uintptr]struct{}{}
+	CoveredC = map[string]struct{}{}
+	fToken   uintptr
+	tid      int32
+	atExit   []func()
 
 	signals   [signal.NSIG]uintptr
 	signalsMu sync.Mutex
@@ -108,7 +109,20 @@ func CoverReport(w io.Writer) error {
 		frame, _ := runtime.CallersFrames(pcs).Next()
 		a = append(a, fmt.Sprintf("%s:%07d:%s", filepath.Base(frame.File), frame.Line, frame.Func.Name()))
 	}
-	fmt.Println()
+	sort.Strings(a)
+	_, err := fmt.Fprintf(w, "%s\n", strings.Join(a, "\n"))
+	return err
+}
+
+func CoverC(s string) {
+	CoveredC[s] = struct{}{}
+}
+
+func CoverCReport(w io.Writer) error {
+	var a []string
+	for k := range CoveredC {
+		a = append(a, k)
+	}
 	sort.Strings(a)
 	_, err := fmt.Fprintf(w, "%s\n", strings.Join(a, "\n"))
 	return err
@@ -159,6 +173,9 @@ func NewTLS() *TLS {
 }
 
 func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
+	if dmesgs {
+		dmesg("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
+	}
 again:
 	switch x := err.(type) {
 	case int:
@@ -380,6 +397,15 @@ func GoString(s uintptr) string {
 		buf = append(buf, b)
 		s++
 	}
+}
+
+// GoBytes returns a byte slice from a C char* having length len bytes.
+func GoBytes(s uintptr, len int) []byte {
+	if len == 0 {
+		return nil
+	}
+
+	return (*RawMem)(unsafe.Pointer(s))[:len:len]
 }
 
 func mustCalloc(t *TLS, n types.Size_t) uintptr {

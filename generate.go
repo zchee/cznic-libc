@@ -23,11 +23,6 @@ var (
 )
 
 func main() {
-	hostConfigCmd := os.Getenv("GO_GENERATE_CPP")
-	var hostConfigOpts []string
-	if s := os.Getenv("GO_GENERATE_CPP_OPTS"); s != "" {
-		hostConfigOpts = strings.Split(s, ",")
-	}
 	if s := os.Getenv("TARGET_GOOS"); s != "" {
 		goos = s
 	}
@@ -38,7 +33,7 @@ func main() {
 	case "linux":
 		makeMusl(goos, goarch)
 	}
-	_, _, hostSysIncludes, err := cc.HostConfig(hostConfigCmd, hostConfigOpts...)
+	_, _, hostSysIncludes, err := cc.HostConfig(os.Getenv("CCGO_CPP"))
 	if err != nil {
 		fail(err)
 	}
@@ -125,6 +120,8 @@ func makeMusl(goos, goarch string) {
 
 	var arch string
 	switch goarch {
+	case "386":
+		arch = "i386"
 	case "amd64":
 		arch = "x86_64"
 	default:
@@ -253,8 +250,6 @@ static char _;
 			"-ccgo-export-fields", "F",
 			"-ccgo-export-structs", "",
 			"-ccgo-export-typedefs", "",
-			"-ccgo-host-config-cmd", os.Getenv("GO_GENERATE_CPP"),
-			"-ccgo-host-config-opts", os.Getenv("GO_GENERATE_CPP_OPTS"),
 			"-ccgo-long-double-is-double",
 			"-ccgo-pkgname", base,
 			"-o", dest,

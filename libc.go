@@ -8,8 +8,6 @@
 
 // Package libc provides run time support for ccgo generated programs and
 // implements selected parts of the C standard library.
-//
-// Some functions are implemented only when CGO_ENABLED=1 and panic otherwise.
 package libc // import "modernc.org/libc"
 
 //TODO use O_RDONLY etc. from fcntl header
@@ -22,6 +20,7 @@ import (
 	"os"
 	gosignal "os/signal"
 	"runtime"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -161,6 +160,9 @@ func Xfree(t *TLS, p uintptr) {
 }
 
 func write(b []byte) (int, error) {
+	if dmesgs {
+		dmesg("%v: %s", origin(1), b)
+	}
 	if _, err := os.Stdout.Write(b); err != nil {
 		return -1, err
 	}
@@ -852,4 +854,11 @@ func Xhtonl(t *TLS, hostlong uint32) uint32 {
 // FILE *fopen(const char *pathname, const char *mode);
 func Xfopen(t *TLS, pathname, mode uintptr) uintptr {
 	return Xfopen64(t, pathname, mode) //TODO 32 bit
+}
+
+// void sqlite3_log(int iErrCode, const char *zFormat, ...);
+func X__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr) {
+	if dmesgs {
+		dmesg("%v: iErrCode: %v, msg: %s\n%s", origin(1), iErrCode, printf(zFormat, args), debug.Stack())
+	}
 }
