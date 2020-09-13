@@ -50,6 +50,10 @@ linux_arm64:
 	CCGO_CPP=aarch64-linux-gnu-cpp-8 TARGET_GOOS=linux TARGET_GOARCH=arm64 go generate
 	GOOS=linux GOARCH=arm64 go build -v ./...
 
+windows_amd64:
+	CCGO_CPP=x86_64-w64-mingw32-cpp TARGET_GOOS=windows TARGET_GOARCH=amd64 go generate
+	GOOS=windows GOARCH=amd64 go build -v ./...
+
 devbench:
 	date 2>&1 | tee log-devbench
 	go test -timeout 24h -dev -run @ -bench . 2>&1 | tee -a log-devbench

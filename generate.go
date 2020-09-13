@@ -261,7 +261,7 @@ static char _;
 		out, err := cmd.CombinedOutput()
 		sout := strings.TrimSpace(string(out) + "\n")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %s%s\n", path, sout, err)
+			fmt.Fprintf(os.Stderr, "%s: %s\n%s\n", path, sout, err)
 		} else {
 			fmt.Fprintf(os.Stdout, "%s\n%s", path, sout)
 		}
