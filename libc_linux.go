@@ -6,7 +6,6 @@ package libc // import "modernc.org/libc"
 
 import (
 	"bufio"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
@@ -144,87 +143,6 @@ func Xstat(t *TLS, pathname, statbuf uintptr) int32 {
 	return Xstat64(t, pathname, statbuf)
 }
 
-// int mkdir(const char *path, mode_t mode);
-func Xmkdir(t *TLS, path uintptr, mode types.Mode_t) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_MKDIR, path, uintptr(mode), 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	if dmesgs {
-		dmesg("%v: %q: ok", origin(1), GoString(path))
-	}
-	return 0
-}
-
-// int symlink(const char *target, const char *linkpath);
-func Xsymlink(t *TLS, target, linkpath uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_SYMLINK, target, linkpath, 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	if dmesgs {
-		dmesg("%v: %q %q: ok", origin(1), GoString(target), GoString(linkpath))
-	}
-	return 0
-}
-
-// int chmod(const char *pathname, mode_t mode)
-func Xchmod(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_CHMOD, pathname, uintptr(mode), 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	if dmesgs {
-		dmesg("%v: %q %#o: ok", origin(1), GoString(pathname), mode)
-	}
-	return 0
-}
-
-// int utimes(const char *filename, const struct timeval times[2]);
-func Xutimes(t *TLS, filename, times uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_UTIMES, filename, times, 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	if dmesgs {
-		dmesg("%v: %q: ok", origin(1), GoString(filename))
-	}
-	return 0
-}
-
-// int unlink(const char *pathname);
-func Xunlink(t *TLS, pathname uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_UNLINK, pathname, 0, 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	if dmesgs {
-		dmesg("%v: %q: ok", origin(1), GoString(pathname))
-	}
-	return 0
-}
-
-// int access(const char *pathname, int mode);
-func Xaccess(t *TLS, pathname uintptr, mode int32) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_ACCESS, pathname, uintptr(mode), 0); err != 0 {
-		if dmesgs {
-			dmesg("%v: %q: %v", origin(1), GoString(pathname), err)
-		}
-		t.setErrno(err)
-		return -1
-	}
-
-	if dmesgs {
-		dmesg("%v: %q %#o: ok", origin(1), GoString(pathname), mode)
-	}
-	return 0
-}
-
 // int chdir(const char *path);
 func Xchdir(t *TLS, path uintptr) int32 {
 	if _, _, err := unix.Syscall(unix.SYS_CHDIR, path, 0, 0); err != 0 {
@@ -294,7 +212,8 @@ func Xopen64(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
 	if args != 0 {
 		mode = *(*types.Mode_t)(unsafe.Pointer(args))
 	}
-	n, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), uintptr(mode))
+	fdcwd := fcntl.AT_FDCWD
+	n, _, err := unix.Syscall6(unix.SYS_OPENAT, uintptr(fdcwd), pathname, uintptr(flags), uintptr(mode), 0, 0)
 	if err != 0 {
 		if dmesgs {
 			dmesg("%v: %q %#x: %v", origin(1), GoString(pathname), flags, err)
@@ -408,7 +327,8 @@ func Xread(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 	}
 
 	if dmesgs {
-		dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
+		// dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
+		dmesg("%v: %d %#x: %#x", origin(1), fd, count, n)
 	}
 	return types.Ssize_t(n)
 }
@@ -425,7 +345,8 @@ func Xwrite(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 	}
 
 	if dmesgs {
-		dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
+		// dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
+		dmesg("%v: %d %#x: %#x", origin(1), fd, count, n)
 	}
 	return types.Ssize_t(n)
 }
@@ -439,19 +360,6 @@ func Xfchmod(t *TLS, fd int32, mode types.Mode_t) int32 {
 
 	if dmesgs {
 		dmesg("%v: %d %#o: ok", origin(1), fd, mode)
-	}
-	return 0
-}
-
-// int rmdir(const char *pathname);
-func Xrmdir(t *TLS, pathname uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_RMDIR, pathname, 0, 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	if dmesgs {
-		dmesg("%v: %q: ok", origin(1), GoString(pathname))
 	}
 	return 0
 }
@@ -564,26 +472,6 @@ func Xselect(t *TLS, nfds int32, readfds, writefds, exceptfds, timeout uintptr) 
 	return int32(n)
 }
 
-// int rename(const char *oldpath, const char *newpath);
-func Xrename(t *TLS, oldpath, newpath uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_RENAME, oldpath, newpath, 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	return 0
-}
-
-// int mknod(const char *pathname, mode_t mode, dev_t dev);
-func Xmknod(t *TLS, pathname uintptr, mode types.Mode_t, dev types.Dev_t) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_MKNOD, pathname, uintptr(mode), uintptr(dev)); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	return 0
-}
-
 // int mkfifo(const char *pathname, mode_t mode);
 func Xmkfifo(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
 	if err := unix.Mkfifo(GoString(pathname), mode); err != nil {
@@ -598,57 +486,6 @@ func Xmkfifo(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
 func Xumask(t *TLS, mask types.Mode_t) types.Mode_t {
 	n, _, _ := unix.Syscall(unix.SYS_UMASK, uintptr(mask), 0, 0)
 	return types.Mode_t(n)
-}
-
-// int utime(const char *filename, const struct utimbuf *times);
-func Xutime(t *TLS, filename, times uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_UTIME, filename, times, 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	return 0
-}
-
-// int chown(const char *pathname, uid_t owner, gid_t group);
-func Xchown(t *TLS, pathname uintptr, owner types.Uid_t, group types.Gid_t) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_CHOWN, pathname, uintptr(owner), uintptr(group)); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	return 0
-}
-
-// int link(const char *oldpath, const char *newpath);
-func Xlink(t *TLS, oldpath, newpath uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_LINK, oldpath, newpath, 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	return 0
-}
-
-// int pipe(int pipefd[2]);
-func Xpipe(t *TLS, pipefd uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_PIPE, pipefd, 0, 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	return 0
-}
-
-// int dup2(int oldfd, int newfd);
-func Xdup2(t *TLS, oldfd, newfd int32) int32 {
-	n, _, err := unix.Syscall(unix.SYS_DUP2, uintptr(oldfd), uintptr(newfd), 0)
-	if err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	return int32(n)
 }
 
 // int execvp(const char *file, char *const argv[]);
@@ -777,29 +614,9 @@ func Xaccept(t *TLS, sockfd int32, addr uintptr, addrlen uintptr) int32 {
 	return int32(n)
 }
 
-// unsigned int alarm(unsigned int seconds);
-func Xalarm(t *TLS, seconds uint32) uint32 {
-	n, _, err := unix.Syscall(unix.SYS_ALARM, uintptr(seconds), 0, 0)
-	if err != 0 {
-		panic(todo(""))
-	}
-
-	return uint32(n)
-}
-
 // int getrlimit(int resource, struct rlimit *rlim);
 func Xgetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
 	return Xgetrlimit64(t, resource, rlim)
-}
-
-// int getrlimit(int resource, struct rlimit *rlim);
-func Xgetrlimit64(t *TLS, resource int32, rlim uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_GETRLIMIT, uintptr(resource), uintptr(rlim), 0); err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	return 0
 }
 
 // int setrlimit(int resource, const struct rlimit *rlim);
@@ -815,17 +632,6 @@ func Xsetrlimit64(t *TLS, resource int32, rlim uintptr) int32 {
 	}
 
 	return 0
-}
-
-// time_t time(time_t *tloc);
-func Xtime(t *TLS, tloc uintptr) types.Time_t {
-	n, _, err := unix.Syscall(unix.SYS_TIME, tloc, 0, 0)
-	if err != 0 {
-		t.setErrno(err)
-		return types.Time_t(-1)
-	}
-
-	return types.Time_t(n)
 }
 
 // uid_t getuid(void);
@@ -1124,17 +930,6 @@ func Xgetgrgid(t *TLS, gid uint32) uintptr {
 	}
 
 	return 0
-}
-
-// ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
-func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
-	n, _, err := unix.Syscall(unix.SYS_READLINK, path, buf, uintptr(bufsize))
-	if err != 0 {
-		t.setErrno(err)
-		return -1
-	}
-
-	return types.Ssize_t(n)
 }
 
 // int mkstemps(char *template, int suffixlen);
@@ -1498,42 +1293,6 @@ func Xfflush(t *TLS, stream uintptr) int32 {
 	return 0 //TODO
 }
 
-// FILE *fopen64(const char *pathname, const char *mode);
-func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
-	m := strings.ReplaceAll(GoString(mode), "b", "")
-	var flags int
-	switch m {
-	case "r":
-		flags = os.O_RDONLY
-	case "r+":
-		flags = os.O_RDWR
-	case "w":
-		flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	case "w+":
-		flags = os.O_RDWR | os.O_CREATE | os.O_TRUNC
-	case "a":
-		flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
-	case "a+":
-		flags = os.O_RDWR | os.O_CREATE | os.O_APPEND
-	default:
-		panic(m)
-	}
-	flags |= fcntl.O_LARGEFILE
-	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
-	if err != 0 {
-		t.setErrno(err)
-		return 0
-	}
-
-	if p := newFile(t, int32(fd)); p != 0 {
-		return p
-	}
-
-	Xclose(t, int32(fd))
-	t.setErrno(errno.ENOMEM)
-	return 0
-}
-
 // size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
 	m, _, err := unix.Syscall(unix.SYS_READ, uintptr(file(stream).fd()), ptr, uintptr(size*nmemb))
@@ -1543,7 +1302,8 @@ func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types
 	}
 
 	if dmesgs {
-		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
+		// dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
+		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
 	}
 	return types.Size_t(m) / size
 }
@@ -1557,7 +1317,8 @@ func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) type
 	}
 
 	if dmesgs {
-		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
+		// dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
+		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
 	}
 	return types.Size_t(m) / size
 }

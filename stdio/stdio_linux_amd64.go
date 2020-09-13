@@ -71,8 +71,11 @@ type Size_t = uint64 /* <builtin>:9:23 */
 
 type Wchar_t = int32 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:29:14 */
-type X__float128 = float64        /* <builtin>:30:21 */
+type X__int128_t = [2]int64   /* <builtin>:21:24 */ //TODO
+type X__uint128_t = [2]uint64 /* <builtin>:22:25 */ //TODO
+
+type X__builtin_va_list = uintptr /* <builtin>:35:14 */
+type X__float128 = float64        /* <builtin>:36:21 */
 
 // Wide character type.
 //   Locale-writers should change this as necessary to
@@ -429,6 +432,7 @@ type X__fpos64_t = X_G_fpos64_t /* __fpos64_t.h:14:3 */
 
 type X_IO_FILE = struct {
 	F_flags          int32
+	_                [4]byte
 	F_IO_read_ptr    uintptr
 	F_IO_read_end    uintptr
 	F_IO_read_base   uintptr
@@ -448,6 +452,7 @@ type X_IO_FILE = struct {
 	F_cur_column     uint16
 	F_vtable_offset  int8
 	F_shortbuf       [1]int8
+	_                [4]byte
 	F_lock           uintptr
 	F_offset         X__off64_t
 	F_codecvt        uintptr

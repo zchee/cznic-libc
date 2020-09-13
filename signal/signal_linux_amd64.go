@@ -291,8 +291,11 @@ type Size_t = uint64 /* <builtin>:9:23 */
 
 type Wchar_t = int32 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:29:14 */
-type X__float128 = float64        /* <builtin>:30:21 */
+type X__int128_t = [2]int64   /* <builtin>:21:24 */ //TODO
+type X__uint128_t = [2]uint64 /* <builtin>:22:25 */ //TODO
+
+type X__builtin_va_list = uintptr /* <builtin>:35:14 */
+type X__float128 = float64        /* <builtin>:36:21 */
 
 // Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //   This file is part of the GNU C Library.
@@ -1267,6 +1270,7 @@ type Sigaction = struct {
 	F__sigaction_handler struct{ Fsa_handler X__sighandler_t }
 	Fsa_mask             X__sigset_t
 	Fsa_flags            int32
+	_                    [4]byte
 	Fsa_restorer         uintptr
 } /* sigaction.h:27:1 */
 
@@ -1531,6 +1535,7 @@ type X_xstate = struct {
 type Stack_t = struct {
 	Fss_sp    uintptr
 	Fss_flags int32
+	_         [4]byte
 	Fss_size  Size_t
 } /* stack_t.h:31:5 */
 

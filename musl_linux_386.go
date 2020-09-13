@@ -1825,10 +1825,13 @@ type _ns_flagdata = struct {
 
 type __ns_rr = struct {
 	name     [1025]int8
+	_        [1]byte
 	__type   uint16_t
 	rr_class uint16_t
+	_        [2]byte
 	ttl      uint32_t
 	rdlength uint16_t
+	_        [2]byte
 	rdata    uintptr
 } /* nameser.h:59:9 */
 
@@ -1845,6 +1848,7 @@ type ns_update_operation = uint32 /* nameser.h:121:3 */
 type ns_tsig_key1 = struct {
 	name [1025]int8
 	alg  [1025]int8
+	_    [2]byte
 	data uintptr
 	len  int32
 } /* nameser.h:123:1 */
@@ -1889,6 +1893,7 @@ type __res_state = struct {
 		sin_zero   [8]uint8_t
 	}
 	id        uint16
+	_         [2]byte
 	dnsrch    [7]uintptr
 	defdname  [256]int8
 	pfcode    uint32

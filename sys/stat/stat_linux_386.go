@@ -80,8 +80,8 @@ type Size_t = uint32 /* <builtin>:9:23 */
 
 type Wchar_t = int32 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:29:14 */
-type X__float128 = float64        /* <builtin>:30:21 */
+type X__builtin_va_list = uintptr /* <builtin>:30:14 */
+type X__float128 = float64        /* <builtin>:31:21 */
 
 // Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //   This file is part of the GNU C Library.
@@ -775,6 +775,7 @@ type Uid_t = X__uid_t /* stat.h:78:17 */
 type Stat = struct {
 	Fst_dev     X__dev_t
 	F__pad1     uint16
+	_           [2]byte
 	F__st_ino   X__ino_t
 	Fst_mode    X__mode_t
 	Fst_nlink   X__nlink_t
@@ -782,6 +783,7 @@ type Stat = struct {
 	Fst_gid     X__gid_t
 	Fst_rdev    X__dev_t
 	F__pad2     uint16
+	_           [2]byte
 	Fst_size    X__off64_t
 	Fst_blksize X__blksize_t
 	Fst_blocks  X__blkcnt64_t

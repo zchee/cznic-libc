@@ -34,20 +34,21 @@ all:
 	go version
 	date 2>&1 | tee -a $(log)
 
+linux_amd64:
+	TARGET_GOOS=linux TARGET_GOARCH=amd64 go generate
+	GOOS=linux GOARCH=amd64 go build -v ./...
+
 linux_386:
-	\
-		CCGO_CPP=i686-linux-gnu-cpp \
-		TARGET_GOOS=linux \
-		TARGET_GOARCH=386 \
-		go generate
+	CCGO_CPP=i686-linux-gnu-cpp TARGET_GOOS=linux TARGET_GOARCH=386 go generate
 	GOOS=linux GOARCH=386 go build -v ./...
 
-linux_amd64:
-	\
-		TARGET_GOOS=linux \
-		TARGET_GOARCH=amd64 \
-		go generate
-	GOOS=linux GOARCH=amd64 go build -v ./...
+linux_arm:
+	CCGO_CPP=arm-linux-gnueabi-cpp-8 TARGET_GOOS=linux TARGET_GOARCH=arm go generate
+	GOOS=linux GOARCH=arm go build -v ./...
+
+linux_arm64:
+	CCGO_CPP=aarch64-linux-gnu-cpp-8 TARGET_GOOS=linux TARGET_GOARCH=arm64 go generate
+	GOOS=linux GOARCH=arm64 go build -v ./...
 
 devbench:
 	date 2>&1 | tee log-devbench

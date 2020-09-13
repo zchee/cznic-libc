@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build 386
-
 package libc // import "modernc.org/libc"
 
 import (
-	"golang.org/x/sys/unix"
+	"os"
+	"strings"
 	"unsafe"
 
+	"golang.org/x/sys/unix"
+	"modernc.org/libc/errno"
+	"modernc.org/libc/fcntl"
 	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/sys/types"
@@ -177,4 +179,247 @@ func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off64_t 
 		dmesg("%v: fd %v, off %#x, whence %v: %#x", origin(1), fd, offset, whenceStr(whence), *(*types.Off64_t)(unsafe.Pointer(bp)))
 	}
 	return *(*types.Off64_t)(unsafe.Pointer(bp))
+}
+
+// int utime(const char *filename, const struct utimbuf *times);
+func Xutime(t *TLS, filename, times uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_UTIME, filename, times, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
+}
+
+// unsigned int alarm(unsigned int seconds);
+func Xalarm(t *TLS, seconds uint32) uint32 {
+	n, _, err := unix.Syscall(unix.SYS_ALARM, uintptr(seconds), 0, 0)
+	if err != 0 {
+		panic(todo(""))
+	}
+
+	return uint32(n)
+}
+
+// int getrlimit(int resource, struct rlimit *rlim);
+func Xgetrlimit64(t *TLS, resource int32, rlim uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_GETRLIMIT, uintptr(resource), uintptr(rlim), 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
+}
+
+// time_t time(time_t *tloc);
+func Xtime(t *TLS, tloc uintptr) types.Time_t {
+	n, _, err := unix.Syscall(unix.SYS_TIME, tloc, 0, 0)
+	if err != 0 {
+		t.setErrno(err)
+		return types.Time_t(-1)
+	}
+
+	return types.Time_t(n)
+}
+
+// int mkdir(const char *path, mode_t mode);
+func Xmkdir(t *TLS, path uintptr, mode types.Mode_t) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_MKDIR, path, uintptr(mode), 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %q: ok", origin(1), GoString(path))
+	}
+	return 0
+}
+
+// int symlink(const char *target, const char *linkpath);
+func Xsymlink(t *TLS, target, linkpath uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_SYMLINK, target, linkpath, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %q %q: ok", origin(1), GoString(target), GoString(linkpath))
+	}
+	return 0
+}
+
+// int chmod(const char *pathname, mode_t mode)
+func Xchmod(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_CHMOD, pathname, uintptr(mode), 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %q %#o: ok", origin(1), GoString(pathname), mode)
+	}
+	return 0
+}
+
+// int utimes(const char *filename, const struct timeval times[2]);
+func Xutimes(t *TLS, filename, times uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_UTIMES, filename, times, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %q: ok", origin(1), GoString(filename))
+	}
+	return 0
+}
+
+// int unlink(const char *pathname);
+func Xunlink(t *TLS, pathname uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_UNLINK, pathname, 0, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %q: ok", origin(1), GoString(pathname))
+	}
+	return 0
+}
+
+// int access(const char *pathname, int mode);
+func Xaccess(t *TLS, pathname uintptr, mode int32) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_ACCESS, pathname, uintptr(mode), 0); err != 0 {
+		if dmesgs {
+			dmesg("%v: %q: %v", origin(1), GoString(pathname), err)
+		}
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %q %#o: ok", origin(1), GoString(pathname), mode)
+	}
+	return 0
+}
+
+// int rmdir(const char *pathname);
+func Xrmdir(t *TLS, pathname uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_RMDIR, pathname, 0, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %q: ok", origin(1), GoString(pathname))
+	}
+	return 0
+}
+
+// int rename(const char *oldpath, const char *newpath);
+func Xrename(t *TLS, oldpath, newpath uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_RENAME, oldpath, newpath, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
+}
+
+// int mknod(const char *pathname, mode_t mode, dev_t dev);
+func Xmknod(t *TLS, pathname uintptr, mode types.Mode_t, dev types.Dev_t) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_MKNOD, pathname, uintptr(mode), uintptr(dev)); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
+}
+
+// int chown(const char *pathname, uid_t owner, gid_t group);
+func Xchown(t *TLS, pathname uintptr, owner types.Uid_t, group types.Gid_t) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_CHOWN, pathname, uintptr(owner), uintptr(group)); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
+}
+
+// int link(const char *oldpath, const char *newpath);
+func Xlink(t *TLS, oldpath, newpath uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_LINK, oldpath, newpath, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
+}
+
+// int pipe(int pipefd[2]);
+func Xpipe(t *TLS, pipefd uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_PIPE, pipefd, 0, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
+}
+
+// int dup2(int oldfd, int newfd);
+func Xdup2(t *TLS, oldfd, newfd int32) int32 {
+	n, _, err := unix.Syscall(unix.SYS_DUP2, uintptr(oldfd), uintptr(newfd), 0)
+	if err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return int32(n)
+}
+
+// ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
+func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
+	n, _, err := unix.Syscall(unix.SYS_READLINK, path, buf, uintptr(bufsize))
+	if err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return types.Ssize_t(n)
+}
+
+// FILE *fopen64(const char *pathname, const char *mode);
+func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
+	m := strings.ReplaceAll(GoString(mode), "b", "")
+	var flags int
+	switch m {
+	case "r":
+		flags = os.O_RDONLY
+	case "r+":
+		flags = os.O_RDWR
+	case "w":
+		flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	case "w+":
+		flags = os.O_RDWR | os.O_CREATE | os.O_TRUNC
+	case "a":
+		flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
+	case "a+":
+		flags = os.O_RDWR | os.O_CREATE | os.O_APPEND
+	default:
+		panic(m)
+	}
+	flags |= fcntl.O_LARGEFILE
+	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
+	if err != 0 {
+		t.setErrno(err)
+		return 0
+	}
+
+	if p := newFile(t, int32(fd)); p != 0 {
+		return p
+	}
+
+	Xclose(t, int32(fd))
+	t.setErrno(errno.ENOMEM)
+	return 0
 }

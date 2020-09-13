@@ -862,3 +862,8 @@ func X__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr) 
 		dmesg("%v: iErrCode: %v, msg: %s\n%s", origin(1), iErrCode, printf(zFormat, args), debug.Stack())
 	}
 }
+
+// int _IO_putc(int __c, _IO_FILE *__fp);
+func X_IO_putc(t *TLS, c int32, fp uintptr) int32 {
+	return Xputc(t, c, fp)
+}

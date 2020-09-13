@@ -342,8 +342,11 @@ type Size_t = uint64 /* <builtin>:9:23 */
 
 type Wchar_t = int32 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:29:14 */
-type X__float128 = float64        /* <builtin>:30:21 */
+type X__int128_t = [2]int64   /* <builtin>:21:24 */ //TODO
+type X__uint128_t = [2]uint64 /* <builtin>:22:25 */ //TODO
+
+type X__builtin_va_list = uintptr /* <builtin>:35:14 */
+type X__float128 = float64        /* <builtin>:36:21 */
 
 // Wide character type.
 //   Locale-writers should change this as necessary to
@@ -1533,6 +1536,7 @@ type Sockaddr_storage = struct {
 type Msghdr = struct {
 	Fmsg_name       uintptr
 	Fmsg_namelen    Socklen_t
+	_               [4]byte
 	Fmsg_iov        uintptr
 	Fmsg_iovlen     Size_t
 	Fmsg_control    uintptr

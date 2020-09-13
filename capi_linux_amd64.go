@@ -3,6 +3,7 @@
 package libc // import "modernc.org/libc"
 
 var CAPI = map[string]struct{}{
+	"_IO_putc":                  {},
 	"___errno_location":         {},
 	"__assert_fail":             {},
 	"__builtin_abort":           {},

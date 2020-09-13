@@ -518,8 +518,11 @@ type Size_t = uint64 /* <builtin>:9:23 */
 
 type Wchar_t = int32 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:29:14 */
-type X__float128 = float64        /* <builtin>:30:21 */
+type X__int128_t = [2]int64   /* <builtin>:21:24 */ //TODO
+type X__uint128_t = [2]uint64 /* <builtin>:22:25 */ //TODO
+
+type X__builtin_va_list = uintptr /* <builtin>:35:14 */
+type X__float128 = float64        /* <builtin>:36:21 */
 
 // Access to locale-dependent parameters.
 //   Copyright (C) 1995-2018 Free Software Foundation, Inc.

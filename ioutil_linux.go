@@ -17,6 +17,7 @@ import (
 
 	"golang.org/x/sys/unix"
 	"modernc.org/libc/errno"
+	"modernc.org/libc/fcntl"
 )
 
 // Random number state.
@@ -47,7 +48,8 @@ func tempFile(s, x uintptr) (fd, err int) {
 	nconflict := 0
 	for i := 0; i < maxTry; i++ {
 		nextRandom(x)
-		n, _, err := unix.Syscall(unix.SYS_OPEN, s, uintptr(os.O_RDWR|os.O_CREATE|os.O_EXCL), 0600)
+		fdcwd := fcntl.AT_FDCWD
+		n, _, err := unix.Syscall6(unix.SYS_OPENAT, uintptr(fdcwd), s, uintptr(os.O_RDWR|os.O_CREATE|os.O_EXCL), 0600, 0, 0)
 		if err == 0 {
 			return int(n), 0
 		}

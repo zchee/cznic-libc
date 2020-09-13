@@ -624,8 +624,11 @@ type Size_t = uint64 /* <builtin>:9:23 */
 
 type Wchar_t = int32 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:29:14 */
-type X__float128 = float64        /* <builtin>:30:21 */
+type X__int128_t = [2]int64   /* <builtin>:21:24 */ //TODO
+type X__uint128_t = [2]uint64 /* <builtin>:22:25 */ //TODO
+
+type X__builtin_va_list = uintptr /* <builtin>:35:14 */
+type X__float128 = float64        /* <builtin>:36:21 */
 
 // Copyright (C) 1996-2018 Free Software Foundation, Inc.
 //   This file is part of the GNU C Library.
@@ -2294,6 +2297,7 @@ type Sockaddr_storage = struct {
 type Msghdr = struct {
 	Fmsg_name       uintptr
 	Fmsg_namelen    Socklen_t
+	_               [4]byte
 	Fmsg_iov        uintptr
 	Fmsg_iovlen     Size_t
 	Fmsg_control    uintptr
@@ -2507,6 +2511,7 @@ type Ipv6_mreq = struct {
 // Multicast group request.
 type Group_req = struct {
 	Fgr_interface Uint32_t
+	_             [4]byte
 	Fgr_group     struct {
 		Fss_family    Sa_family_t
 		F__ss_padding [118]int8
@@ -2516,6 +2521,7 @@ type Group_req = struct {
 
 type Group_source_req = struct {
 	Fgsr_interface Uint32_t
+	_              [4]byte
 	Fgsr_group     struct {
 		Fss_family    Sa_family_t
 		F__ss_padding [118]int8
@@ -2539,6 +2545,7 @@ type Ip_msfilter = struct {
 
 type Group_filter = struct {
 	Fgf_interface Uint32_t
+	_             [4]byte
 	Fgf_group     struct {
 		Fss_family    Sa_family_t
 		F__ss_padding [118]int8
@@ -2753,6 +2760,7 @@ type Servent = struct {
 	Fs_name    uintptr
 	Fs_aliases uintptr
 	Fs_port    int32
+	_          [4]byte
 	Fs_proto   uintptr
 } /* netdb.h:255:1 */
 
@@ -2772,6 +2780,7 @@ type Addrinfo = struct {
 	Fai_socktype  int32
 	Fai_protocol  int32
 	Fai_addrlen   Socklen_t
+	_             [4]byte
 	Fai_addr      uintptr
 	Fai_canonname uintptr
 	Fai_next      uintptr

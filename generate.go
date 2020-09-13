@@ -120,10 +120,14 @@ func makeMusl(goos, goarch string) {
 
 	var arch string
 	switch goarch {
-	case "386":
-		arch = "i386"
 	case "amd64":
 		arch = "x86_64"
+	case "386":
+		arch = "i386"
+	case "arm":
+		arch = "arm"
+	case "arm64":
+		arch = "aarch64"
 	default:
 		fail(fmt.Errorf("unknown/unsupported GOARCH: %q", goarch))
 	}

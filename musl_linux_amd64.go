@@ -456,6 +456,7 @@ type iovec = struct {
 type flock = struct {
 	l_type   int16
 	l_whence int16
+	_        [4]byte
 	l_start  off_t
 	l_len    off_t
 	l_pid    pid_t
@@ -523,6 +524,7 @@ func __isspace3(tls *TLS, _c int32) int32 { /* ctype.h:26:21: */
 
 type _IO_FILE = struct {
 	flags        uint32
+	_            [4]byte
 	rpos         uintptr
 	rend         uintptr
 	close        uintptr
@@ -543,6 +545,7 @@ type _IO_FILE = struct {
 	mode         int32
 	lock         int32
 	lbf          int32
+	_            [4]byte
 	cookie       uintptr
 	off          off_t
 	getln_buf    uintptr
@@ -979,6 +982,7 @@ type sa_family_t = uint16 /* alltypes.h:366:24 */
 type msghdr = struct {
 	msg_name       uintptr
 	msg_namelen    socklen_t
+	_              [4]byte
 	msg_iov        uintptr
 	msg_iovlen     int32
 	__pad1         int32
@@ -1085,6 +1089,7 @@ type ip_msfilter = struct {
 
 type group_req = struct {
 	gr_interface uint32_t
+	_            [4]byte
 	gr_group     struct {
 		ss_family    sa_family_t
 		__ss_padding [118]int8
@@ -1094,6 +1099,7 @@ type group_req = struct {
 
 type group_source_req = struct {
 	gsr_interface uint32_t
+	_             [4]byte
 	gsr_group     struct {
 		ss_family    sa_family_t
 		__ss_padding [118]int8
@@ -1108,6 +1114,7 @@ type group_source_req = struct {
 
 type group_filter = struct {
 	gf_interface uint32_t
+	_            [4]byte
 	gf_group     struct {
 		ss_family    sa_family_t
 		__ss_padding [118]int8
@@ -1160,6 +1167,7 @@ type addrinfo = struct {
 	ai_socktype  int32
 	ai_protocol  int32
 	ai_addrlen   socklen_t
+	_            [4]byte
 	ai_addr      uintptr
 	ai_canonname uintptr
 	ai_next      uintptr
@@ -1186,6 +1194,7 @@ type servent = struct {
 	s_name    uintptr
 	s_aliases uintptr
 	s_port    int32
+	_         [4]byte
 	s_proto   uintptr
 } /* netdb.h:78:1 */
 
@@ -1203,6 +1212,7 @@ type aibuf = struct {
 		ai_socktype  int32
 		ai_protocol  int32
 		ai_addrlen   socklen_t
+		_            [4]byte
 		ai_addr      uintptr
 		ai_canonname uintptr
 		ai_next      uintptr
@@ -1371,6 +1381,7 @@ type tm = struct {
 	tm_wday   int32
 	tm_yday   int32
 	tm_isdst  int32
+	_         [4]byte
 	tm_gmtoff int64
 	tm_zone   uintptr
 } /* time.h:38:1 */
@@ -1544,6 +1555,7 @@ type mmsghdr = struct {
 	msg_hdr struct {
 		msg_name       uintptr
 		msg_namelen    socklen_t
+		_              [4]byte
 		msg_iov        uintptr
 		msg_iovlen     int32
 		__pad1         int32
@@ -1791,6 +1803,7 @@ func Xgethostbyname2_r(tls *TLS, name uintptr, af int32, h uintptr, buf uintptr,
 
 type if_nameindex = struct {
 	if_index uint32
+	_        [4]byte
 	if_name  uintptr
 } /* if.h:12:1 */
 
@@ -1833,6 +1846,7 @@ type ifreq = struct {
 
 type ifconf = struct {
 	ifc_len  int32
+	_        [4]byte
 	ifc_ifcu struct{ ifcu_buf uintptr }
 } /* if.h:116:1 */
 
@@ -1848,6 +1862,7 @@ type __ns_msg = struct {
 	_id       uint16_t
 	_flags    uint16_t
 	_counts   [4]uint16_t
+	_         [4]byte
 	_sections [4]uintptr
 	_sect     ns_sect
 	_rrnum    int32
@@ -1863,10 +1878,13 @@ type _ns_flagdata = struct {
 
 type __ns_rr = struct {
 	name     [1025]int8
+	_        [1]byte
 	__type   uint16_t
 	rr_class uint16_t
+	_        [2]byte
 	ttl      uint32_t
 	rdlength uint16_t
+	_        [2]byte
 	rdata    uintptr
 } /* nameser.h:59:9 */
 
@@ -1883,6 +1901,7 @@ type ns_update_operation = uint32 /* nameser.h:121:3 */
 type ns_tsig_key1 = struct {
 	name [1025]int8
 	alg  [1025]int8
+	_    [6]byte
 	data uintptr
 	len  int32
 	_    [4]byte
@@ -1892,6 +1911,7 @@ type ns_tsig_key = ns_tsig_key1 /* nameser.h:128:28 */
 
 type ns_tcp_tsig_state1 = struct {
 	counter int32
+	_       [4]byte
 	key     uintptr
 	ctx     uintptr
 	sig     [512]uint8
@@ -1929,6 +1949,7 @@ type __res_state = struct {
 		sin_zero   [8]uint8_t
 	}
 	id        uint16
+	_         [2]byte
 	dnsrch    [7]uintptr
 	defdname  [256]int8
 	pfcode    uint64
@@ -1937,11 +1958,13 @@ type __res_state = struct {
 		addr struct{ s_addr in_addr_t }
 		mask uint32_t
 	}
+	_           [4]byte
 	qhook       uintptr
 	rhook       uintptr
 	res_h_errno int32
 	_vcsock     int32
 	_flags      uint32
+	_           [4]byte
 	_u          struct {
 		_   [0]uint64
 		pad [52]int8
@@ -1954,6 +1977,7 @@ type res_state = uintptr /* resolv.h:62:3 */
 
 type res_sym = struct {
 	number    int32
+	_         [4]byte
 	name      uintptr
 	humanname uintptr
 } /* resolv.h:70:1 */
