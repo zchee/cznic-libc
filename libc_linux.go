@@ -43,8 +43,9 @@ var (
 )
 
 type (
-	long  = types.X__syscall_slong_t
-	ulong = types.X__syscall_ulong_t
+	long     = types.X__syscall_slong_t
+	longlong = int64
+	ulong    = types.X__syscall_ulong_t
 )
 
 type file uintptr
@@ -60,6 +61,7 @@ func (f file) close(t *TLS) int32 {
 	if r < 0 {
 		return stdio.EOF
 	}
+
 	return 0
 }
 
@@ -91,46 +93,6 @@ func Xgetrusage(t *TLS, who int32, usage uintptr) int32 {
 	}
 
 	return 0
-}
-
-// char *fgets(char *s, int size, FILE *stream);
-func Xfgets(t *TLS, s uintptr, size int32, stream uintptr) uintptr {
-	fd := int((*stdio.FILE)(unsafe.Pointer(stream)).F_fileno)
-	var b []byte
-	buf := [1]byte{}
-	for ; size > 0; size-- {
-		n, err := unix.Read(fd, buf[:])
-		if n != 0 {
-			b = append(b, buf[0])
-			if buf[0] == '\n' {
-				b = append(b, 0)
-				copy((*RawMem)(unsafe.Pointer(s))[:len(b):len(b)], b)
-				return s
-			}
-
-			continue
-		}
-
-		switch {
-		case n == 0 && err == nil && len(b) == 0:
-			return 0
-		default:
-			panic(todo(""))
-		}
-
-		// if err == nil {
-		// 	panic("internal error")
-		// }
-
-		// if len(b) != 0 {
-		// 		b = append(b, 0)
-		// 		copy((*RawMem)(unsafe.Pointer(s)[:len(b)]), b)
-		// 		return s
-		// }
-
-		// t.setErrno(err)
-	}
-	panic(todo(""))
 }
 
 // int lstat(const char *pathname, struct stat *statbuf);
@@ -1168,11 +1130,6 @@ func Xdlsym(t *TLS, handle, symbol uintptr) uintptr {
 	panic(todo(""))
 }
 
-// void perror(const char *s);
-func Xperror(t *TLS, s uintptr) {
-	panic(todo(""))
-}
-
 // int pclose(FILE *stream);
 func Xpclose(t *TLS, stream uintptr) int32 {
 	panic(todo(""))
@@ -1323,20 +1280,6 @@ func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) type
 	return types.Size_t(m) / size
 }
 
-// int fclose(FILE *stream);
-func Xfclose(t *TLS, stream uintptr) int32 {
-	return file(stream).close(t)
-}
-
-// int fputc(int c, FILE *stream);
-func Xfputc(t *TLS, c int32, stream uintptr) int32 {
-	if _, err := fwrite(file(stream).fd(), []byte{byte(c)}); err != nil {
-		return stdio.EOF
-	}
-
-	return int32(byte(c))
-}
-
 // int fseek(FILE *stream, long offset, int whence);
 func Xfseek(t *TLS, stream uintptr, offset long, whence int32) int32 {
 	if n := Xlseek(t, int32(file(stream).fd()), types.Off_t(offset), whence); n < 0 {
@@ -1389,28 +1332,6 @@ func Xfputs(t *TLS, s, stream uintptr) int32 {
 	}
 
 	return 0
-}
-
-func Xexit(t *TLS, status int32) {
-	if len(Covered) != 0 {
-		buf := bufio.NewWriter(os.Stdout)
-		CoverReport(buf)
-		buf.Flush()
-	}
-	if len(CoveredC) != 0 {
-		buf := bufio.NewWriter(os.Stdout)
-		CoverCReport(buf)
-		buf.Flush()
-	}
-	for _, v := range atExit {
-		v()
-	}
-	X_exit(t, status)
-}
-
-// void _exit(int status);
-func X_exit(t *TLS, status int32) {
-	os.Exit(int(status))
 }
 
 var getservbynameStaticResult netdb.Servent
@@ -1528,4 +1449,50 @@ func fcntlCmdStr(cmd int32) string {
 	default:
 		return fmt.Sprintf("cmd(%d)", cmd)
 	}
+}
+
+// int usleep(useconds_t usec);
+func Xusleep(t *TLS, usec types.X__useconds_t) int32 {
+	gotime.Sleep(gotime.Microsecond * gotime.Duration(usec))
+	return 0
+}
+
+// char *fgets(char *s, int size, FILE *stream);
+func Xfgets(t *TLS, s uintptr, size int32, stream uintptr) uintptr {
+	fd := int(file(stream).fd())
+	var b []byte
+	buf := [1]byte{}
+	for ; size > 0; size-- {
+		n, err := unix.Read(fd, buf[:])
+		if n != 0 {
+			b = append(b, buf[0])
+			if buf[0] == '\n' {
+				b = append(b, 0)
+				copy((*RawMem)(unsafe.Pointer(s))[:len(b):len(b)], b)
+				return s
+			}
+
+			continue
+		}
+
+		switch {
+		case n == 0 && err == nil && len(b) == 0:
+			return 0
+		default:
+			panic(todo(""))
+		}
+
+		// if err == nil {
+		// 	panic("internal error")
+		// }
+
+		// if len(b) != 0 {
+		// 		b = append(b, 0)
+		// 		copy((*RawMem)(unsafe.Pointer(s)[:len(b)]), b)
+		// 		return s
+		// }
+
+		// t.setErrno(err)
+	}
+	panic(todo(""))
 }

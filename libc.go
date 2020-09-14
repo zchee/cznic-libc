@@ -15,6 +15,7 @@ package libc // import "modernc.org/libc"
 //TODO use t.Alloc/Free where appropriate
 
 import (
+	"bufio"
 	"fmt"
 	"math"
 	"os"
@@ -49,6 +50,47 @@ var Xstdin = newFile(nil, unistd.STDIN_FILENO)
 var Xstdout = newFile(nil, unistd.STDOUT_FILENO)
 var Xstderr = newFile(nil, unistd.STDERR_FILENO)
 
+func X__builtin_abort(t *TLS)                                        { Xabort(t) }
+func X__builtin_abs(t *TLS, j int32) int32                           { return Xabs(t, j) }
+func X__builtin_copysign(t *TLS, x, y float64) float64               { return Xcopysign(t, x, y) }
+func X__builtin_copysignf(t *TLS, x, y float32) float32              { return Xcopysignf(t, x, y) }
+func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, status) }
+func X__builtin_expect(t *TLS, exp, c long) long                     { return exp }
+func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
+func X__builtin_free(t *TLS, ptr uintptr)                            { Xfree(t, ptr) }
+func X__builtin_llabs(t *TLS, j longlong) longlong                   { return Xllabs(t, j) }
+func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
+func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
+func X__builtin_prefetch(t *TLS, addr, args uintptr)                 {}
+func X__builtin_printf(t *TLS, s, args uintptr) int32                { return Xprintf(t, s, args) }
+func X__builtin_strchr(t *TLS, s uintptr, c int32) uintptr           { return Xstrchr(t, s, c) }
+func X__builtin_strcmp(t *TLS, s1, s2 uintptr) int32                 { return Xstrcmp(t, s1, s2) }
+func X__builtin_strcpy(t *TLS, dest, src uintptr) uintptr            { return Xstrcpy(t, dest, src) }
+func X__builtin_strlen(t *TLS, s uintptr) types.Size_t               { return Xstrlen(t, s) }
+func X__builtin_trap(t *TLS)                                         { Xabort(t) }
+
+func X__builtin_unreachable(t *TLS) {
+	fmt.Fprintf(os.Stderr, "unrechable\n")
+	os.Stderr.Sync()
+	Xexit(t, 1)
+}
+
+func X__builtin_snprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) int32 {
+	return Xsnprintf(t, str, size, format, args)
+}
+
+func X__builtin_sprintf(t *TLS, str, format, args uintptr) (r int32) {
+	return Xsprintf(t, str, format, args)
+}
+
+func X__builtin_memcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
+	return Xmemcpy(t, dest, src, n)
+}
+
+func X__builtin_memset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
+	return Xmemset(t, s, c, n)
+}
+
 func Environ() uintptr {
 	return Xenviron
 }
@@ -79,6 +121,35 @@ func Start(main func(*TLS, int32, uintptr) int32) {
 	}
 	SetEnviron(t, os.Environ())
 	Xexit(t, main(t, int32(len(os.Args)), argv))
+}
+
+func Xexit(t *TLS, status int32) {
+	if len(Covered) != 0 {
+		buf := bufio.NewWriter(os.Stdout)
+		CoverReport(buf)
+		buf.Flush()
+	}
+	if len(CoveredC) != 0 {
+		buf := bufio.NewWriter(os.Stdout)
+		CoverCReport(buf)
+		buf.Flush()
+	}
+	for _, v := range atExit {
+		v()
+	}
+	X_exit(t, status)
+}
+
+// void _exit(int status);
+func X_exit(t *TLS, status int32) {
+	os.Exit(int(status))
+}
+
+// void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function);
+func X__assert_fail(t *TLS, assertion, file uintptr, line uint32, function uintptr) {
+	fmt.Fprintf(os.Stderr, "assertion failure: %s:%d.%s: %s\n", GoString(file), line, GoString(function), GoString(assertion))
+	os.Stderr.Sync()
+	Xexit(t, 1)
 }
 
 func SetEnviron(t *TLS, env []string) {
@@ -170,49 +241,10 @@ func write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func X__builtin_abort(t *TLS)                                        { Xabort(t) }
-func X__builtin_abs(t *TLS, j int32) int32                           { return Xabs(t, j) }
-func X__builtin_copysign(t *TLS, x, y float64) float64               { return Xcopysign(t, x, y) }
-func X__builtin_copysignf(t *TLS, x, y float32) float32              { return Xcopysignf(t, x, y) }
-func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, status) }
-func X__builtin_expect(t *TLS, exp, c long) long                     { return exp }
-func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
-func X__builtin_free(t *TLS, ptr uintptr)                            { Xfree(t, ptr) }
-func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
-func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
-func X__builtin_prefetch(t *TLS, addr, args uintptr)                 {}
-func X__builtin_printf(t *TLS, s, args uintptr) int32                { return Xprintf(t, s, args) }
-func X__builtin_strchr(t *TLS, s uintptr, c int32) uintptr           { return Xstrchr(t, s, c) }
-func X__builtin_strcmp(t *TLS, s1, s2 uintptr) int32                 { return Xstrcmp(t, s1, s2) }
-func X__builtin_strcpy(t *TLS, dest, src uintptr) uintptr            { return Xstrcpy(t, dest, src) }
-func X__builtin_strlen(t *TLS, s uintptr) types.Size_t               { return Xstrlen(t, s) }
-func X__builtin_trap(t *TLS)                                         { Xabort(t) }
-func X__isnan(t *TLS, arg float64) int32                             { return Xisnan(t, arg) }
-func X__isnanf(t *TLS, arg float32) int32                            { return Xisnanf(t, arg) }
-func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
-func Xvfprintf(t *TLS, stream, format, ap uintptr) int32             { return Xfprintf(t, stream, format, ap) }
-
-func X__builtin_unreachable(t *TLS) {
-	fmt.Fprintf(os.Stderr, "unrechable\n")
-	os.Stderr.Sync()
-	Xexit(t, 1)
-}
-
-func X__builtin_snprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) int32 {
-	return Xsnprintf(t, str, size, format, args)
-}
-
-func X__builtin_sprintf(t *TLS, str, format, args uintptr) (r int32) {
-	return Xsprintf(t, str, format, args)
-}
-
-func X__builtin_memcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
-	return Xmemcpy(t, dest, src, n)
-}
-
-func X__builtin_memset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
-	return Xmemset(t, s, c, n)
-}
+func X__isnan(t *TLS, arg float64) int32                 { return Xisnan(t, arg) }
+func X__isnanf(t *TLS, arg float32) int32                { return Xisnanf(t, arg) }
+func X__isnanl(t *TLS, arg float64) int32                { return Xisnanl(t, arg) }
+func Xvfprintf(t *TLS, stream, format, ap uintptr) int32 { return Xfprintf(t, stream, format, ap) }
 
 // int sprintf(char *str, const char *format, ...);
 func Xsprintf(t *TLS, str, format, args uintptr) (r int32) {
@@ -236,31 +268,17 @@ func Xqsort(t *TLS, base uintptr, nmemb, size types.Size_t, compar uintptr) {
 	})
 }
 
-// void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function);
-func X__assert_fail(t *TLS, assertion, file uintptr, line uint32, function uintptr) {
-	fmt.Fprintf(os.Stderr, "assertion failure: %s:%d.%s: %s\n", GoString(file), line, GoString(function), GoString(assertion))
-	os.Stderr.Sync()
-	Xexit(t, 1)
-}
-
 // int vprintf(const char *format, va_list ap);
 func Xvprintf(t *TLS, s, ap uintptr) int32 { return Xprintf(t, s, ap) }
 
 // int __isoc99_sscanf(const char *str, const char *format, ...);
 func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
 	return scanf(strings.NewReader(GoString(str)), format, va)
-
 }
 
 // unsigned int sleep(unsigned int seconds);
 func Xsleep(t *TLS, seconds uint32) uint32 {
 	gotime.Sleep(gotime.Second * gotime.Duration(seconds))
-	return 0
-}
-
-// int usleep(useconds_t usec);
-func Xusleep(t *TLS, usec types.X__useconds_t) int32 {
-	gotime.Sleep(gotime.Microsecond * gotime.Duration(usec))
 	return 0
 }
 
@@ -337,12 +355,6 @@ func Xprintf(t *TLS, format, args uintptr) int32 {
 	return int32(n)
 }
 
-// int fprintf(FILE *stream, const char *format, ...);
-func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
-	n, _ := fwrite((*stdio.FILE)(unsafe.Pointer(stream)).F_fileno, printf(format, args))
-	return int32(n)
-}
-
 // int snprintf(char *str, size_t size, const char *format, ...);
 func Xsnprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) (r int32) {
 	switch size {
@@ -365,6 +377,15 @@ func Xsnprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) (r 
 
 // int abs(int j);
 func Xabs(t *TLS, j int32) int32 {
+	if j >= 0 {
+		return j
+	}
+
+	return -j
+}
+
+// long long int llabs(long long int j);
+func Xllabs(t *TLS, j longlong) longlong {
 	if j >= 0 {
 		return j
 	}
@@ -866,4 +887,34 @@ func X__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr) 
 // int _IO_putc(int __c, _IO_FILE *__fp);
 func X_IO_putc(t *TLS, c int32, fp uintptr) int32 {
 	return Xputc(t, c, fp)
+}
+
+// int fprintf(FILE *stream, const char *format, ...);
+func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
+	n, _ := fwrite(file(stream).fd(), printf(format, args))
+	return int32(n)
+}
+
+// size_t wcsnlen(const wchar_t *s, size_t maxlen);
+func Xwcsnlen(t *TLS, s uintptr, maxlen types.Size_t) types.Size_t {
+	panic(todo(""))
+}
+
+// int fputc(int c, FILE *stream);
+func Xfputc(t *TLS, c int32, stream uintptr) int32 {
+	if _, err := fwrite(file(stream).fd(), []byte{byte(c)}); err != nil {
+		return stdio.EOF
+	}
+
+	return int32(byte(c))
+}
+
+// void perror(const char *s);
+func Xperror(t *TLS, s uintptr) {
+	panic(todo(""))
+}
+
+// int fclose(FILE *stream);
+func Xfclose(t *TLS, stream uintptr) int32 {
+	return file(stream).close(t)
 }

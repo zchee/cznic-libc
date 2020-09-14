@@ -143,6 +143,7 @@ func makeMusl(goos, goarch string) {
 	run("sh", "-c", fmt.Sprintf("sed -n -e s/__NR_/SYS_/p < arch/%s/bits/syscall.h.in >> obj/include/bits/syscall.h", arch))
 	out := run(
 		"ccgo",
+		"-D__attribute__(x)=",
 		"-ccgo-export-externs", "X",
 		"-ccgo-hide", "__syscall0,__syscall1,__syscall2,__syscall3,__syscall4,__syscall5,__syscall6",
 		"-ccgo-libc",
@@ -247,6 +248,7 @@ static char _;
 		cmd := exec.Command(
 			"ccgo", fn,
 			"-D__signed__=signed", // <asm/signal.h>
+			"-D__attribute__(x)=",
 			"-ccgo-crt-import-path", "",
 			"-ccgo-export-defines", "",
 			"-ccgo-export-enums", "",
@@ -254,6 +256,7 @@ static char _;
 			"-ccgo-export-fields", "F",
 			"-ccgo-export-structs", "",
 			"-ccgo-export-typedefs", "",
+			"-ccgo-header",
 			"-ccgo-long-double-is-double",
 			"-ccgo-pkgname", base,
 			"-o", dest,

@@ -14,6 +14,7 @@ var CAPI = map[string]struct{}{
 	"__builtin_expect":          {},
 	"__builtin_fabs":            {},
 	"__builtin_free":            {},
+	"__builtin_llabs":           {},
 	"__builtin_malloc":          {},
 	"__builtin_memcmp":          {},
 	"__builtin_memcpy":          {},
@@ -176,6 +177,7 @@ var CAPI = map[string]struct{}{
 	"ldexp":                     {},
 	"link":                      {},
 	"listen":                    {},
+	"llabs":                     {},
 	"localtime":                 {},
 	"localtime_r":               {},
 	"log":                       {},
@@ -291,6 +293,7 @@ var CAPI = map[string]struct{}{
 	"vfprintf":                  {},
 	"vprintf":                   {},
 	"waitpid":                   {},
+	"wcsnlen":                   {},
 	"write":                     {},
 	"zero_struct_address":       {},
 }

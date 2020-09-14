@@ -7,32 +7,27 @@
 	linux_amd64 \
 
 
-grep=--include=*.go --include=*.l --include=*.y --include=*.yy --include=*.qbe --include=*.ssa
+grep=--include=*.go
 ngrep='internalError\|TODOOK'
 log=log-$(shell go env GOOS)-$(shell go env GOARCH)
 
 all:
+	LC_ALL=C make all_log 2>&1 | tee log
+
+all_log:
 	date
-	go version 2>&1 | tee $(log)
-	go generate
+	go version
+	uname -a
 	gofmt -l -s -w *.go
-	go install -v ./...
-	go test -i
-	go test 2>&1 -timeout 1h | tee -a $(log)
 	GOOS=linux GOARCH=386 go build
 	GOOS=linux GOARCH=amd64 go build
-	# GOOS=linux GOARCH=arm go build
-	# GOOS=windows GOARCH=386 go build
-	# GOOS=windows GOARCH=amd64 go build
+	GOOS=linux GOARCH=arm go build
+	GOOS=linux GOARCH=arm64 go build
+	#TODO GOOS=windows GOARCH=386 go build
+	GOOS=windows GOARCH=amd64 go build
 	go vet 2>&1 | grep -v $(ngrep) || true
 	golint 2>&1 | grep -v $(ngrep) || true
-	make todo
-	misspell *.go
-	staticcheck | grep -v 'lexer\.go\|parser\.go' || true
-	maligned || true
-	grep -n 'FAIL\|PASS' $(log)
-	go version
-	date 2>&1 | tee -a $(log)
+	staticcheck || true
 
 linux_amd64:
 	TARGET_GOOS=linux TARGET_GOARCH=amd64 go generate
