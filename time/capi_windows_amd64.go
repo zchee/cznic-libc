@@ -2,9 +2,4 @@
 
 package time
 
-var CAPI = map[string]struct{}{
-	"__debugbreak": {},
-	"ctime_s":      {},
-	"gmtime_s":     {},
-	"localtime_s":  {},
-}
+var CAPI = map[string]struct{}{}

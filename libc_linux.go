@@ -65,6 +65,10 @@ func (f file) close(t *TLS) int32 {
 	return 0
 }
 
+func (f file) fflush(t *TLS) int32 {
+	return 0 //TODO
+}
+
 func newFile(t *TLS, fd int32) uintptr {
 	p := Xcalloc(t, 1, types.Size_t(unsafe.Sizeof(stdio.FILE{})))
 	if p == 0 {
@@ -1245,11 +1249,6 @@ func Xabort(t *TLS) {
 	panic(todo("unrechable"))
 }
 
-// int fflush(FILE *stream);
-func Xfflush(t *TLS, stream uintptr) int32 {
-	return 0 //TODO
-}
-
 // size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
 	m, _, err := unix.Syscall(unix.SYS_READ, uintptr(file(stream).fd()), ptr, uintptr(size*nmemb))
@@ -1313,11 +1312,6 @@ func Xftell(t *TLS, stream uintptr) long {
 // int ferror(FILE *stream);
 func Xferror(t *TLS, stream uintptr) int32 {
 	return Bool32(file(stream).err())
-}
-
-// int fgetc(FILE *stream);
-func Xfgetc(t *TLS, stream uintptr) int32 {
-	panic(todo(""))
 }
 
 // FILE *fdopen(int fd, const char *mode);

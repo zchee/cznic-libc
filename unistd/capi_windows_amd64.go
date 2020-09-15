@@ -2,7 +2,4 @@
 
 package unistd
 
-var CAPI = map[string]struct{}{
-	"__debugbreak": {},
-	"wcsnlen_s":    {},
-}
+var CAPI = map[string]struct{}{}

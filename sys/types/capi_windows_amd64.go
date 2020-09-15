@@ -2,6 +2,4 @@
 
 package types
 
-var CAPI = map[string]struct{}{
-	"__debugbreak": {},
-}
+var CAPI = map[string]struct{}{}

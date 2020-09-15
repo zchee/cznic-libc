@@ -69,6 +69,21 @@ func X__builtin_strcpy(t *TLS, dest, src uintptr) uintptr            { return Xs
 func X__builtin_strlen(t *TLS, s uintptr) types.Size_t               { return Xstrlen(t, s) }
 func X__builtin_trap(t *TLS)                                         { Xabort(t) }
 
+// uint16_t __builtin_bswap16 (uint32_t x)
+func X__builtin_bswap16(t *TLS, x uint16) uint16 {
+	panic(todo(""))
+}
+
+// uint32_t __builtin_bswap32 (uint32_t x)
+func X__builtin_bswap32(t *TLS, x uint32) uint32 {
+	panic(todo(""))
+}
+
+// int __builtin_clzll (unsigned long long)
+func X__builtin_clzll(t *TLS, x uint64) int32 {
+	panic(todo(""))
+}
+
 func X__builtin_unreachable(t *TLS) {
 	fmt.Fprintf(os.Stderr, "unrechable\n")
 	os.Stderr.Sync()
@@ -917,4 +932,30 @@ func Xperror(t *TLS, s uintptr) {
 // int fclose(FILE *stream);
 func Xfclose(t *TLS, stream uintptr) int32 {
 	return file(stream).close(t)
+}
+
+// int fflush(FILE *stream);
+func Xfflush(t *TLS, stream uintptr) int32 {
+	return file(stream).fflush(t)
+}
+
+// int fgetc(FILE *stream);
+func Xfgetc(t *TLS, stream uintptr) int32 {
+	panic(todo(""))
+}
+
+func AtomicLoadNUint16(ptr uintptr, memorder int16) uint16 {
+	panic(todo(""))
+}
+
+func AtomicLoadNInt16(ptr uintptr, memorder int16) uint16 {
+	panic(todo(""))
+}
+
+func AtomicStoreNInt16(ptr uintptr, val int16, memorder int32) {
+	panic(todo(""))
+}
+
+func AtomicStoreNUint16(ptr uintptr, val uint16, memorder int32) {
+	panic(todo(""))
 }

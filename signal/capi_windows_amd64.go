@@ -2,6 +2,4 @@
 
 package signal
 
-var CAPI = map[string]struct{}{
-	"__debugbreak": {},
-}
+var CAPI = map[string]struct{}{}

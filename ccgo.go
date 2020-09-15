@@ -2,7 +2,50 @@
 
 package libc // import "modernc.org/libc"
 
-import "unsafe"
+import (
+	"sync/atomic"
+	"unsafe"
+)
+
+func AtomicStoreNInt32(ptr uintptr, val int32, memorder int32) {
+	atomic.StoreInt32((*int32)(unsafe.Pointer(ptr)), val)
+}
+
+func AtomicStoreNInt64(ptr uintptr, val int64, memorder int32) {
+	atomic.StoreInt64((*int64)(unsafe.Pointer(ptr)), val)
+}
+
+func AtomicStoreNUint32(ptr uintptr, val uint32, memorder int32) {
+	atomic.StoreUint32((*uint32)(unsafe.Pointer(ptr)), val)
+}
+
+func AtomicStoreNUint64(ptr uintptr, val uint64, memorder int32) {
+	atomic.StoreUint64((*uint64)(unsafe.Pointer(ptr)), val)
+}
+
+func AtomicStoreNUintptr(ptr uintptr, val uintptr, memorder int32) {
+	atomic.StoreUintptr((*uintptr)(unsafe.Pointer(ptr)), val)
+}
+
+func AtomicLoadNInt32(ptr uintptr, memorder int32) int32 {
+	return atomic.LoadInt32((*int32)(unsafe.Pointer(ptr)))
+}
+
+func AtomicLoadNInt64(ptr uintptr, memorder int32) int64 {
+	return atomic.LoadInt64((*int64)(unsafe.Pointer(ptr)))
+}
+
+func AtomicLoadNUint32(ptr uintptr, memorder int32) uint32 {
+	return atomic.LoadUint32((*uint32)(unsafe.Pointer(ptr)))
+}
+
+func AtomicLoadNUint64(ptr uintptr, memorder int32) uint64 {
+	return atomic.LoadUint64((*uint64)(unsafe.Pointer(ptr)))
+}
+
+func AtomicLoadNUintptr(ptr uintptr, memorder int32) uintptr {
+	return atomic.LoadUintptr((*uintptr)(unsafe.Pointer(ptr)))
+}
 
 func AssignInt8(p *int8, v int8) int8             { *p = v; return v }
 func AssignInt16(p *int16, v int16) int16         { *p = v; return v }

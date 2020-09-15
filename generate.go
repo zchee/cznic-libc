@@ -32,6 +32,8 @@ func main() {
 	switch goos {
 	case "linux":
 		makeMusl(goos, goarch)
+	case "windows":
+		makeMuslWin(goos, goarch)
 	}
 	_, _, hostSysIncludes, err := cc.HostConfig(os.Getenv("CCGO_CPP"))
 	if err != nil {
@@ -197,6 +199,72 @@ func makeMusl(goos, goarch string) {
 	fmt.Printf("%s\n", out)
 }
 
+func makeMuslWin(goos, goarch string) {
+	return //TODO
+	wd, err := os.Getwd()
+	if err != nil {
+		fail(err)
+	}
+
+	if err := os.Chdir("musl"); err != nil {
+		fail(err)
+	}
+
+	var arch string
+	switch goarch {
+	case "amd64":
+		arch = "x86_64"
+	case "386":
+		arch = "i386"
+	case "arm":
+		arch = "arm"
+	case "arm64":
+		arch = "aarch64"
+	default:
+		fail(fmt.Errorf("unknown/unsupported GOARCH: %q", goarch))
+	}
+	defer func() {
+		if err := os.Chdir(wd); err != nil {
+			fail(err)
+		}
+	}()
+
+	run("mkdir", "-p", "obj/include/bits")
+	run("sh", "-c", fmt.Sprintf("sed -f ./tools/mkalltypes.sed ./arch/%s/bits/alltypes.h.in ./include/alltypes.h.in > obj/include/bits/alltypes.h", arch))
+	run("sh", "-c", fmt.Sprintf("cp arch/%s/bits/syscall.h.in obj/include/bits/syscall.h", arch))
+	run("sh", "-c", fmt.Sprintf("sed -n -e s/__NR_/SYS_/p < arch/%s/bits/syscall.h.in >> obj/include/bits/syscall.h", arch))
+	out := run(
+		"ccgo",
+		"-D__attribute__(x)=",
+		"-ccgo-export-externs", "X",
+		"-ccgo-libc",
+		"-ccgo-long-double-is-double",
+		"-ccgo-pkgname", "libc",
+		"-nostdinc",
+		"-o", fmt.Sprintf("../musl_%s_%s.go", goos, goarch),
+
+		// Keep the order below, don't sort!
+		fmt.Sprintf("-I%s", filepath.Join("arch", arch)),
+		fmt.Sprintf("-I%s", "arch/generic"),
+		fmt.Sprintf("-I%s", "obj/src/internal"),
+		fmt.Sprintf("-I%s", "src/include"),
+		fmt.Sprintf("-I%s", "src/internal"),
+		fmt.Sprintf("-I%s", "obj/include"),
+		fmt.Sprintf("-I%s", "include"),
+		// Keep the order above, don't sort!
+
+		"copyright.c", // Inject legalese first
+
+		// Keep the below lines sorted.
+		"src/ctype/isalnum.c",
+		"src/ctype/isalpha.c",
+		"src/ctype/isdigit.c",
+		"src/ctype/isprint.c",
+		"src/ctype/isspace.c",
+	)
+	fmt.Printf("%s\n", out)
+}
+
 func run(arg0 string, args ...string) []byte {
 	fmt.Printf("%s %q\n", arg0, args)
 	cmd := exec.Command(arg0, args...)
@@ -296,6 +364,13 @@ func ccgoHelpers() {
 		arith  = append(ints[:len(ints):len(ints)], "float32", "float64")
 		scalar = append(arith[:len(arith):len(arith)], []string{"uintptr"}...)
 		sizes  = []string{"8", "16", "32", "64"}
+		atomic = []string{
+			"int32",
+			"int64",
+			"uint32",
+			"uint64",
+			"uintptr",
+		}
 	)
 
 	b := bytes.NewBuffer(nil)
@@ -303,9 +378,24 @@ func ccgoHelpers() {
 
 package libc // import "modernc.org/libc"
 
-import "unsafe"
+import (
+	"sync/atomic"
+	"unsafe"
+)
 
 `)
+	for _, v := range atomic {
+		fmt.Fprintln(b)
+		fmt.Fprintf(b, "func AtomicStoreN%s(ptr uintptr, val %s, memorder int32) { atomic.Store%[1]s((*%[2]s)(unsafe.Pointer(ptr)), val) }\n", capitalize(v), v)
+	}
+
+	fmt.Fprintln(b)
+	for _, v := range atomic {
+		fmt.Fprintln(b)
+		fmt.Fprintf(b, "func AtomicLoadN%s(ptr uintptr, memorder int32) %s { return atomic.Load%[1]s((*%[2]s)(unsafe.Pointer(ptr))) }\n", capitalize(v), v)
+	}
+
+	fmt.Fprintln(b)
 	for _, v := range scalar {
 		fmt.Fprintf(b, "func Assign%s(p *%s, v %[2]s) %[2]s { *p = v; return v }\n", capitalize(v), v)
 	}
