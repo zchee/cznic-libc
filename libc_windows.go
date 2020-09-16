@@ -118,7 +118,7 @@ func Xclose(t *TLS, fd int32) int32 {
 	return 0
 }
 
-// int _fileno(FILE *stream); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fileno?view=vs-2019
+// int _fileno(FILE *stream);
 func X_fileno(t *TLS, stream uintptr) int32 {
 	return file(stream).fd()
 }
@@ -172,394 +172,57 @@ func X__mingw_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, ap 
 // func Xgnu_sscanf(t *TLS, str, format, va uintptr) int32 {
 // 	return scanf(strings.NewReader(GoString(str)), format, va)
 // }
-//
-// func __debugbreak(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // AreFileApisANSI
-// func XAreFileApisANSI(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // CreateFileA
-// func XCreateFileA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // CreateFileMappingA
-// func XCreateFileMappingA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // CreateFileMappingW
-// func XCreateFileMappingW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // CreateMutexW
-// func XCreateMutexW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // DebugBreak
-// func XDebugBreak(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // DeleteFileA
-// func XDeleteFileA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // DeleteFileW
-// func XDeleteFileW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // FlushFileBuffers
-// func XFlushFileBuffers(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // FlushViewOfFile
-// func XFlushViewOfFile(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // FormatMessageA
-// func XFormatMessageA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // FormatMessageW
-// func XFormatMessageW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetCurrentProcessId
-// func XGetCurrentProcessId(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetDiskFreeSpaceA
-// func XGetDiskFreeSpaceA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetDiskFreeSpaceW
-// func XGetDiskFreeSpaceW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetFileAttributesA
-// func XGetFileAttributesA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetFileAttributesExW
-// func XGetFileAttributesExW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetFileAttributesW
-// func XGetFileAttributesW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetFileSize
-// func XGetFileSize(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetFullPathNameA
-// func XGetFullPathNameA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetFullPathNameW
-// func XGetFullPathNameW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetLastError
-// func XGetLastError(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetProcessHeap
-// func XGetProcessHeap(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetSystemInfo
-// func XGetSystemInfo(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetSystemTimeAsFileTime
-// func XGetSystemTimeAsFileTime(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetTempPathA
-// func XGetTempPathA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetTempPathW
-// func XGetTempPathW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetTickCount
-// func XGetTickCount(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetVersionExA
-// func XGetVersionExA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetVersionExW
-// func XGetVersionExW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // HeapAlloc
-// func XHeapAlloc(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // HeapCompact
-// func XHeapCompact(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // HeapCreate
-// func XHeapCreate(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // HeapDestroy
-// func XHeapDestroy(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // HeapFree
-// func XHeapFree(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // HeapReAlloc
-// func XHeapReAlloc(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // HeapSize
-// func XHeapSize(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // HeapValidate
-// func XHeapValidate(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // LoadLibraryW
-// func XLoadLibraryW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // LocalFree
-// func XLocalFree(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // LockFile
-// func XLockFile(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // LockFileEx
-// func XLockFileEx(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // MapViewOfFile
-// func XMapViewOfFile(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // MultiByteToWideChar
-// func XMultiByteToWideChar(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // OutputDebugStringA
-// func XOutputDebugStringA(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // OutputDebugStringW
-// func XOutputDebugStringW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // QueryPerformanceCounter
-// func XQueryPerformanceCounter(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // ReadFile
-// func XReadFile(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // SetConsoleCtrlHandler
-// func XSetConsoleCtrlHandler(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // SetEndOfFile
-// func XSetEndOfFile(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // SetFilePointer
-// func XSetFilePointer(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // Sleep
-// func XSleep(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // UnlockFile
-// func XUnlockFile(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // UnlockFileEx
-// func XUnlockFileEx(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // UnmapViewOfFile
-// func XUnmapViewOfFile(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // WaitForSingleObject
-// func XWaitForSingleObject(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // WaitForSingleObjectEx
-// func XWaitForSingleObjectEx(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // WideCharToMultiByte
-// func XWideCharToMultiByte(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // WriteFile
-// func XWriteFile(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // _InterlockedCompareExchange
-// func X_InterlockedCompareExchange(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __atomic_load_n
-// func X__atomic_load_n(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __atomic_store_n
-// func X__atomic_store_n(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_add_overflow
-// func X__builtin_add_overflow(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_bswap16
-// func X__builtin_bswap16(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_bswap32
-// func X__builtin_bswap32(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_clzll
-// func X__builtin_clzll(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_inff
-// func X__builtin_inff(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_mul_overflow
-// func X__builtin_mul_overflow(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_sub_overflow
-// func X__builtin_sub_overflow(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // getpid
-// func Xgetpid(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // localtime
-// func Xlocaltime(t *TLS) {
-// 	panic(todo(""))
-// }
 
-// AreFileApisANSI
-func XAreFileApisANSI(t *TLS) {
+// BOOL AreFileApisANSI();
+func XAreFileApisANSI(t *TLS) int32 {
 	panic(todo(""))
 }
 
-// BOOL CloseHandle( // https://docs.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-closehandle
+// BOOL CloseHandle(
 //   HANDLE hObject
 // );
 func XCloseHandle(t *TLS, hObject uintptr) int32 {
 	panic(todo(""))
 }
 
-// CreateFileA
-func XCreateFileA(t *TLS) {
+// HANDLE CreateFileA(
+//   LPCSTR                lpFileName,
+//   DWORD                 dwDesiredAccess,
+//   DWORD                 dwShareMode,
+//   LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+//   DWORD                 dwCreationDisposition,
+//   DWORD                 dwFlagsAndAttributes,
+//   HANDLE                hTemplateFile
+// );
+func XCreateFileA(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
 	panic(todo(""))
 }
 
-// CreateFileMappingA
-func XCreateFileMappingA(t *TLS) {
+// HANDLE CreateFileMappingA(
+//   HANDLE                hFile,
+//   LPSECURITY_ATTRIBUTES lpFileMappingAttributes,
+//   DWORD                 flProtect,
+//   DWORD                 dwMaximumSizeHigh,
+//   DWORD                 dwMaximumSizeLow,
+//   LPCSTR                lpName
+// );
+func XCreateFileMappingA(t *TLS, hFile, lpFileMappingAttributes uintptr, flProtect, dwMaximumSizeHigh, dwMaximumSizeLow uint32, lpName uintptr) uintptr {
 	panic(todo(""))
 }
 
-// CreateFileMappingW
-func XCreateFileMappingW(t *TLS) {
+// HANDLE CreateFileMappingW(
+//   HANDLE                hFile,
+//   LPSECURITY_ATTRIBUTES lpFileMappingAttributes,
+//   DWORD                 flProtect,
+//   DWORD                 dwMaximumSizeHigh,
+//   DWORD                 dwMaximumSizeLow,
+//   LPCWSTR               lpName
+// );
+func XCreateFileMappingW(t *TLS, hFile, lpFileMappingAttributes uintptr, flProtect, dwMaximumSizeHigh, dwMaximumSizeLow uint32, lpName uintptr) uintptr {
 	panic(todo(""))
 }
 
-// HANDLE CreateFileW( // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+// HANDLE CreateFileW(
 //   LPCWSTR               lpFileName,
 //   DWORD                 dwDesiredAccess,
 //   DWORD                 dwShareMode,
@@ -572,8 +235,12 @@ func XCreateFileW(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint3
 	panic(todo(""))
 }
 
-// CreateMutexW
-func XCreateMutexW(t *TLS) {
+// HANDLE CreateMutexW(
+//   LPSECURITY_ATTRIBUTES lpMutexAttributes,
+//   BOOL                  bInitialOwner,
+//   LPCWSTR               lpName
+// );
+func XCreateMutexW(t *TLS, lpMutexAttributes uintptr, bInitialOwner int32, lpName uintptr) uintptr {
 	panic(todo(""))
 }
 
@@ -582,47 +249,72 @@ func XDebugBreak(t *TLS) {
 	panic(todo(""))
 }
 
-// DeleteFileA
-func XDeleteFileA(t *TLS) {
+// BOOL DeleteFileA(
+//   LPCSTR lpFileName
+// );
+func XDeleteFileA(t *TLS, lpFileName uintptr) int32 {
 	panic(todo(""))
 }
 
-// DeleteFileW
-func XDeleteFileW(t *TLS) {
+// BOOL DeleteFileW(
+//   LPCWSTR lpFileName
+// );
+func XDeleteFileW(t *TLS, lpFileName uintptr) int32 {
 	panic(todo(""))
 }
 
-// BOOL FindClose(HANDLE hFindFile); // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findclose
+// BOOL FindClose(HANDLE hFindFile);
 func XFindClose(t *TLS, hFindFile uintptr) int32 {
 	panic(todo(""))
 }
 
-// HANDLE FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData); // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findfirstfilew
+// HANDLE FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
 func XFindFirstFileW(t *TLS, lpFileName, lpFindFileData uintptr) uintptr {
 	panic(todo(""))
 }
 
-// FlushFileBuffers
-func XFlushFileBuffers(t *TLS) {
+// BOOL FlushFileBuffers(
+//   HANDLE hFile
+// );
+func XFlushFileBuffers(t *TLS, hFile uintptr) int32 {
 	panic(todo(""))
 }
 
-// FlushViewOfFile
-func XFlushViewOfFile(t *TLS) {
+// BOOL FlushViewOfFile(
+//   LPCVOID lpBaseAddress,
+//   SIZE_T  dwNumberOfBytesToFlush
+// );
+func XFlushViewOfFile(t *TLS, lpBaseAddress uintptr, dwNumberOfBytesToFlush types.Size_t) int32 {
 	panic(todo(""))
 }
 
-// FormatMessageA
-func XFormatMessageA(t *TLS) {
+// DWORD FormatMessageA(
+//   DWORD   dwFlags,
+//   LPCVOID lpSource,
+//   DWORD   dwMessageId,
+//   DWORD   dwLanguageId,
+//   LPSTR   lpBuffer,
+//   DWORD   nSize,
+//   va_list *Arguments
+// );
+func XFormatMessageA(t *TLS, dwFlagsAndAttributes uint32, lpSource uintptr, dwMessageId, dwLanguageId uint32, lpBuffer uintptr, nSize uint32, Arguments uintptr) uint32 {
 	panic(todo(""))
 }
 
-// FormatMessageW
-func XFormatMessageW(t *TLS) {
+// DWORD FormatMessageW(
+//   DWORD   dwFlags,
+//   LPCVOID lpSource,
+//   DWORD   dwMessageId,
+//   DWORD   dwLanguageId,
+//   LPWSTR  lpBuffer,
+//   DWORD   nSize,
+//   va_list *Arguments
+// );
+func XFormatMessageW(t *TLS, dwFlagsAndAttributes uint32, lpSource uintptr, dwMessageId, dwLanguageId uint32, lpBuffer uintptr, nSize uint32, Arguments uintptr) uint32 {
 	panic(todo(""))
 }
 
-// BOOL FreeLibrary(HMODULE hLibModule); // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-freelibrary
+// BOOL FreeLibrary(HMODULE hLibModule);
 func XFreeLibrary(t *TLS, hLibModule uintptr) int32 {
 	panic(todo(""))
 }
@@ -635,68 +327,101 @@ func XGetConsoleScreenBufferInfo(t *TLS, hConsoleOutput, lpConsoleScreenBufferIn
 	panic(todo(""))
 }
 
-// HANDLE GetCurrentProcess(); // https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess
+// HANDLE GetCurrentProcess();
 func XGetCurrentProcess(t *TLS) uintptr {
 	panic(todo(""))
 }
 
-// GetCurrentProcessId
-func XGetCurrentProcessId(t *TLS) {
+// DWORD GetCurrentProcessId();
+func XGetCurrentProcessId(t *TLS) uint32 {
 	panic(todo(""))
 }
 
-// GetDiskFreeSpaceA
-func XGetDiskFreeSpaceA(t *TLS) {
+// BOOL GetDiskFreeSpaceA(
+//   LPCSTR  lpRootPathName,
+//   LPDWORD lpSectorsPerCluster,
+//   LPDWORD lpBytesPerSector,
+//   LPDWORD lpNumberOfFreeClusters,
+//   LPDWORD lpTotalNumberOfClusters
+// );
+func XGetDiskFreeSpaceA(t *TLS, lpRootPathName, lpSectorsPerCluster, lpBytesPerSector, lpNumberOfFreeClusters, lpTotalNumberOfClusters uintptr) int32 {
 	panic(todo(""))
 }
 
-// GetDiskFreeSpaceW
-func XGetDiskFreeSpaceW(t *TLS) {
+// BOOL GetDiskFreeSpaceW(
+//   LPCWSTR lpRootPathName,
+//   LPDWORD lpSectorsPerCluster,
+//   LPDWORD lpBytesPerSector,
+//   LPDWORD lpNumberOfFreeClusters,
+//   LPDWORD lpTotalNumberOfClusters
+// );
+func XGetDiskFreeSpaceW(t *TLS, lpRootPathName, lpSectorsPerCluster, lpBytesPerSector, lpNumberOfFreeClusters, lpTotalNumberOfClusters uintptr) int32 {
 	panic(todo(""))
 }
 
-// GetFileAttributesA
-func XGetFileAttributesA(t *TLS) {
+// DWORD GetFileAttributesA(
+//   LPCSTR lpFileName
+// );
+func XGetFileAttributesA(t *TLS, lpFileName uintptr) uint32 {
 	panic(todo(""))
 }
 
-// GetFileAttributesExW
-func XGetFileAttributesExW(t *TLS) {
+// BOOL GetFileAttributesExW(
+//   LPCWSTR                lpFileName,
+//   GET_FILEEX_INFO_LEVELS fInfoLevelId,
+//   LPVOID                 lpFileInformation
+// );
+func XGetFileAttributesExW(t *TLS, lpFileName uintptr, fInfoLevelId uint32, lpFileInformation uintptr) int32 {
 	panic(todo(""))
 }
 
-// GetFileAttributesW
-func XGetFileAttributesW(t *TLS) {
+// DWORD GetFileAttributesW(
+//   LPCWSTR lpFileName
+// );
+func XGetFileAttributesW(t *TLS, lpFileName uintptr) uint32 {
 	panic(todo(""))
 }
 
-// GetFileSize
-func XGetFileSize(t *TLS) {
+// DWORD GetFileSize(
+//   HANDLE  hFile,
+//   LPDWORD lpFileSizeHigh
+// );
+func XGetFileSize(t *TLS, hFile, lpFileSizeHigh uintptr) uint32 {
 	panic(todo(""))
 }
 
-// GetFullPathNameA
-func XGetFullPathNameA(t *TLS) {
+// DWORD GetFullPathNameA(
+//   LPCSTR lpFileName,
+//   DWORD  nBufferLength,
+//   LPSTR  lpBuffer,
+//   LPSTR  *lpFilePart
+// );
+func XGetFullPathNameA(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffer, lpFilePart uintptr) uint32 {
 	panic(todo(""))
 }
 
-// GetFullPathNameW
-func XGetFullPathNameW(t *TLS) {
+// DWORD GetFullPathNameW(
+//   LPCWSTR lpFileName,
+//   DWORD   nBufferLength,
+//   LPWSTR  lpBuffer,
+//   LPWSTR  *lpFilePart
+// );
+func XGetFullPathNameW(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffer, lpFilePart uintptr) uint32 {
 	panic(todo(""))
 }
 
-// GetLastError
-func XGetLastError(t *TLS) {
+// DWORD GetLastError();
+func XGetLastError(t *TLS) uint32 {
 	panic(todo(""))
 }
 
-// FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName); // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getprocaddress
+// FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName);
 func XGetProcAddress(t *TLS, hModule, lpProcName uintptr) uintptr {
 	panic(todo(""))
 }
 
-// GetProcessHeap
-func XGetProcessHeap(t *TLS) {
+// HANDLE GetProcessHeap();
+func XGetProcessHeap(t *TLS) uintptr {
 	panic(todo(""))
 }
 
@@ -707,143 +432,232 @@ func XGetStdHandle(t *TLS, nStdHandle uint32) uintptr {
 	panic(todo(""))
 }
 
-// GetSystemInfo
-func XGetSystemInfo(t *TLS) {
+// void GetSystemInfo(
+//   LPSYSTEM_INFO lpSystemInfo
+// );
+func XGetSystemInfo(t *TLS, lpSystemInfo uintptr) {
 	panic(todo(""))
 }
 
-// void GetSystemTime(LPSYSTEMTIME lpSystemTime); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtime
+// void GetSystemTime(LPSYSTEMTIME lpSystemTime);
 func XGetSystemTime(t *TLS, lpSystemTime uintptr) {
 	panic(todo(""))
 }
 
-// GetSystemTimeAsFileTime
-func XGetSystemTimeAsFileTime(t *TLS) {
+// void GetSystemTimeAsFileTime(
+//   LPFILETIME lpSystemTimeAsFileTime
+// );
+func XGetSystemTimeAsFileTime(t *TLS, lpSystemTimeAsFileTime uintptr) {
 	panic(todo(""))
 }
 
-// GetTempPathA
-func XGetTempPathA(t *TLS) {
+// DWORD GetTempPathA(
+//   DWORD nBufferLength,
+//   LPSTR lpBuffer
+// );
+func XGetTempPathA(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
 	panic(todo(""))
 }
 
-// GetTempPathW
-func XGetTempPathW(t *TLS) {
+// DWORD GetTempPathW(
+//   DWORD  nBufferLength,
+//   LPWSTR lpBuffer
+// );
+func XGetTempPathW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
 	panic(todo(""))
 }
 
-// GetTickCount
-func XGetTickCount(t *TLS) {
+// DWORD GetTickCount();
+func XGetTickCount(t *TLS) uint32 {
 	panic(todo(""))
 }
 
-// GetVersionExA
-func XGetVersionExA(t *TLS) {
+// BOOL GetVersionExA(
+//   LPOSVERSIONINFOA lpVersionInformation
+// );
+func XGetVersionExA(t *TLS, lpVersionInformation uintptr) int32 {
 	panic(todo(""))
 }
 
-// GetVersionExW
-func XGetVersionExW(t *TLS) {
+// BOOL GetVersionExW(
+//   LPOSVERSIONINFOW lpVersionInformation
+// );
+func XGetVersionExW(t *TLS, lpVersionInformation uintptr) int32 {
 	panic(todo(""))
 }
 
-// HeapAlloc
-func XHeapAlloc(t *TLS) {
+// LPVOID HeapAlloc(
+//   HANDLE hHeap,
+//   DWORD  dwFlags,
+//   SIZE_T dwBytes
+// );
+func XHeapAlloc(t *TLS, hHeap uintptr, dwFlags uint32, dwBytes types.Size_t) uintptr {
 	panic(todo(""))
 }
 
-// HeapCompact
-func XHeapCompact(t *TLS) {
+// SIZE_T HeapCompact(
+//   HANDLE hHeap,
+//   DWORD  dwFlags
+// );
+func XHeapCompact(t *TLS, hHeap uintptr, dwFlags uint32) types.Size_t {
 	panic(todo(""))
 }
 
-// HeapCreate
-func XHeapCreate(t *TLS) {
+// HANDLE HeapCreate(
+//   DWORD  flOptions,
+//   SIZE_T dwInitialSize,
+//   SIZE_T dwMaximumSize
+// );
+func XHeapCreate(t *TLS, flOptions uint32, dwInitialSize, dwMaximumSize types.Size_t) uintptr {
 	panic(todo(""))
 }
 
-// HeapDestroy
-func XHeapDestroy(t *TLS) {
+// BOOL HeapDestroy(
+//   HANDLE hHeap
+// );
+func XHeapDestroy(t *TLS, hHeap uintptr) int32 {
 	panic(todo(""))
 }
 
-// HeapFree
-func XHeapFree(t *TLS) {
+// BOOL HeapFree(
+//   HANDLE                 hHeap,
+//   DWORD                  dwFlags,
+//   _Frees_ptr_opt_ LPVOID lpMem
+// );
+func XHeapFree(t *TLS, hHeap uintptr, dwFlags uint32, lpMem uintptr) int32 {
 	panic(todo(""))
 }
 
-// HeapReAlloc
-func XHeapReAlloc(t *TLS) {
+// LPVOID HeapReAlloc(
+//   HANDLE                 hHeap,
+//   DWORD                  dwFlags,
+//   _Frees_ptr_opt_ LPVOID lpMem,
+//   SIZE_T                 dwBytes
+// );
+func XHeapReAlloc(t *TLS, hHeap uintptr, dwFlags uint32, lpMem uintptr, dwBytes types.Size_t) uintptr {
 	panic(todo(""))
 }
 
-// HeapSize
-func XHeapSize(t *TLS) {
+// SIZE_T HeapSize(
+//   HANDLE  hHeap,
+//   DWORD   dwFlags,
+//   LPCVOID lpMem
+// );
+func XHeapSize(t *TLS, hHeap uintptr, dwFlags uint32, lpMem uintptr) types.Size_t {
 	panic(todo(""))
 }
 
-// HeapValidate
-func XHeapValidate(t *TLS) {
+// BOOL HeapValidate(
+//   HANDLE  hHeap,
+//   DWORD   dwFlags,
+//   LPCVOID lpMem
+// );
+func XHeapValidate(t *TLS, hHeap uintptr, dwFlags uint32, lpMem uintptr) int32 {
 	panic(todo(""))
 }
 
-// HMODULE LoadLibraryA(LPCSTR lpLibFileName); // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya
+// HMODULE LoadLibraryA(LPCSTR lpLibFileName);
 func XLoadLibraryA(t *TLS, lpLibFileName uintptr) uintptr {
 	panic(todo(""))
 }
 
-// LoadLibraryW
-func XLoadLibraryW(t *TLS) {
+// HMODULE LoadLibraryW(
+//   LPCWSTR lpLibFileName
+// );
+func XLoadLibraryW(t *TLS, lpLibFileName uintptr) uintptr {
 	panic(todo(""))
 }
 
-// LocalFree
-func XLocalFree(t *TLS) {
+// HLOCAL LocalFree(
+//   HLOCAL hMem
+// );
+func XLocalFree(t *TLS, hMem uintptr) uintptr {
 	panic(todo(""))
 }
 
-// LockFile
-func XLockFile(t *TLS) {
+// BOOL LockFile(
+//   HANDLE hFile,
+//   DWORD  dwFileOffsetLow,
+//   DWORD  dwFileOffsetHigh,
+//   DWORD  nNumberOfBytesToLockLow,
+//   DWORD  nNumberOfBytesToLockHigh
+// );
+func XLockFile(t *TLS, hFile uintptr, dwFileOffsetLow, dwFileOffsetHigh, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh uint32) int32 {
 	panic(todo(""))
 }
 
-// LockFileEx
-func XLockFileEx(t *TLS) {
+// BOOL LockFileEx(
+//   HANDLE       hFile,
+//   DWORD        dwFlags,
+//   DWORD        dwReserved,
+//   DWORD        nNumberOfBytesToLockLow,
+//   DWORD        nNumberOfBytesToLockHigh,
+//   LPOVERLAPPED lpOverlapped
+// );
+func XLockFileEx(t *TLS, hFile uintptr, dwFileOffsetLow, dwFileOffsetHigh, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh uint32, lpOverlapped uintptr) int32 {
 	panic(todo(""))
 }
 
-// MapViewOfFile
-func XMapViewOfFile(t *TLS) {
+// LPVOID MapViewOfFile(
+//   HANDLE hFileMappingObject,
+//   DWORD  dwDesiredAccess,
+//   DWORD  dwFileOffsetHigh,
+//   DWORD  dwFileOffsetLow,
+//   SIZE_T dwNumberOfBytesToMap
+// );
+func XMapViewOfFile(t *TLS, hFileMappingObject uintptr, dwDesiredAccess, dwFileOffsetHigh, dwFileOffsetLow uint32, dwNumberOfBytesToMap types.Size_t) uintptr {
 	panic(todo(""))
 }
 
-// MultiByteToWideChar
-func XMultiByteToWideChar(t *TLS) {
+// int MultiByteToWideChar(
+//   UINT                              CodePage,
+//   DWORD                             dwFlags,
+//   _In_NLS_string_(cbMultiByte)LPCCH lpMultiByteStr,
+//   int                               cbMultiByte,
+//   LPWSTR                            lpWideCharStr,
+//   int                               cchWideChar
+// );
+func XMultiByteToWideChar(t *TLS, CodePage uint32, dwFlags uint32, lpMultiByteStr uintptr, cbMultiByte int32, lpWideCharStr uintptr, cchWideChar int32) int32 {
 	panic(todo(""))
 }
 
-// OutputDebugStringA
-func XOutputDebugStringA(t *TLS) {
+// void OutputDebugStringA(
+//   LPCSTR lpOutputString
+// )
+func XOutputDebugStringA(t *TLS, lpOutputString uintptr) {
 	panic(todo(""))
 }
 
-// OutputDebugStringW
-func XOutputDebugStringW(t *TLS) {
+// void OutputDebugStringW(
+//   LPCWSTR lpOutputString
+// );
+func XOutputDebugStringW(t *TLS, lpOutputString uintptr) {
 	panic(todo(""))
 }
 
-// QueryPerformanceCounter
-func XQueryPerformanceCounter(t *TLS) {
+// BOOL QueryPerformanceCounter(
+//   LARGE_INTEGER *lpPerformanceCount
+// );
+func XQueryPerformanceCounter(t *TLS, lpPerformanceCount uintptr) int32 {
 	panic(todo(""))
 }
 
-// ReadFile
-func XReadFile(t *TLS) {
+// BOOL ReadFile(
+//   HANDLE       hFile,
+//   LPVOID       lpBuffer,
+//   DWORD        nNumberOfBytesToRead,
+//   LPDWORD      lpNumberOfBytesRead,
+//   LPOVERLAPPED lpOverlapped
+// );
+func XReadFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToRead uint32, lpNumberOfBytesRead, lpOverlapped uintptr) int32 {
 	panic(todo(""))
 }
 
-// SetConsoleCtrlHandler
-func XSetConsoleCtrlHandler(t *TLS) {
+// BOOL WINAPI SetConsoleCtrlHandler(
+//   _In_opt_ PHANDLER_ROUTINE HandlerRoutine,
+//   _In_     BOOL             Add
+// );
+func XSetConsoleCtrlHandler(t *TLS, HandlerRoutine uintptr, Add int32) int32 {
 	panic(todo(""))
 }
 
@@ -862,17 +676,24 @@ func XSetCurrentDirectoryW(t *TLS, lpPathName uintptr) int32 {
 	panic(todo(""))
 }
 
-// SetEndOfFile
-func XSetEndOfFile(t *TLS) {
+// BOOL SetEndOfFile(
+//   HANDLE hFile
+// );
+func XSetEndOfFile(t *TLS, hFile uintptr) int32 {
 	panic(todo(""))
 }
 
-// SetFilePointer
-func XSetFilePointer(t *TLS) {
+// DWORD SetFilePointer(
+//   HANDLE hFile,
+//   LONG   lDistanceToMove,
+//   PLONG  lpDistanceToMoveHigh,
+//   DWORD  dwMoveMethod
+// );
+func XSetFilePointer(t *TLS, hFile uintptr, lDistanceToMove long, lpDistanceToMoveHigh uintptr, dwMoveMethod uint32) uint32 {
 	panic(todo(""))
 }
 
-// BOOL SetFileTime( // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfiletime
+// BOOL SetFileTime(
 //   HANDLE         hFile,
 //   const FILETIME *lpCreationTime,
 //   const FILETIME *lpLastAccessTime,
@@ -882,53 +703,95 @@ func XSetFileTime(t *TLS, hFindFile uintptr, lpCreationTime, lpLastAccessTime, l
 	panic(todo(""))
 }
 
-// Sleep
-func XSleep(t *TLS) {
+// void Sleep(
+//   DWORD dwMilliseconds
+// );
+func XSleep(t *TLS, dwMilliseconds uint32) {
 	panic(todo(""))
 }
 
-// BOOL SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, LPFILETIME lpFileTime); // https://docs.microsoft.com/en-us/windows/win32/api/timezoneapi/nf-timezoneapi-systemtimetofiletime
+// BOOL SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, LPFILETIME lpFileTime);
 func XSystemTimeToFileTime(t *TLS, lpSystemTime, lpFileTime uintptr) int32 {
 	panic(todo(""))
 }
 
-// UnlockFile
-func XUnlockFile(t *TLS) {
+// BOOL UnlockFile(
+//   HANDLE hFile,
+//   DWORD  dwFileOffsetLow,
+//   DWORD  dwFileOffsetHigh,
+//   DWORD  nNumberOfBytesToUnlockLow,
+//   DWORD  nNumberOfBytesToUnlockHigh
+// );
+func XUnlockFile(t *TLS, hFile uintptr, dwFileOffsetLow, dwFileOffsetHigh, nNumberOfBytesToUnlockLow, nNumberOfBytesToUnlockHigh uint32) int32 {
 	panic(todo(""))
 }
 
-// UnlockFileEx
-func XUnlockFileEx(t *TLS) {
+// BOOL UnlockFileEx(
+//   HANDLE       hFile,
+//   DWORD        dwReserved,
+//   DWORD        nNumberOfBytesToUnlockLow,
+//   DWORD        nNumberOfBytesToUnlockHigh,
+//   LPOVERLAPPED lpOverlapped
+// );
+func XUnlockFileEx(t *TLS, hFile uintptr, dwReserved, nNumberOfBytesToUnlockLow, nNumberOfBytesToUnlockHigh uint32, lpOverlapped uintptr) int32 {
 	panic(todo(""))
 }
 
-// UnmapViewOfFile
-func XUnmapViewOfFile(t *TLS) {
+// BOOL UnmapViewOfFile(
+//   LPCVOID lpBaseAddress
+// );
+func XUnmapViewOfFile(t *TLS, lpBaseAddress uintptr) int32 {
 	panic(todo(""))
 }
 
-// WaitForSingleObject
-func XWaitForSingleObject(t *TLS) {
+// DWORD WaitForSingleObject(
+//   HANDLE hHandle,
+//   DWORD  dwMilliseconds
+// );
+func XWaitForSingleObject(t *TLS, hHandle uintptr, dwMilliseconds uint32) uint32 {
 	panic(todo(""))
 }
 
-// WaitForSingleObjectEx
-func XWaitForSingleObjectEx(t *TLS) {
+// DWORD WaitForSingleObjectEx(
+//   HANDLE hHandle,
+//   DWORD  dwMilliseconds,
+//   BOOL   bAlertable
+// );
+func XWaitForSingleObjectEx(t *TLS, hHandle uintptr, dwMilliseconds uint32, bAlertable int32) uint32 {
 	panic(todo(""))
 }
 
-// WideCharToMultiByte
-func XWideCharToMultiByte(t *TLS) {
+// int WideCharToMultiByte(
+//   UINT                               CodePage,
+//   DWORD                              dwFlags,
+//   _In_NLS_string_(cchWideChar)LPCWCH lpWideCharStr,
+//   int                                cchWideChar,
+//   LPSTR                              lpMultiByteStr,
+//   int                                cbMultiByte,
+//   LPCCH                              lpDefaultChar,
+//   LPBOOL                             lpUsedDefaultChar
+// );
+func XWideCharToMultiByte(t *TLS, CodePage uint32, dwFlags uint32, lpWideCharStr uintptr, cchWideChar int32, lpMultiByteStr uintptr, cbMultiByte int32, lpDefaultChar, lpUsedDefaultChar uintptr) int32 {
 	panic(todo(""))
 }
 
-// WriteFile
-func XWriteFile(t *TLS) {
+// BOOL WriteFile(
+//   HANDLE       hFile,
+//   LPCVOID      lpBuffer,
+//   DWORD        nNumberOfBytesToWrite,
+//   LPDWORD      lpNumberOfBytesWritten,
+//   LPOVERLAPPED lpOverlapped
+// );
+func XWriteFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToWrite uint32, lpNumberOfBytesWritten, lpOverlapped uintptr) int32 {
 	panic(todo(""))
 }
 
-// _InterlockedCompareExchange
-func X_InterlockedCompareExchange(t *TLS) {
+// long _InterlockedCompareExchange(
+//    long volatile * Destination,
+//    long Exchange,
+//    long Comparand
+// );
+func X_InterlockedCompareExchange(t *TLS, Destination uintptr, Exchange, Comparand long) long {
 	panic(todo(""))
 }
 
@@ -958,11 +821,6 @@ func X__atomic_store_n(t *TLS, _ ...interface{}) int32 {
 
 // __builtin_add_overflow
 func X__builtin_add_overflow(t *TLS) {
-	panic(todo(""))
-}
-
-// __builtin_inff
-func X__builtin_inff(t *TLS) {
 	panic(todo(""))
 }
 
@@ -1018,7 +876,7 @@ func X__ms_vwscanf(t *TLS, format, ap uintptr) int32 {
 	panic(todo(""))
 }
 
-// int _access( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=vs-2019
+// int _access(
 //    const char *path,
 //    int mode
 // );
@@ -1026,7 +884,7 @@ func X_access(t *TLS, pathname uintptr, mode int32) int32 {
 	panic(todo(""))
 }
 
-// void _assert( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/assert-macro-assert-wassert?view=vs-2019
+// void _assert(
 //    char const* message,
 //    char const* filename,
 //    unsigned line
@@ -1035,7 +893,7 @@ func X_assert(t *TLS, message, filename uintptr, line uint32) {
 	panic(todo(""))
 }
 
-// int _chmod( const char *filename, int pmode ); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/chmod-wchmod?view=vs-2019
+// int _chmod( const char *filename, int pmode );
 func X_chmod(t *TLS, filename uintptr, pmode int32) int32 {
 	panic(todo(""))
 }
@@ -1050,7 +908,7 @@ func X_isatty(t *TLS, fd int32) int32 {
 	panic(todo(""))
 }
 
-// int _mkdir(const char *dirname); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir-wmkdir?view=vs-2019
+// int _mkdir(const char *dirname);
 func X_mkdir(t *TLS, dirname uintptr) int32 {
 	panic(todo(""))
 }
@@ -1068,12 +926,12 @@ func X_popen(t *TLS, command, mode uintptr) uintptr {
 	panic(todo(""))
 }
 
-// int _setmode (int fd, int mode); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/setmode?view=vs-2019
+// int _setmode (int fd, int mode);
 func X_setmode(t *TLS, fd, mode int32) {
 	panic(todo(""))
 }
 
-// int _stat64(const char *path, struct __stat64 *buffer); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019
+// int _stat64(const char *path, struct __stat64 *buffer);
 func X_stat64(t *TLS, path, buffer uintptr) int32 {
 	panic(todo(""))
 }
@@ -1083,7 +941,7 @@ func X_strdup(t *TLS, s uintptr) uintptr {
 	return Xstrdup(t, s)
 }
 
-// int _unlink( // https://docs.microsoft.com/lv-lv/cpp/c-runtime-library/reference/unlink-wunlink?view=vs-2015
+// int _unlink(
 //    const char *filename
 // );
 func X_unlink(t *TLS, filename uintptr) int32 {
@@ -1096,7 +954,7 @@ func X_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, ap uintptr
 	panic(todo(""))
 }
 
-// int _wunlink( // https://docs.microsoft.com/lv-lv/cpp/c-runtime-library/reference/unlink-wunlink?view=vs-2015
+// int _wunlink(
 //    const wchar_t *filename
 // );
 func X_wunlink(t *TLS, filename uintptr) int32 {
@@ -1166,18 +1024,18 @@ func Xftell(t *TLS, stream uintptr) long {
 	panic(todo(""))
 }
 
-// size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fwrite?view=vs-2019
+// size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream);
 func Xfwrite(t *TLS, buffer uintptr, size, count types.Size_t, stream uintptr) types.Size_t {
 	panic(todo(""))
 }
 
-// getpid
-func Xgetpid(t *TLS) {
+// int _getpid( void );
+func Xgetpid(t *TLS) int32 {
 	panic(todo(""))
 }
 
-// localtime
-func Xlocaltime(t *TLS) {
+// struct tm *localtime( const time_t *sourceTime );
+func Xlocaltime(t *TLS, sourceTime uintptr) uintptr {
 	panic(todo(""))
 }
 
@@ -1200,7 +1058,7 @@ func Xsetvbuf(t *TLS, stream, buffer uintptr, mode int32, size types.Size_t) int
 	panic(todo(""))
 }
 
-// int system( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/system-wsystem?view=vs-2019
+// int system(
 //    const char *command
 // );
 func Xsystem(t *TLS, command uintptr) int32 {

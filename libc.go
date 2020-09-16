@@ -58,6 +58,7 @@ func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, 
 func X__builtin_expect(t *TLS, exp, c long) long                     { return exp }
 func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
 func X__builtin_free(t *TLS, ptr uintptr)                            { Xfree(t, ptr) }
+func X__builtin_inff(t *TLS) float32                                 { return float32(math.Inf(0)) }
 func X__builtin_llabs(t *TLS, j longlong) longlong                   { return Xllabs(t, j) }
 func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
 func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
@@ -68,6 +69,21 @@ func X__builtin_strcmp(t *TLS, s1, s2 uintptr) int32                 { return Xs
 func X__builtin_strcpy(t *TLS, dest, src uintptr) uintptr            { return Xstrcpy(t, dest, src) }
 func X__builtin_strlen(t *TLS, s uintptr) types.Size_t               { return Xstrlen(t, s) }
 func X__builtin_trap(t *TLS)                                         { Xabort(t) }
+
+// bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_add_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
+	panic(todo(""))
+}
+
+// bool __builtin_sub_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_sub_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
+	panic(todo(""))
+}
+
+// bool __builtin_mul_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_mul_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
+	panic(todo(""))
+}
 
 // uint16_t __builtin_bswap16 (uint32_t x)
 func X__builtin_bswap16(t *TLS, x uint16) uint16 {
