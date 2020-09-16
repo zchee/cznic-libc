@@ -200,7 +200,6 @@ func makeMusl(goos, goarch string) {
 }
 
 func makeMuslWin(goos, goarch string) {
-	return //TODO
 	wd, err := os.Getwd()
 	if err != nil {
 		fail(err)
@@ -261,6 +260,11 @@ func makeMuslWin(goos, goarch string) {
 		"src/ctype/isdigit.c",
 		"src/ctype/isprint.c",
 		"src/ctype/isspace.c",
+		"src/internal/intscan.c",
+		"src/internal/shgetc.c",
+		"src/stdio/__toread.c",
+		"src/stdio/__uflow.c",
+		"src/stdlib/strtol.c",
 	)
 	fmt.Printf("%s\n", out)
 }

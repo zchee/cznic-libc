@@ -177,176 +177,6 @@ func X__mingw_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, ap 
 // 	panic(todo(""))
 // }
 //
-// // int pclose(FILE *stream);
-// func X_pclose(t *TLS, stream uintptr) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int _setmode (int fd, int mode); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/setmode?view=vs-2019
-// func X_setmode(t *TLS, fd, mode int32) {
-// 	panic(todo(""))
-// }
-//
-// // HANDLE GetCurrentProcess(); // https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess
-// func XGetCurrentProcess() windows.Handle {
-// 	panic(todo(""))
-// }
-//
-// // HMODULE LoadLibraryA(LPCSTR lpLibFileName); // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya
-// func XLoadLibraryA(t *TLS, lpLibFileName uintptr) windows.Handle {
-// 	panic(todo(""))
-// }
-//
-// // FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName); // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getprocaddress
-// func XGetProcAddress(t *TLS, hModule, lpProcName uintptr) uintptr {
-// 	panic(todo(""))
-// }
-//
-// // BOOL FreeLibrary(HMODULE hLibModule); // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-freelibrary
-// func XFreeLibrary(t *TLS, hLibModule windows.Handle) int32 {
-// 	panic(todo(""))
-// }
-//
-// // long ftell(FILE *stream);
-// func Xftell(t *TLS, stream uintptr) long {
-// 	panic(todo(""))
-// }
-//
-// // size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
-// func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
-// 	panic(todo(""))
-// }
-//
-// // BOOL SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, LPFILETIME lpFileTime); // https://docs.microsoft.com/en-us/windows/win32/api/timezoneapi/nf-timezoneapi-systemtimetofiletime
-// func XSystemTimeToFileTime(t *TLS, lpSystemTime, lpFileTime uintptr) int32 {
-// 	panic(todo(""))
-// }
-//
-// // HANDLE FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData); // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findfirstfilew
-// func XFindFirstFileW(t *TLS, lpFileName, lpFindFileData uintptr) windows.Handle {
-// 	panic(todo(""))
-// }
-//
-// // BOOL FindClose(HANDLE hFindFile); // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findclose
-// func XFindClose(t *TLS, hFindFile windows.Handle) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int _stat64(const char *path, struct __stat64 *buffer); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019
-// func X_stat64(t *TLS, path, buffer uintptr) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int _mkdir(const char *dirname); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir-wmkdir?view=vs-2019
-// func X_mkdir(t *TLS, dirname uintptr) int32 {
-// 	panic(todo(""))
-// }
-//
-// // _CRTIMP extern int *__cdecl _errno(void); // /usr/share/mingw-w64/include/errno.h:17:
-// func X_errno(t *TLS) uintptr {
-// 	return t.errnop
-// }
-//
-// // int _chmod( const char *filename, int pmode ); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/chmod-wchmod?view=vs-2019
-// func X_chmod(t *TLS, filename uintptr, pmode int32) int32 {
-// 	panic(todo(""))
-// }
-//
-// // size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fwrite?view=vs-2019
-// func Xfwrite(t *TLS, buffer uintptr, size, count types.Size_t, stream uintptr) types.Size_t {
-// 	panic(todo(""))
-// }
-//
-// // void GetSystemTime(LPSYSTEMTIME lpSystemTime); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtime
-// func XGetSystemTime(t *TLS, lpSystemTime uintptr) {
-// 	panic(todo(""))
-// }
-//
-// // HANDLE CreateFileW( // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
-// //   LPCWSTR               lpFileName,
-// //   DWORD                 dwDesiredAccess,
-// //   DWORD                 dwShareMode,
-// //   LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-// //   DWORD                 dwCreationDisposition,
-// //   DWORD                 dwFlagsAndAttributes,
-// //   HANDLE                hTemplateFile
-// // );
-// func XCreateFileW(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile windows.Handle) windows.Handle {
-// 	panic(todo(""))
-// }
-//
-// // BOOL SetFileTime( // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfiletime
-// //   HANDLE         hFile,
-// //   const FILETIME *lpCreationTime,
-// //   const FILETIME *lpLastAccessTime,
-// //   const FILETIME *lpLastWriteTime
-// // );
-// func XSetFileTime(t *TLS, hFindFile windows.Handle, lpCreationTime, lpLastAccessTime, lpLastWriteTime uintptr) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL CloseHandle( // https://docs.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-closehandle
-// //   HANDLE hObject
-// // );
-// func XCloseHandle(t *TLS, hObject windows.Handle) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xopendir(tls *TLS, name uintptr) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func Xreaddir(tls *TLS, dir uintptr) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func Xclosedir(tls *TLS, dir uintptr) int32 {
-// 	panic(todo(""))
-// }
-//
-// // void _assert( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/assert-macro-assert-wassert?view=vs-2019
-// //    char const* message,
-// //    char const* filename,
-// //    unsigned line
-// // );
-// func X_assert(t *TLS, message, filename uintptr, line uint32) {
-// 	panic(todo(""))
-// }
-//
-// // int system( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/system-wsystem?view=vs-2019
-// //    const char *command
-// // );
-// func Xsystem(t *TLS, command uintptr) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int _unlink( // https://docs.microsoft.com/lv-lv/cpp/c-runtime-library/reference/unlink-wunlink?view=vs-2015
-// //    const char *filename
-// // );
-// func X_unlink(t *TLS, filename uintptr) int32 {
-// 	panic(todo(""))
-// }
-//
-// // char *strdup(const char *s);
-// func X_strdup(t *TLS, s uintptr) uintptr {
-// 	return Xstrdup(t, s)
-// }
-//
-// // int _access( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=vs-2019
-// //    const char *path,
-// //    int mode
-// // );
-// func X_access(t *TLS, pathname uintptr, mode int32) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int _wunlink( // https://docs.microsoft.com/lv-lv/cpp/c-runtime-library/reference/unlink-wunlink?view=vs-2015
-// //    const wchar_t *filename
-// // );
-// func X_wunlink(t *TLS, filename uintptr) int32 {
-// 	panic(todo(""))
-// }
-//
 // // AreFileApisANSI
 // func XAreFileApisANSI(t *TLS) {
 // 	panic(todo(""))
@@ -407,11 +237,6 @@ func X__mingw_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, ap 
 // 	panic(todo(""))
 // }
 //
-// // GetConsoleScreenBufferInfo
-// func XGetConsoleScreenBufferInfo(t *TLS) {
-// 	panic(todo(""))
-// }
-//
 // // GetCurrentProcessId
 // func XGetCurrentProcessId(t *TLS) {
 // 	panic(todo(""))
@@ -464,11 +289,6 @@ func X__mingw_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, ap 
 //
 // // GetProcessHeap
 // func XGetProcessHeap(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // GetStdHandle
-// func XGetStdHandle(t *TLS) {
 // 	panic(todo(""))
 // }
 //
@@ -602,16 +422,6 @@ func X__mingw_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, ap 
 // 	panic(todo(""))
 // }
 //
-// // SetConsoleTextAttribute
-// func XSetConsoleTextAttribute(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // SetCurrentDirectoryW
-// func XSetCurrentDirectoryW(t *TLS) {
-// 	panic(todo(""))
-// }
-//
 // // SetEndOfFile
 // func XSetEndOfFile(t *TLS) {
 // 	panic(todo(""))
@@ -712,16 +522,6 @@ func X__mingw_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, ap 
 // 	panic(todo(""))
 // }
 //
-// // _isatty
-// func X_isatty(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // _popen
-// func X_popen(t *TLS) {
-// 	panic(todo(""))
-// }
-//
 // // getpid
 // func Xgetpid(t *TLS) {
 // 	panic(todo(""))
@@ -731,24 +531,16 @@ func X__mingw_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, ap 
 // func Xlocaltime(t *TLS) {
 // 	panic(todo(""))
 // }
-//
-// // setvbuf
-// func Xsetvbuf(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // strtol
-// func Xstrtol(t *TLS) {
-// 	panic(todo(""))
-// }
 
 // AreFileApisANSI
 func XAreFileApisANSI(t *TLS) {
 	panic(todo(""))
 }
 
-// CloseHandle
-func XCloseHandle(t *TLS) {
+// BOOL CloseHandle( // https://docs.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-closehandle
+//   HANDLE hObject
+// );
+func XCloseHandle(t *TLS, hObject uintptr) int32 {
 	panic(todo(""))
 }
 
@@ -767,8 +559,16 @@ func XCreateFileMappingW(t *TLS) {
 	panic(todo(""))
 }
 
-// CreateFileW
-func XCreateFileW(t *TLS) {
+// HANDLE CreateFileW( // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+//   LPCWSTR               lpFileName,
+//   DWORD                 dwDesiredAccess,
+//   DWORD                 dwShareMode,
+//   LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+//   DWORD                 dwCreationDisposition,
+//   DWORD                 dwFlagsAndAttributes,
+//   HANDLE                hTemplateFile
+// );
+func XCreateFileW(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
 	panic(todo(""))
 }
 
@@ -792,13 +592,13 @@ func XDeleteFileW(t *TLS) {
 	panic(todo(""))
 }
 
-// FindClose
-func XFindClose(t *TLS) {
+// BOOL FindClose(HANDLE hFindFile); // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findclose
+func XFindClose(t *TLS, hFindFile uintptr) int32 {
 	panic(todo(""))
 }
 
-// FindFirstFileW
-func XFindFirstFileW(t *TLS) {
+// HANDLE FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData); // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findfirstfilew
+func XFindFirstFileW(t *TLS, lpFileName, lpFindFileData uintptr) uintptr {
 	panic(todo(""))
 }
 
@@ -822,18 +622,21 @@ func XFormatMessageW(t *TLS) {
 	panic(todo(""))
 }
 
-// FreeLibrary
-func XFreeLibrary(t *TLS) {
+// BOOL FreeLibrary(HMODULE hLibModule); // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-freelibrary
+func XFreeLibrary(t *TLS, hLibModule uintptr) int32 {
 	panic(todo(""))
 }
 
-// GetConsoleScreenBufferInfo
-func XGetConsoleScreenBufferInfo(t *TLS) {
+// BOOL WINAPI GetConsoleScreenBufferInfo(
+//   _In_  HANDLE                      hConsoleOutput,
+//   _Out_ PCONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo
+// );
+func XGetConsoleScreenBufferInfo(t *TLS, hConsoleOutput, lpConsoleScreenBufferInfo uintptr) int32 {
 	panic(todo(""))
 }
 
-// GetCurrentProcess
-func XGetCurrentProcess(t *TLS) {
+// HANDLE GetCurrentProcess(); // https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess
+func XGetCurrentProcess(t *TLS) uintptr {
 	panic(todo(""))
 }
 
@@ -887,8 +690,8 @@ func XGetLastError(t *TLS) {
 	panic(todo(""))
 }
 
-// GetProcAddress
-func XGetProcAddress(t *TLS) {
+// FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName); // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getprocaddress
+func XGetProcAddress(t *TLS, hModule, lpProcName uintptr) uintptr {
 	panic(todo(""))
 }
 
@@ -897,8 +700,10 @@ func XGetProcessHeap(t *TLS) {
 	panic(todo(""))
 }
 
-// GetStdHandle
-func XGetStdHandle(t *TLS) {
+// HANDLE WINAPI GetStdHandle(
+//   _In_ DWORD nStdHandle
+// );
+func XGetStdHandle(t *TLS, nStdHandle uint32) uintptr {
 	panic(todo(""))
 }
 
@@ -907,8 +712,8 @@ func XGetSystemInfo(t *TLS) {
 	panic(todo(""))
 }
 
-// GetSystemTime
-func XGetSystemTime(t *TLS) {
+// void GetSystemTime(LPSYSTEMTIME lpSystemTime); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtime
+func XGetSystemTime(t *TLS, lpSystemTime uintptr) {
 	panic(todo(""))
 }
 
@@ -982,8 +787,8 @@ func XHeapValidate(t *TLS) {
 	panic(todo(""))
 }
 
-// LoadLibraryA
-func XLoadLibraryA(t *TLS) {
+// HMODULE LoadLibraryA(LPCSTR lpLibFileName); // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya
+func XLoadLibraryA(t *TLS, lpLibFileName uintptr) uintptr {
 	panic(todo(""))
 }
 
@@ -1042,13 +847,18 @@ func XSetConsoleCtrlHandler(t *TLS) {
 	panic(todo(""))
 }
 
-// SetConsoleTextAttribute
-func XSetConsoleTextAttribute(t *TLS) {
+// BOOL WINAPI SetConsoleTextAttribute(
+//   _In_ HANDLE hConsoleOutput,
+//   _In_ WORD   wAttributes
+// );
+func XSetConsoleTextAttribute(t *TLS, hConsoleOutput uintptr, wAttributes uint16) int32 {
 	panic(todo(""))
 }
 
-// SetCurrentDirectoryW
-func XSetCurrentDirectoryW(t *TLS) {
+// BOOL SetCurrentDirectory(
+//   LPCTSTR lpPathName
+// );
+func XSetCurrentDirectoryW(t *TLS, lpPathName uintptr) int32 {
 	panic(todo(""))
 }
 
@@ -1062,8 +872,13 @@ func XSetFilePointer(t *TLS) {
 	panic(todo(""))
 }
 
-// SetFileTime
-func XSetFileTime(t *TLS) {
+// BOOL SetFileTime( // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfiletime
+//   HANDLE         hFile,
+//   const FILETIME *lpCreationTime,
+//   const FILETIME *lpLastAccessTime,
+//   const FILETIME *lpLastWriteTime
+// );
+func XSetFileTime(t *TLS, hFindFile uintptr, lpCreationTime, lpLastAccessTime, lpLastWriteTime uintptr) int32 {
 	panic(todo(""))
 }
 
@@ -1072,8 +887,8 @@ func XSleep(t *TLS) {
 	panic(todo(""))
 }
 
-// SystemTimeToFileTime
-func XSystemTimeToFileTime(t *TLS) {
+// BOOL SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, LPFILETIME lpFileTime); // https://docs.microsoft.com/en-us/windows/win32/api/timezoneapi/nf-timezoneapi-systemtimetofiletime
+func XSystemTimeToFileTime(t *TLS, lpSystemTime, lpFileTime uintptr) int32 {
 	panic(todo(""))
 }
 
@@ -1203,63 +1018,75 @@ func X__ms_vwscanf(t *TLS, format, ap uintptr) int32 {
 	panic(todo(""))
 }
 
-// _access
-func X_access(t *TLS) {
+// int _access( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=vs-2019
+//    const char *path,
+//    int mode
+// );
+func X_access(t *TLS, pathname uintptr, mode int32) int32 {
 	panic(todo(""))
 }
 
-// _assert
-func X_assert(t *TLS) {
+// void _assert( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/assert-macro-assert-wassert?view=vs-2019
+//    char const* message,
+//    char const* filename,
+//    unsigned line
+// );
+func X_assert(t *TLS, message, filename uintptr, line uint32) {
 	panic(todo(""))
 }
 
-// _chmod
-func X_chmod(t *TLS) {
+// int _chmod( const char *filename, int pmode ); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/chmod-wchmod?view=vs-2019
+func X_chmod(t *TLS, filename uintptr, pmode int32) int32 {
 	panic(todo(""))
 }
 
-// _errno
-func X_errno(t *TLS) {
+// _CRTIMP extern int *__cdecl _errno(void); // /usr/share/mingw-w64/include/errno.h:17:
+func X_errno(t *TLS) uintptr {
+	return t.errnop
+}
+
+// int _isatty( int fd );
+func X_isatty(t *TLS, fd int32) int32 {
 	panic(todo(""))
 }
 
-// _isatty
-func X_isatty(t *TLS) {
+// int _mkdir(const char *dirname); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir-wmkdir?view=vs-2019
+func X_mkdir(t *TLS, dirname uintptr) int32 {
 	panic(todo(""))
 }
 
-// _mkdir
-func X_mkdir(t *TLS) {
+// int pclose(FILE *stream);
+func X_pclose(t *TLS, stream uintptr) int32 {
 	panic(todo(""))
 }
 
-// _pclose
-func X_pclose(t *TLS) {
+// FILE *_popen(
+//     const char *command,
+//     const char *mode
+// );
+func X_popen(t *TLS, command, mode uintptr) uintptr {
 	panic(todo(""))
 }
 
-// _popen
-func X_popen(t *TLS) {
+// int _setmode (int fd, int mode); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/setmode?view=vs-2019
+func X_setmode(t *TLS, fd, mode int32) {
 	panic(todo(""))
 }
 
-// _setmode
-func X_setmode(t *TLS) {
+// int _stat64(const char *path, struct __stat64 *buffer); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019
+func X_stat64(t *TLS, path, buffer uintptr) int32 {
 	panic(todo(""))
 }
 
-// _stat64
-func X_stat64(t *TLS) {
-	panic(todo(""))
+// char *strdup(const char *s);
+func X_strdup(t *TLS, s uintptr) uintptr {
+	return Xstrdup(t, s)
 }
 
-// _strdup
-func X_strdup(t *TLS) {
-	panic(todo(""))
-}
-
-// _unlink
-func X_unlink(t *TLS) {
+// int _unlink( // https://docs.microsoft.com/lv-lv/cpp/c-runtime-library/reference/unlink-wunlink?view=vs-2015
+//    const char *filename
+// );
+func X_unlink(t *TLS, filename uintptr) int32 {
 	panic(todo(""))
 }
 
@@ -1269,13 +1096,14 @@ func X_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, ap uintptr
 	panic(todo(""))
 }
 
-// _wunlink
-func X_wunlink(t *TLS) {
+// int _wunlink( // https://docs.microsoft.com/lv-lv/cpp/c-runtime-library/reference/unlink-wunlink?view=vs-2015
+//    const wchar_t *filename
+// );
+func X_wunlink(t *TLS, filename uintptr) int32 {
 	panic(todo(""))
 }
 
-// closedir
-func Xclosedir(t *TLS) {
+func Xclosedir(tls *TLS, dir uintptr) int32 {
 	panic(todo(""))
 }
 
@@ -1328,18 +1156,18 @@ func Xfputs(t *TLS, s, stream uintptr) int32 {
 	return 0
 }
 
-// fread
-func Xfread(t *TLS) {
+// size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
 	panic(todo(""))
 }
 
-// ftell
-func Xftell(t *TLS) {
+// long ftell(FILE *stream);
+func Xftell(t *TLS, stream uintptr) long {
 	panic(todo(""))
 }
 
-// fwrite
-func Xfwrite(t *TLS) {
+// size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream); // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fwrite?view=vs-2019
+func Xfwrite(t *TLS, buffer uintptr, size, count types.Size_t, stream uintptr) types.Size_t {
 	panic(todo(""))
 }
 
@@ -1348,57 +1176,33 @@ func Xgetpid(t *TLS) {
 	panic(todo(""))
 }
 
-// isalnum
-func Xisalnum(t *TLS) {
-	panic(todo(""))
-}
-
-// isalpha
-func Xisalpha(t *TLS) {
-	panic(todo(""))
-}
-
-// isdigit
-func Xisdigit(t *TLS) {
-	panic(todo(""))
-}
-
-// isprint
-func Xisprint(t *TLS) {
-	panic(todo(""))
-}
-
-// isspace
-func Xisspace(t *TLS) {
-	panic(todo(""))
-}
-
 // localtime
 func Xlocaltime(t *TLS) {
 	panic(todo(""))
 }
 
-// opendir
-func Xopendir(t *TLS) {
+func Xopendir(tls *TLS, name uintptr) uintptr {
 	panic(todo(""))
 }
 
-// readdir
-func Xreaddir(t *TLS) {
+func Xreaddir(tls *TLS, dir uintptr) uintptr {
 	panic(todo(""))
 }
 
 // setvbuf
-func Xsetvbuf(t *TLS) {
+// int setvbuf(
+//    FILE *stream,
+//    char *buffer,
+//    int mode,
+//    size_t size
+// );
+func Xsetvbuf(t *TLS, stream, buffer uintptr, mode int32, size types.Size_t) int32 {
 	panic(todo(""))
 }
 
-// strtol
-func Xstrtol(t *TLS) {
-	panic(todo(""))
-}
-
-// system
-func Xsystem(t *TLS) {
+// int system( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/system-wsystem?view=vs-2019
+//    const char *command
+// );
+func Xsystem(t *TLS, command uintptr) int32 {
 	panic(todo(""))
 }
