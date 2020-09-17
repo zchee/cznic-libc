@@ -7,6 +7,8 @@ package libc // import "modernc.org/libc"
 import (
 	"os"
 	"strings"
+	"sync/atomic"
+	"syscall"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -22,6 +24,16 @@ type (
 	ulong    = uint32
 )
 
+var (
+	msvcrt   = syscall.NewLazyDLL("msvcrt.dll")
+	_access  = msvcrt.NewProc("_access")
+	_isatty  = msvcrt.NewProc("_isatty")
+	_setmode = msvcrt.NewProc("_setmode")
+
+	kernel32      = syscall.NewLazyDLL("kernel32.dll")
+	getSystemInfo = kernel32.NewProc("GetSystemInfo")
+)
+
 type file uintptr
 
 func (f file) fd() int32      { return (*stdio.FILE)(unsafe.Pointer(f)).F_file }
@@ -32,6 +44,7 @@ func newFile(t *TLS, fd int32) uintptr {
 	if p == 0 {
 		return 0
 	}
+
 	file(p).setFd(fd)
 	return p
 }
@@ -436,7 +449,7 @@ func XGetStdHandle(t *TLS, nStdHandle uint32) uintptr {
 //   LPSYSTEM_INFO lpSystemInfo
 // );
 func XGetSystemInfo(t *TLS, lpSystemInfo uintptr) {
-	panic(todo(""))
+	syscall.Syscall(getSystemInfo.Addr(), 1, lpSystemInfo, 0, 0)
 }
 
 // void GetSystemTime(LPSYSTEMTIME lpSystemTime);
@@ -658,7 +671,7 @@ func XReadFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToRead uint32, lpN
 //   _In_     BOOL             Add
 // );
 func XSetConsoleCtrlHandler(t *TLS, HandlerRoutine uintptr, Add int32) int32 {
-	panic(todo(""))
+	return 1 //TODO
 }
 
 // BOOL WINAPI SetConsoleTextAttribute(
@@ -792,7 +805,9 @@ func XWriteFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToWrite uint32, l
 //    long Comparand
 // );
 func X_InterlockedCompareExchange(t *TLS, Destination uintptr, Exchange, Comparand long) long {
-	panic(todo(""))
+	r := atomic.LoadInt32((*int32)(unsafe.Pointer(Destination)))
+	atomic.CompareAndSwapInt32((*int32)(unsafe.Pointer(Destination)), Comparand, Exchange)
+	return r
 }
 
 // __acrt_iob_func
@@ -881,7 +896,13 @@ func X__ms_vwscanf(t *TLS, format, ap uintptr) int32 {
 //    int mode
 // );
 func X_access(t *TLS, pathname uintptr, mode int32) int32 {
-	panic(todo(""))
+	n, _, err := syscall.Syscall(_access.Addr(), 2, pathname, uintptr(mode), 0)
+	if err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return int32(n)
 }
 
 // void _assert(
@@ -905,7 +926,13 @@ func X_errno(t *TLS) uintptr {
 
 // int _isatty( int fd );
 func X_isatty(t *TLS, fd int32) int32 {
-	panic(todo(""))
+	n, _, err := syscall.Syscall(_isatty.Addr(), 1, uintptr(fd), 0, 0)
+	if err != 0 {
+		t.setErrno(err)
+		return 0
+	}
+
+	return int32(n)
 }
 
 // int _mkdir(const char *dirname);
@@ -927,8 +954,14 @@ func X_popen(t *TLS, command, mode uintptr) uintptr {
 }
 
 // int _setmode (int fd, int mode);
-func X_setmode(t *TLS, fd, mode int32) {
-	panic(todo(""))
+func X_setmode(t *TLS, fd, mode int32) int32 {
+	n, _, err := syscall.Syscall(_setmode.Addr(), 2, uintptr(fd), uintptr(mode), 0)
+	if err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return int32(n)
 }
 
 // int _stat64(const char *path, struct __stat64 *buffer);
@@ -1055,7 +1088,7 @@ func Xreaddir(tls *TLS, dir uintptr) uintptr {
 //    size_t size
 // );
 func Xsetvbuf(t *TLS, stream, buffer uintptr, mode int32, size types.Size_t) int32 {
-	panic(todo(""))
+	return 0 //TODO
 }
 
 // int system(
