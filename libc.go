@@ -17,6 +17,7 @@ package libc // import "modernc.org/libc"
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	gosignal "os/signal"
@@ -261,11 +262,11 @@ func Xfree(t *TLS, p uintptr) {
 	allocator.UintptrFree(p)
 }
 
-func write(b []byte) (int, error) {
+func write(w io.Writer, b []byte) (int, error) {
 	if dmesgs {
 		dmesg("%v: %s", origin(1), b)
 	}
-	if _, err := os.Stdout.Write(b); err != nil {
+	if _, err := w.Write(b); err != nil {
 		return -1, err
 	}
 
@@ -378,12 +379,6 @@ func Xstrcspn(t *TLS, s, reject uintptr) (r types.Size_t) {
 		s++
 		r++
 	}
-}
-
-// int printf(const char *format, ...);
-func Xprintf(t *TLS, format, args uintptr) int32 {
-	n, _ := write(printf(format, args))
-	return int32(n)
 }
 
 // int snprintf(char *str, size_t size, const char *format, ...);
@@ -772,7 +767,7 @@ func Xatol(t *TLS, nptr uintptr) long {
 
 // int putchar(int c);
 func Xputchar(t *TLS, c int32) int32 {
-	if _, err := write([]byte{byte(c)}); err != nil {
+	if _, err := write(os.Stdout, []byte{byte(c)}); err != nil {
 		return stdio.EOF
 	}
 
@@ -920,12 +915,6 @@ func X_IO_putc(t *TLS, c int32, fp uintptr) int32 {
 	return Xputc(t, c, fp)
 }
 
-// int fprintf(FILE *stream, const char *format, ...);
-func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
-	n, _ := fwrite(file(stream).fd(), printf(format, args))
-	return int32(n)
-}
-
 // size_t wcsnlen(const wchar_t *s, size_t maxlen);
 func Xwcsnlen(t *TLS, s uintptr, maxlen types.Size_t) types.Size_t {
 	panic(todo(""))
@@ -974,4 +963,16 @@ func AtomicStoreNInt16(ptr uintptr, val int16, memorder int32) {
 
 func AtomicStoreNUint16(ptr uintptr, val uint16, memorder int32) {
 	panic(todo(""))
+}
+
+// int fprintf(FILE *stream, const char *format, ...);
+func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
+	n, _ := fwrite(file(stream).fd(), printf(format, args))
+	return int32(n)
+}
+
+// int printf(const char *format, ...);
+func Xprintf(t *TLS, format, args uintptr) int32 {
+	n, _ := write(os.Stdout, printf(format, args))
+	return int32(n)
 }

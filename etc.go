@@ -173,6 +173,7 @@ func NewTLS() *TLS {
 }
 
 func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
+	trc("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
 	if dmesgs {
 		dmesg("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
 	}
@@ -268,47 +269,6 @@ func mustMalloc(t *TLS, n types.Size_t) uintptr {
 	}
 
 	panic("OOM")
-}
-
-// VaList fills a varargs list at p with args and returns uintptr(p).  The list
-// must have been allocated by caller and it must not be in Go managed
-// memory, ie. it must be pinned. Caller is responsible for freeing the list.
-//
-// Individual arguments must be one of int, uint, int32, uint32, int64, uint64,
-// float64, uintptr or Intptr. Other types will panic.
-//
-// Note: The C translated to Go varargs ABI alignment for all types is 8 at all
-// architectures.
-func VaList(p uintptr, args ...interface{}) (r uintptr) {
-	if p&7 != 0 {
-		panic("internal error")
-	}
-
-	r = p
-	for _, v := range args {
-		switch x := v.(type) {
-		case int:
-			*(*int64)(unsafe.Pointer(p)) = int64(x)
-		case int32:
-			*(*int64)(unsafe.Pointer(p)) = int64(x)
-		case int64:
-			*(*int64)(unsafe.Pointer(p)) = x
-		case uint:
-			*(*uint64)(unsafe.Pointer(p)) = uint64(x)
-		case uint32:
-			*(*uint64)(unsafe.Pointer(p)) = uint64(x)
-		case uint64:
-			*(*uint64)(unsafe.Pointer(p)) = x
-		case float64:
-			*(*float64)(unsafe.Pointer(p)) = x
-		case uintptr:
-			*(*uint64)(unsafe.Pointer(p)) = uint64(x)
-		default:
-			panic(todo("invalid VaList argument type: %T", x))
-		}
-		p += 8
-	}
-	return r
 }
 
 func VaInt32(app *uintptr) int32 {

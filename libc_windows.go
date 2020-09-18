@@ -5,10 +5,13 @@
 package libc // import "modernc.org/libc"
 
 import (
+	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"syscall"
+	"unicode/utf16"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -25,18 +28,125 @@ type (
 )
 
 var (
-	msvcrt   = syscall.NewLazyDLL("msvcrt.dll")
-	_access  = msvcrt.NewProc("_access")
-	_isatty  = msvcrt.NewProc("_isatty")
-	_setmode = msvcrt.NewProc("_setmode")
+	// msvcrt.dll
+	_access  uintptr
+	_isatty  uintptr
+	_setmode uintptr
 
-	kernel32      = syscall.NewLazyDLL("kernel32.dll")
-	getSystemInfo = kernel32.NewProc("GetSystemInfo")
+	// kernel32.dll
+	closeHandle          uintptr
+	createFileW          uintptr
+	formatMessageW       uintptr
+	getCurrentProcessId  uintptr
+	getFileAttributesExW uintptr
+	getFullPathNameW     uintptr
+	getLastError         uintptr
+	getSystemInfo        uintptr
+	getVersionExA        uintptr
+	localFree            uintptr
+	multiByteToWideChar  uintptr
+	readFile             uintptr
+	wideCharToMultiByte  uintptr
 )
+
+func init() {
+	mustLinkDll("msvcrt.dll", []linkFunc{
+		{"_access", &_access},
+		{"_isatty", &_isatty},
+		{"_setmode", &_setmode},
+	})
+	mustLinkDll("kernel32.dll", []linkFunc{
+		{"CloseHandle", &closeHandle},
+		{"CreateFileW", &createFileW},
+		{"FormatMessageW", &formatMessageW},
+		{"GetCurrentProcessId", &getCurrentProcessId},
+		{"GetFileAttributesExW", &getFileAttributesExW},
+		{"GetFullPathNameW", &getFullPathNameW},
+		{"GetLastError", &getLastError},
+		{"GetSystemInfo", &getSystemInfo},
+		{"GetVersionExA", &getVersionExA},
+		{"LocalFree", &localFree},
+		{"MultiByteToWideChar", &multiByteToWideChar},
+		{"ReadFile", &readFile},
+		{"WideCharToMultiByte", &wideCharToMultiByte},
+	})
+}
+
+type linkFunc struct {
+	name string
+	p    *uintptr
+}
+
+func mustLinkDll(lib string, a []linkFunc) {
+	dll, err := syscall.LoadLibrary(lib)
+	if err != nil {
+		panic(fmt.Errorf("cannot load %s: %v", lib, err))
+	}
+
+	for _, v := range a {
+		p, err := syscall.GetProcAddress(dll, v.name)
+		if p == 0 || err != nil {
+			panic(fmt.Errorf("cannot find %s in %s: %v", v.name, lib, err))
+		}
+
+		*v.p = p
+	}
+}
+
+// VaList fills a varargs list at p with number of args and args and returns
+// uintptr(p)+8.  The list must have been allocated by caller and it must not
+// be in Go managed memory, ie. it must be pinned. Caller is responsible for
+// freeing the list.
+//
+// Individual arguments must be one of int, uint, int32, uint32, int64, uint64,
+// float64, uintptr or Intptr. Other types will panic.
+//
+// Note: The C translated to Go varargs ABI alignment for all types is 8 at all
+// architectures.
+func VaList(p uintptr, args ...interface{}) (r uintptr) {
+	if p&7 != 0 {
+		panic("internal error")
+	}
+
+	*(*int64)(unsafe.Pointer(p)) = int64(len(args))
+	p += 8
+	r = p
+	for _, v := range args {
+		switch x := v.(type) {
+		case int:
+			*(*int64)(unsafe.Pointer(p)) = int64(x)
+		case int32:
+			*(*int64)(unsafe.Pointer(p)) = int64(x)
+		case int64:
+			*(*int64)(unsafe.Pointer(p)) = x
+		case uint:
+			*(*uint64)(unsafe.Pointer(p)) = uint64(x)
+		case uint32:
+			*(*uint64)(unsafe.Pointer(p)) = uint64(x)
+		case uint64:
+			*(*uint64)(unsafe.Pointer(p)) = x
+		case float64:
+			*(*float64)(unsafe.Pointer(p)) = x
+		case uintptr:
+			*(*uint64)(unsafe.Pointer(p)) = uint64(x)
+		default:
+			panic(todo("invalid VaList argument type: %T", x))
+		}
+		p += 8
+	}
+	return r
+}
 
 type file uintptr
 
-func (f file) fd() int32      { return (*stdio.FILE)(unsafe.Pointer(f)).F_file }
+func (f file) fd() int32 {
+	if f == 0 { //TODO-
+		return unistd.STDOUT_FILENO
+	}
+
+	return (*stdio.FILE)(unsafe.Pointer(f)).F_file
+}
+
 func (f file) setFd(fd int32) { (*stdio.FILE)(unsafe.Pointer(f)).F_file = fd }
 
 func newFile(t *TLS, fd int32) uintptr {
@@ -64,14 +174,15 @@ func (f file) fflush(t *TLS) int32 {
 }
 
 func fwrite(fd int32, b []byte) (int, error) {
-	if fd == unistd.STDOUT_FILENO {
-		return write(b)
+	switch fd {
+	case unistd.STDOUT_FILENO:
+		return write(os.Stdout, b)
+	case unistd.STDERR_FILENO:
+		trc("\n%s", debug.Stack())
+		return write(os.Stderr, b)
+	default:
+		panic(todo("%v: %q", fd, b))
 	}
-
-	if dmesgs {
-		dmesg("%v: fd %v: %s", origin(1), fd, b)
-	}
-	return windows.Write(windows.Handle(fd), b)
 }
 
 func Xabort(t *TLS) {
@@ -105,6 +216,7 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	}
 	fd, err := windows.Open(GoString(pathname), flags, 0666)
 	if err != nil {
+		trc("%v: %q %q %v", origin(1), GoString(pathname), GoString(mode), err)
 		t.setErrno(err)
 		return 0
 	}
@@ -114,6 +226,7 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	}
 
 	Xclose(t, int32(fd))
+	trc("%v: %q %q %v", origin(1), GoString(pathname), GoString(mode), err)
 	t.setErrno(errno.ENOMEM)
 	return 0
 }
@@ -195,7 +308,7 @@ func XAreFileApisANSI(t *TLS) int32 {
 //   HANDLE hObject
 // );
 func XCloseHandle(t *TLS, hObject uintptr) int32 {
-	panic(todo(""))
+	return int32(sys(closeHandle, hObject))
 }
 
 // HANDLE CreateFileA(
@@ -245,7 +358,27 @@ func XCreateFileMappingW(t *TLS, hFile, lpFileMappingAttributes uintptr, flProte
 //   HANDLE                hTemplateFile
 // );
 func XCreateFileW(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
-	panic(todo(""))
+	r := sys(createFileW, lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile)
+	trc("%v: %q access %#x share %#x createDispo %#x attr %#x: %v\n%s", origin(1), goWideString(lpFileName), dwDesiredAccess, dwShareMode, dwCreationDisposition, dwFlagsAndAttributes, r, debug.Stack())
+	return r
+}
+
+func goWideString(p uintptr) string {
+	if p == 0 {
+		return ""
+	}
+
+	var a []uint16
+	for {
+		c := *(*uint16)(unsafe.Pointer(p))
+		if c == 0 {
+			break
+		}
+
+		a = append(a, c)
+		p += 2
+	}
+	return string(utf16.Decode(a))
 }
 
 // HANDLE CreateMutexW(
@@ -324,7 +457,7 @@ func XFormatMessageA(t *TLS, dwFlagsAndAttributes uint32, lpSource uintptr, dwMe
 //   va_list *Arguments
 // );
 func XFormatMessageW(t *TLS, dwFlagsAndAttributes uint32, lpSource uintptr, dwMessageId, dwLanguageId uint32, lpBuffer uintptr, nSize uint32, Arguments uintptr) uint32 {
-	panic(todo(""))
+	return uint32(sysv(formatMessageW, dwFlagsAndAttributes, lpSource, dwMessageId, dwLanguageId, lpBuffer, nSize, Arguments))
 }
 
 // BOOL FreeLibrary(HMODULE hLibModule);
@@ -347,7 +480,7 @@ func XGetCurrentProcess(t *TLS) uintptr {
 
 // DWORD GetCurrentProcessId();
 func XGetCurrentProcessId(t *TLS) uint32 {
-	panic(todo(""))
+	return uint32(sys(getCurrentProcessId))
 }
 
 // BOOL GetDiskFreeSpaceA(
@@ -385,7 +518,7 @@ func XGetFileAttributesA(t *TLS, lpFileName uintptr) uint32 {
 //   LPVOID                 lpFileInformation
 // );
 func XGetFileAttributesExW(t *TLS, lpFileName uintptr, fInfoLevelId uint32, lpFileInformation uintptr) int32 {
-	panic(todo(""))
+	return int32(sys(getFileAttributesExW, lpFileName, fInfoLevelId, lpFileName))
 }
 
 // DWORD GetFileAttributesW(
@@ -420,12 +553,12 @@ func XGetFullPathNameA(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffe
 //   LPWSTR  *lpFilePart
 // );
 func XGetFullPathNameW(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffer, lpFilePart uintptr) uint32 {
-	panic(todo(""))
+	return uint32(sys(getFullPathNameW, lpFileName, nBufferLength, lpBuffer, lpFilePart))
 }
 
 // DWORD GetLastError();
 func XGetLastError(t *TLS) uint32 {
-	panic(todo(""))
+	return uint32(sys(getLastError))
 }
 
 // FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName);
@@ -449,7 +582,7 @@ func XGetStdHandle(t *TLS, nStdHandle uint32) uintptr {
 //   LPSYSTEM_INFO lpSystemInfo
 // );
 func XGetSystemInfo(t *TLS, lpSystemInfo uintptr) {
-	syscall.Syscall(getSystemInfo.Addr(), 1, lpSystemInfo, 0, 0)
+	sys(getSystemInfo, lpSystemInfo)
 }
 
 // void GetSystemTime(LPSYSTEMTIME lpSystemTime);
@@ -489,7 +622,7 @@ func XGetTickCount(t *TLS) uint32 {
 //   LPOSVERSIONINFOA lpVersionInformation
 // );
 func XGetVersionExA(t *TLS, lpVersionInformation uintptr) int32 {
-	panic(todo(""))
+	return int32(sys(getVersionExA, lpVersionInformation))
 }
 
 // BOOL GetVersionExW(
@@ -585,7 +718,7 @@ func XLoadLibraryW(t *TLS, lpLibFileName uintptr) uintptr {
 //   HLOCAL hMem
 // );
 func XLocalFree(t *TLS, hMem uintptr) uintptr {
-	panic(todo(""))
+	return sys(localFree, hMem)
 }
 
 // BOOL LockFile(
@@ -631,7 +764,7 @@ func XMapViewOfFile(t *TLS, hFileMappingObject uintptr, dwDesiredAccess, dwFileO
 //   int                               cchWideChar
 // );
 func XMultiByteToWideChar(t *TLS, CodePage uint32, dwFlags uint32, lpMultiByteStr uintptr, cbMultiByte int32, lpWideCharStr uintptr, cchWideChar int32) int32 {
-	panic(todo(""))
+	return int32(sys(multiByteToWideChar, CodePage, dwFlags, lpMultiByteStr, cbMultiByte, lpWideCharStr, cchWideChar))
 }
 
 // void OutputDebugStringA(
@@ -663,7 +796,18 @@ func XQueryPerformanceCounter(t *TLS, lpPerformanceCount uintptr) int32 {
 //   LPOVERLAPPED lpOverlapped
 // );
 func XReadFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToRead uint32, lpNumberOfBytesRead, lpOverlapped uintptr) int32 {
-	panic(todo(""))
+	n, err := sys2(readFile, hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped)
+	trc("%v: hfile %d, buflen %d, read %d: %v %v\n%s", origin(1), hFile, nNumberOfBytesToRead, *(*uint32)(unsafe.Pointer(lpNumberOfBytesRead)), n, err, debug.Stack())
+	if n == 0 {
+		if err == nil {
+			panic(todo(""))
+		}
+
+		return 0
+	}
+
+	return 1
+	// windows.ReadFile(hFile, (*RawMem)(unsafe.Pointer(lpBuffer))[:nNumberOfBytesToRead:nNumberOfBytesToRead], &done, (*windows.Overlaped)(unsafe.Pointer(lpOverlapped)))
 }
 
 // BOOL WINAPI SetConsoleCtrlHandler(
@@ -785,7 +929,7 @@ func XWaitForSingleObjectEx(t *TLS, hHandle uintptr, dwMilliseconds uint32, bAle
 //   LPBOOL                             lpUsedDefaultChar
 // );
 func XWideCharToMultiByte(t *TLS, CodePage uint32, dwFlags uint32, lpWideCharStr uintptr, cchWideChar int32, lpMultiByteStr uintptr, cbMultiByte int32, lpDefaultChar, lpUsedDefaultChar uintptr) int32 {
-	panic(todo(""))
+	return int32(sys(wideCharToMultiByte, CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cbMultiByte, lpDefaultChar, lpUsedDefaultChar))
 }
 
 // BOOL WriteFile(
@@ -896,8 +1040,9 @@ func X__ms_vwscanf(t *TLS, format, ap uintptr) int32 {
 //    int mode
 // );
 func X_access(t *TLS, pathname uintptr, mode int32) int32 {
-	n, _, err := syscall.Syscall(_access.Addr(), 2, pathname, uintptr(mode), 0)
-	if err != 0 {
+	n, err := sys2(_access, pathname, mode)
+	if err != nil {
+		trc("%v: %q %v", origin(1), GoString(pathname), err)
 		t.setErrno(err)
 		return -1
 	}
@@ -926,8 +1071,8 @@ func X_errno(t *TLS) uintptr {
 
 // int _isatty( int fd );
 func X_isatty(t *TLS, fd int32) int32 {
-	n, _, err := syscall.Syscall(_isatty.Addr(), 1, uintptr(fd), 0, 0)
-	if err != 0 {
+	n, err := sys2(_isatty, fd)
+	if err != nil {
 		t.setErrno(err)
 		return 0
 	}
@@ -955,8 +1100,8 @@ func X_popen(t *TLS, command, mode uintptr) uintptr {
 
 // int _setmode (int fd, int mode);
 func X_setmode(t *TLS, fd, mode int32) int32 {
-	n, _, err := syscall.Syscall(_setmode.Addr(), 2, uintptr(fd), uintptr(mode), 0)
-	if err != 0 {
+	n, err := sys2(_setmode, fd, mode)
+	if err != nil {
 		t.setErrno(err)
 		return -1
 	}
@@ -1004,6 +1149,7 @@ func Xfgets(t *TLS, s uintptr, size int32, stream uintptr) uintptr {
 	var b []byte
 	buf := [1]byte{}
 	for ; size > 0; size-- {
+		panic(todo(""))
 		n, err := windows.Read(fd, buf[:])
 		if n != 0 {
 			b = append(b, buf[0])
@@ -1096,4 +1242,72 @@ func Xsetvbuf(t *TLS, stream, buffer uintptr, mode int32, size types.Size_t) int
 // );
 func Xsystem(t *TLS, command uintptr) int32 {
 	panic(todo(""))
+}
+
+func sysv(proc uintptr, args ...interface{}) uintptr {
+	va := args[len(args)-1].(uintptr)
+	if va != 0 {
+		args = args[:len(args)-1]
+		va -= 8
+		n := int(VaInt32(&va))
+		trc("nargs %v", n)
+		for i := 0; i < n; i++ {
+			args = append(args, VaInt64(&va))
+		}
+	}
+	return sys(proc, args...)
+}
+
+func sys(proc uintptr, args ...interface{}) uintptr {
+	n, _ := sys2(proc, args...)
+	return n
+}
+
+func sys2(proc uintptr, args ...interface{}) (r uintptr, err error) {
+	na0 := uintptr(len(args))
+	na := na0
+	if n := na % 3; n != 0 {
+		na += 3 - n
+	}
+	if na == 0 {
+		na = 3
+	}
+	a := make([]uintptr, na)
+	for i, v := range args {
+		switch x := v.(type) {
+		case uintptr:
+			a[i] = x
+		case int32:
+			a[i] = uintptr(x)
+		case int64:
+			a[i] = uintptr(x)
+		case uint32:
+			a[i] = uintptr(x)
+		case uint64:
+			a[i] = uintptr(x)
+		case float32:
+			a[i] = uintptr(x)
+		case float64:
+			a[i] = uintptr(x)
+		default:
+			panic(todo("%T", x))
+		}
+	}
+	switch na {
+	case 3:
+		r, _, err = syscall.Syscall(proc, na0, a[0], a[1], a[2])
+	case 6:
+		r, _, err = syscall.Syscall6(proc, na0, a[0], a[1], a[2], a[3], a[4], a[5])
+	case 9:
+		r, _, err = syscall.Syscall9(proc, na0, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8])
+	case 12:
+		r, _, err = syscall.Syscall12(proc, na0, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11])
+	case 15:
+		r, _, err = syscall.Syscall15(proc, na0, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14])
+	case 18:
+		r, _, err = syscall.Syscall18(proc, na0, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15], a[16], a[17])
+	default:
+		panic(todo("", na))
+	}
+	return r, err
 }
