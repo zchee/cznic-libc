@@ -558,7 +558,9 @@ func XGetFullPathNameW(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffe
 
 // DWORD GetLastError();
 func XGetLastError(t *TLS) uint32 {
-	return uint32(sys(getLastError))
+	r := sys(getLastError)
+	trc("%v: %d(%#x)", origin(1), r, r)
+	return uint32(r)
 }
 
 // FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName);
