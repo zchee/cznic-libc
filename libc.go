@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/big"
+	"math/bits"
 	"os"
 	gosignal "os/signal"
 	"runtime"
@@ -81,24 +83,32 @@ func X__builtin_sub_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
 	panic(todo(""))
 }
 
+var (
+	bigMinInt64 = big.NewInt(math.MinInt64)
+	bigMaxInt64 = big.NewInt(math.MaxInt64)
+)
+
 // bool __builtin_mul_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_mul_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
-	panic(todo(""))
+	//TODO do better without big.Int
+	x := big.NewInt(a)
+	x.Mul(x, big.NewInt(b))
+	return Bool32(x.Cmp(bigMaxInt64) < 0 || x.Cmp(bigMaxInt64) > 0)
 }
 
 // uint16_t __builtin_bswap16 (uint32_t x)
 func X__builtin_bswap16(t *TLS, x uint16) uint16 {
-	panic(todo(""))
+	return x<<8 | x>>8
 }
 
 // uint32_t __builtin_bswap32 (uint32_t x)
 func X__builtin_bswap32(t *TLS, x uint32) uint32 {
-	panic(todo(""))
+	return x<<24 | x&0xff00<<8 | x&0xff0000>>8 | x>>24
 }
 
 // int __builtin_clzll (unsigned long long)
 func X__builtin_clzll(t *TLS, x uint64) int32 {
-	panic(todo(""))
+	return int32(bits.LeadingZeros64(x))
 }
 
 func X__builtin_unreachable(t *TLS) {
@@ -360,7 +370,7 @@ func Xsignal(t *TLS, signum int32, handler uintptr) uintptr { //TODO use sigacti
 
 // size_t strcspn(const char *s, const char *reject);
 func Xstrcspn(t *TLS, s, reject uintptr) (r types.Size_t) {
-	bits := newBits(256)
+	bitset := newBitset(256)
 	for {
 		c := *(*byte)(unsafe.Pointer(reject))
 		if c == 0 {
@@ -368,11 +378,11 @@ func Xstrcspn(t *TLS, s, reject uintptr) (r types.Size_t) {
 		}
 
 		reject++
-		bits.set(int(c))
+		bitset.set(int(c))
 	}
 	for {
 		c := *(*byte)(unsafe.Pointer(s))
-		if c == 0 || bits.has(int(c)) {
+		if c == 0 || bitset.has(int(c)) {
 			return r
 		}
 
@@ -798,14 +808,14 @@ func Xmktime(t *TLS, ptm uintptr) types.Time_t {
 
 // char *strpbrk(const char *s, const char *accept);
 func Xstrpbrk(t *TLS, s, accept uintptr) uintptr {
-	bits := newBits(256)
+	bitset := newBitset(256)
 	for {
 		b := *(*byte)(unsafe.Pointer(accept))
 		if b == 0 {
 			break
 		}
 
-		bits.set(int(b))
+		bitset.set(int(b))
 		accept++
 	}
 	for {
@@ -814,7 +824,7 @@ func Xstrpbrk(t *TLS, s, accept uintptr) uintptr {
 			return 0
 		}
 
-		if bits.has(int(b)) {
+		if bitset.has(int(b)) {
 			return s
 		}
 

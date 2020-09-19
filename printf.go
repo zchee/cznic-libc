@@ -330,6 +330,22 @@ flags:
 		default:
 			panic(todo(""))
 		}
+	case 'S':
+		format++
+		arg := VaUintptr(args)
+		switch mod {
+		case modNone:
+			var f string
+			switch {
+			case hasPrecision:
+				f = fmt.Sprintf("%s.%ds", spec, prec)
+			default:
+				f = spec + "s"
+			}
+			str = fmt.Sprintf(f, goWideString(arg))
+		default:
+			panic(todo(""))
+		}
 	case 'p':
 		// The void * pointer argument is printed in hexadecimal (as if by %#x or
 		// %#lx).

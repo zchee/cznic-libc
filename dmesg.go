@@ -22,9 +22,11 @@ var (
 
 func init() {
 	var err error
-	if logf, err = os.OpenFile("/tmp/libc.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644); err != nil {
+	if logf, err = os.OpenFile(filepath.Join(os.TempDir(), "libc.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644); err != nil {
 		panic(err.Error())
 	}
+
+	fmt.Printf("dmesgs in %s\n", logf.Name())
 }
 
 func dmesg(s string, args ...interface{}) {

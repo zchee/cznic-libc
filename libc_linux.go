@@ -1531,3 +1531,9 @@ func VaList(p uintptr, args ...interface{}) (r uintptr) {
 	}
 	return r
 }
+
+type TLS struct {
+	ID     int32
+	errnop uintptr
+	stack  stackHeader
+}

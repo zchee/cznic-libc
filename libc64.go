@@ -10,8 +10,8 @@ type (
 	RawMem [1<<50 - 1]byte
 )
 
-type bits []int
+type bitset []int
 
-func newBits(n int) (r bits)  { return make(bits, (n+63)>>6) }
-func (b bits) has(n int) bool { return b != nil && b[n>>6]&(1<<uint(n&63)) != 0 }
-func (b bits) set(n int)      { b[n>>6] |= 1 << uint(n&63) }
+func newBitset(n int) (r bitset) { return make(bitset, (n+63)>>6) }
+func (b bitset) has(n int) bool  { return b != nil && b[n>>6]&(1<<uint(n&63)) != 0 }
+func (b bitset) set(n int)       { b[n>>6] |= 1 << uint(n&63) }

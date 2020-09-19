@@ -18,6 +18,7 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+	"unicode/utf16"
 	"unsafe"
 
 	"modernc.org/libc/errno"
@@ -159,12 +160,6 @@ func removeObject(t uintptr) {
 	objectMu.Unlock()
 }
 
-type TLS struct {
-	ID     int32
-	errnop uintptr
-	stack  stackHeader
-}
-
 func NewTLS() *TLS {
 	id := atomic.AddInt32(&tid, 1)
 	t := &TLS{ID: id}
@@ -173,10 +168,9 @@ func NewTLS() *TLS {
 }
 
 func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
-	trc("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
-	if dmesgs {
-		dmesg("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
-	}
+	// if dmesgs {
+	// 	dmesg("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
+	// }
 again:
 	switch x := err.(type) {
 	case int:
@@ -706,4 +700,21 @@ func isTimeDST(t time.Time) bool {
 	}
 	// assume no dst
 	return false
+}
+
+func goWideString(p uintptr) string {
+	if p == 0 {
+		return ""
+	}
+
+	var a []uint16
+	for {
+		c := *(*uint16)(unsafe.Pointer(p))
+		if c == 0 {
+			return string(utf16.Decode(a))
+		}
+
+		a = append(a, c)
+		p += unsafe.Sizeof(uint16(0))
+	}
 }
