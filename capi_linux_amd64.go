@@ -37,6 +37,7 @@ var CAPI = map[string]struct{}{
 	"__builtin_trap":              {},
 	"__builtin_unreachable":       {},
 	"__ccgo_in6addr_anyp":         {},
+	"__ccgo_print_debug_stack":    {},
 	"__ccgo_sqlite3_log":          {},
 	"__ctype_b_loc":               {},
 	"__errno_location":            {},

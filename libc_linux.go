@@ -1537,3 +1537,20 @@ type TLS struct {
 	errnop uintptr
 	stack  stackHeader
 }
+
+func goWideString(p uintptr) string {
+	if p == 0 {
+		return ""
+	}
+
+	var a []rune
+	for {
+		c := *(*rune)(unsafe.Pointer(p))
+		if c == 0 {
+			return string(a)
+		}
+
+		a = append(a, c)
+		p += unsafe.Sizeof(rune(0))
+	}
+}

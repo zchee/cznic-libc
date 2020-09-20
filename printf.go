@@ -7,6 +7,7 @@ package libc // import "modernc.org/libc"
 import (
 	"bytes"
 	"fmt"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -34,12 +35,16 @@ const (
 // the output stream; and conversion specifications, each of which results in
 // fetching zero or more subsequent arguments.
 func printf(format, args uintptr) []byte {
+	f0 := format
 	buf := bytes.NewBuffer(nil)
 	for {
 		switch c := *(*byte)(unsafe.Pointer(format)); c {
 		case '%':
 			format = printfConversion(buf, format, &args)
 		case 0:
+			if dmesgs {
+				dmesg("%v: %q: %q\n%s", origin(1), GoString(f0), buf.Bytes(), debug.Stack())
+			}
 			return buf.Bytes()
 		default:
 			format++

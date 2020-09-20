@@ -90,10 +90,14 @@ var (
 
 // bool __builtin_mul_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_mul_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
-	//TODO do better without big.Int
-	x := big.NewInt(a)
-	x.Mul(x, big.NewInt(b))
-	return Bool32(x.Cmp(bigMaxInt64) < 0 || x.Cmp(bigMaxInt64) > 0)
+	if a == 0 || b == 0 {
+		*(*int64)(unsafe.Pointer(res)) = 0
+		return 0
+	}
+
+	r := a * b
+	*(*int64)(unsafe.Pointer(res)) = r
+	return Bool32(r/a != b)
 }
 
 // uint16_t __builtin_bswap16 (uint32_t x)
@@ -985,4 +989,8 @@ func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
 func Xprintf(t *TLS, format, args uintptr) int32 {
 	n, _ := write(os.Stdout, printf(format, args))
 	return int32(n)
+}
+
+func X__ccgo_print_debug_stack(t *TLS) {
+	fmt.Printf("%s\n", debug.Stack())
 }

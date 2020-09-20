@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"syscall"
+	"unicode/utf16"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -465,8 +466,15 @@ func XFormatMessageA(t *TLS, dwFlagsAndAttributes uint32, lpSource uintptr, dwMe
 //   DWORD   nSize,
 //   va_list *Arguments
 // );
-func XFormatMessageW(t *TLS, dwFlagsAndAttributes uint32, lpSource uintptr, dwMessageId, dwLanguageId uint32, lpBuffer uintptr, nSize uint32, Arguments uintptr) uint32 {
-	return uint32(sysv(t, formatMessageW, dwFlagsAndAttributes, lpSource, dwMessageId, dwLanguageId, lpBuffer, nSize, Arguments))
+func XFormatMessageW(t *TLS, dwFlags uint32, lpSource uintptr, dwMessageId, dwLanguageId uint32, lpBuffer uintptr, nSize uint32, Arguments uintptr) uint32 {
+	if dmesgs {
+		var nargs uintptr
+		if Arguments != 0 {
+			nargs = *(*uintptr)(unsafe.Pointer(Arguments - 8))
+		}
+		dmesg("%v: %q nargs %v", GoString(lpSource), nargs)
+	}
+	return uint32(sysv(t, formatMessageW, dwFlags, lpSource, dwMessageId, dwLanguageId, lpBuffer, nSize, Arguments))
 }
 
 // BOOL FreeLibrary(HMODULE hLibModule);
@@ -1263,6 +1271,9 @@ func sysv(t *TLS, proc uintptr, args ...interface{}) uintptr { //TODO-
 			args = append(args, VaInt64(&va))
 		}
 	}
+	if dmesgs {
+		dmesg("%v: %v", origin(1), args)
+	}
 	return sys(t, proc, args...)
 }
 
@@ -1325,4 +1336,26 @@ type TLS struct {
 	errnop    uintptr
 	lastError syscall.Errno
 	stack     stackHeader
+}
+
+// char *setlocale(int category, const char *locale);
+func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
+	panic(todo(""))
+}
+
+func goWideString(p uintptr) string {
+	if p == 0 {
+		return ""
+	}
+
+	var a []uint16
+	for {
+		c := *(*uint16)(unsafe.Pointer(p))
+		if c == 0 {
+			return string(utf16.Decode(a))
+		}
+
+		a = append(a, c)
+		p += unsafe.Sizeof(uint16(0))
+	}
 }

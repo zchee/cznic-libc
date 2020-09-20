@@ -18,7 +18,6 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
-	"unicode/utf16"
 	"unsafe"
 
 	"modernc.org/libc/errno"
@@ -700,21 +699,4 @@ func isTimeDST(t time.Time) bool {
 	}
 	// assume no dst
 	return false
-}
-
-func goWideString(p uintptr) string {
-	if p == 0 {
-		return ""
-	}
-
-	var a []uint16
-	for {
-		c := *(*uint16)(unsafe.Pointer(p))
-		if c == 0 {
-			return string(utf16.Decode(a))
-		}
-
-		a = append(a, c)
-		p += unsafe.Sizeof(uint16(0))
-	}
 }
