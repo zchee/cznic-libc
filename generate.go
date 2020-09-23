@@ -259,6 +259,7 @@ func makeMuslWin(goos, goarch string) {
 		"src/ctype/isalnum.c",
 		"src/ctype/isalpha.c",
 		"src/ctype/isdigit.c",
+		"src/ctype/islower.c",
 		"src/ctype/isprint.c",
 		"src/ctype/isspace.c",
 		"src/ctype/isxdigit.c",
