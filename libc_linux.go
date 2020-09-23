@@ -1104,11 +1104,6 @@ func Xfts64_close(t *TLS, ftsp uintptr) int32 {
 	return 0
 }
 
-// void tzset (void);
-func Xtzset(t *TLS) {
-	//TODO
-}
-
 // char *strerror(int errnum);
 func Xstrerror(t *TLS, errnum int32) uintptr {
 	panic(todo(""))

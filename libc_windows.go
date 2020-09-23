@@ -27,11 +27,15 @@ type (
 	ulong    = uint32
 )
 
+// Keep these outside of the var block otherwise go generate will miss them.
+var X__imp__environ uintptr
+
 var (
 	// msvcrt.dll
 	_access  uintptr
 	_isatty  uintptr
 	_setmode uintptr
+	_stricmp uintptr
 
 	// kernel32.dll
 	closeHandle             uintptr
@@ -56,6 +60,7 @@ var (
 	flushFileBuffers        uintptr
 	getFileAttributesW      uintptr
 	deleteFileW             uintptr
+	setEvent                uintptr
 )
 
 func init() {
@@ -63,6 +68,7 @@ func init() {
 		{"_access", &_access},
 		{"_isatty", &_isatty},
 		{"_setmode", &_setmode},
+		{"_stricmp", &_stricmp},
 	})
 	mustLinkDll("kernel32.dll", []linkFunc{
 		{"CloseHandle", &closeHandle},
@@ -87,6 +93,7 @@ func init() {
 		{"FlushFileBuffers", &flushFileBuffers},
 		{"GetFileAttributesW", &getFileAttributesW},
 		{"DeleteFileW", &deleteFileW},
+		{"SetEvent", &setEvent},
 	})
 }
 
@@ -1358,4 +1365,839 @@ func goWideString(p uintptr) string {
 		a = append(a, c)
 		p += unsafe.Sizeof(uint16(0))
 	}
+}
+
+// int _stricmp(
+//    const char *string1,
+//    const char *string2
+// );
+func X_stricmp(t *TLS, string1, string2 uintptr) int32 {
+	return int32(sys(t, _stricmp, string1, string2))
+}
+
+// BOOL SetEvent(
+//   HANDLE hEvent
+// );
+func XSetEvent(t *TLS, hEvent uintptr) int32 {
+	return int32(sys(t, setEvent, hEvent))
+}
+
+func XAccessCheck(t *TLS) {
+	panic(todo(""))
+}
+
+func XBuildCommDCBW(t *TLS) {
+	panic(todo(""))
+}
+
+func XCharLowerW(t *TLS) {
+	panic(todo(""))
+}
+
+func XClearCommError(t *TLS) {
+	panic(todo(""))
+}
+
+func XCopyFileW(t *TLS) {
+	panic(todo(""))
+}
+
+func XCreateDirectoryW(t *TLS) {
+	panic(todo(""))
+}
+
+func XCreateEventW(t *TLS) {
+	panic(todo(""))
+}
+
+func XCreateHardLinkW(t *TLS) {
+	panic(todo(""))
+}
+
+func XCreatePipe(t *TLS) {
+	panic(todo(""))
+}
+
+func XCreateThread(t *TLS) {
+	panic(todo(""))
+}
+
+func XCreateWindowExW(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeAbandonTransaction(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeAccessData(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeClientTransaction(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeConnect(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeCreateDataHandle(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeCreateStringHandleW(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeDisconnect(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeFreeDataHandle(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeFreeStringHandle(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeGetData(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeGetLastError(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeInitializeW(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeNameService(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeQueryStringW(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeUnaccessData(t *TLS) {
+	panic(todo(""))
+}
+
+func XDdeUninitialize(t *TLS) {
+	panic(todo(""))
+}
+
+func XDefWindowProcW(t *TLS) {
+	panic(todo(""))
+}
+
+func XDeleteCriticalSection(t *TLS) {
+	panic(todo(""))
+}
+
+func XDestroyWindow(t *TLS) {
+	panic(todo(""))
+}
+
+func XDeviceIoControl(t *TLS) {
+	panic(todo(""))
+}
+
+func XDispatchMessageW(t *TLS) {
+	panic(todo(""))
+}
+
+func XDuplicateHandle(t *TLS) {
+	panic(todo(""))
+}
+
+func XEnterCriticalSection(t *TLS) {
+	panic(todo(""))
+}
+
+func XEnumWindows(t *TLS) {
+	panic(todo(""))
+}
+
+func XEqualSid(t *TLS) {
+	panic(todo(""))
+}
+
+func XEscapeCommFunction(t *TLS) {
+	panic(todo(""))
+}
+
+func XExitProcess(t *TLS) {
+	panic(todo(""))
+}
+
+func XFindFirstFileExW(t *TLS) {
+	panic(todo(""))
+}
+
+func XFindNextFileW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetCommModemStatus(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetCommState(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetComputerNameW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetConsoleMode(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetCurrentDirectoryW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetCurrentThreadId(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetEnvironmentVariableA(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetEnvironmentVariableW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetExitCodeProcess(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetExitCodeThread(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetFileInformationByHandle(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetFileSecurityW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetFileType(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetLogicalDriveStringsA(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetMessageW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetModuleFileNameA(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetModuleFileNameW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetModuleHandleW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetNamedSecurityInfoW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetOverlappedResult(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetPrivateProfileStringA(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetProfilesDirectoryW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetSecurityDescriptorOwner(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetShortPathNameW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetSidIdentifierAuthority(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetTempFileNameW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetTokenInformation(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetUserNameW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetVolumeInformationA(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetVolumeInformationW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetVolumeNameForVolumeMountPointW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetWindowLongPtrW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetWindowsDirectoryA(t *TLS) {
+	panic(todo(""))
+}
+
+func XGlobalAddAtomW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGlobalDeleteAtom(t *TLS) {
+	panic(todo(""))
+}
+
+func XGlobalGetAtomNameW(t *TLS) {
+	panic(todo(""))
+}
+
+func XIN6_ADDR_EQUAL(t *TLS) {
+	panic(todo(""))
+}
+
+func XIN6_IS_ADDR_V4MAPPED(t *TLS) {
+	panic(todo(""))
+}
+
+func XImpersonateSelf(t *TLS) {
+	panic(todo(""))
+}
+
+func XInitializeCriticalSection(t *TLS) {
+	panic(todo(""))
+}
+
+func XIsDebuggerPresent(t *TLS) {
+	panic(todo(""))
+}
+
+func XIsWindow(t *TLS) {
+	panic(todo(""))
+}
+
+func XKillTimer(t *TLS) {
+	panic(todo(""))
+}
+
+func XLeaveCriticalSection(t *TLS) {
+	panic(todo(""))
+}
+
+func XLoadLibraryExW(t *TLS) {
+	panic(todo(""))
+}
+
+func XMessageBeep(t *TLS) {
+	panic(todo(""))
+}
+
+func XMessageBoxW(t *TLS) {
+	panic(todo(""))
+}
+
+func XMoveFileW(t *TLS) {
+	panic(todo(""))
+}
+
+func XMsgWaitForMultipleObjectsEx(t *TLS) {
+	panic(todo(""))
+}
+
+func XNetApiBufferFree(t *TLS) {
+	panic(todo(""))
+}
+
+func XNetGetDCName(t *TLS) {
+	panic(todo(""))
+}
+
+func XNetUserGetInfo(t *TLS) {
+	panic(todo(""))
+}
+
+func XOpenProcessToken(t *TLS) {
+	panic(todo(""))
+}
+
+func XOpenThreadToken(t *TLS) {
+	panic(todo(""))
+}
+
+func XPeekConsoleInputW(t *TLS) {
+	panic(todo(""))
+}
+
+func XPeekMessageW(t *TLS) {
+	panic(todo(""))
+}
+
+func XPeekNamedPipe(t *TLS) {
+	panic(todo(""))
+}
+
+func XPostMessageW(t *TLS) {
+	panic(todo(""))
+}
+
+func XPostQuitMessage(t *TLS) {
+	panic(todo(""))
+}
+
+func XPurgeComm(t *TLS) {
+	panic(todo(""))
+}
+
+func XQueryPerformanceFrequency(t *TLS) {
+	panic(todo(""))
+}
+
+func XReadConsoleW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegCloseKey(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegConnectRegistryW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegCreateKeyExW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegDeleteKeyW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegDeleteValueW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegEnumKeyExW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegEnumValueW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegOpenKeyExW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegQueryValueExW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegSetValueExW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegisterClassExW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRegisterClassW(t *TLS) {
+	panic(todo(""))
+}
+
+func XRemoveDirectoryW(t *TLS) {
+	panic(todo(""))
+}
+
+func XResetEvent(t *TLS) {
+	panic(todo(""))
+}
+
+func XRevertToSelf(t *TLS) {
+	panic(todo(""))
+}
+
+func XSearchPathW(t *TLS) {
+	panic(todo(""))
+}
+
+func XSendMessageTimeoutW(t *TLS) {
+	panic(todo(""))
+}
+
+func XSendMessageW(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetCommState(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetCommTimeouts(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetConsoleMode(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetFileAttributesW(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetHandleInformation(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetThreadPriority(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetTimer(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetWindowLongPtrW(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetupComm(t *TLS) {
+	panic(todo(""))
+}
+
+func XSleepEx(t *TLS) {
+	panic(todo(""))
+}
+
+func XTerminateThread(t *TLS) {
+	panic(todo(""))
+}
+
+func XTranslateMessage(t *TLS) {
+	panic(todo(""))
+}
+
+func XUnregisterClassW(t *TLS) {
+	panic(todo(""))
+}
+
+func XWSAAsyncSelect(t *TLS) {
+	panic(todo(""))
+}
+
+func XWSAGetLastError(t *TLS) {
+	panic(todo(""))
+}
+
+func XWSAStartup(t *TLS) {
+	panic(todo(""))
+}
+
+func XWriteConsoleW(t *TLS) {
+	panic(todo(""))
+}
+
+func XWspiapiFreeAddrInfo(t *TLS) {
+	panic(todo(""))
+}
+
+func XWspiapiGetAddrInfo(t *TLS) {
+	panic(todo(""))
+}
+
+func XWspiapiGetNameInfo(t *TLS) {
+	panic(todo(""))
+}
+
+func X_InterlockedExchange(t *TLS) {
+	panic(todo(""))
+}
+
+func X__builtin_huge_val(t *TLS) {
+	panic(todo(""))
+}
+
+func X__ccgo_in6addr_anyp(t *TLS) {
+	panic(todo(""))
+}
+
+func X_beginthreadex(t *TLS) {
+	panic(todo(""))
+}
+
+func X_controlfp(t *TLS) {
+	panic(todo(""))
+}
+
+func X_endthreadex(t *TLS) {
+	panic(todo(""))
+}
+
+func X_ftime(t *TLS) {
+	panic(todo(""))
+}
+
+func X_snwprintf(t *TLS) {
+	panic(todo(""))
+}
+
+func X_strnicmp(t *TLS) {
+	panic(todo(""))
+}
+
+func X_wcsicmp(t *TLS) {
+	panic(todo(""))
+}
+
+func X_wcsnicmp(t *TLS) {
+	panic(todo(""))
+}
+
+func Xaccept(t *TLS) {
+	panic(todo(""))
+}
+
+func Xbind(t *TLS) {
+	panic(todo(""))
+}
+
+func Xclosesocket(t *TLS) {
+	panic(todo(""))
+}
+
+func Xconnect(t *TLS) {
+	panic(todo(""))
+}
+
+func Xgai_strerrorW(t *TLS) {
+	panic(todo(""))
+}
+
+func Xgethostname(t *TLS) {
+	panic(todo(""))
+}
+
+func Xgetpeername(t *TLS) {
+	panic(todo(""))
+}
+
+func Xgetservbyname(t *TLS) {
+	panic(todo(""))
+}
+
+func Xgetsockname(t *TLS) {
+	panic(todo(""))
+}
+
+func Xgetsockopt(t *TLS) {
+	panic(todo(""))
+}
+
+func Xgmtime(t *TLS) {
+	panic(todo(""))
+}
+
+func Xinet_ntoa(t *TLS) {
+	panic(todo(""))
+}
+
+func Xioctlsocket(t *TLS) {
+	panic(todo(""))
+}
+
+func Xislower(t *TLS) {
+	panic(todo(""))
+}
+
+func Xlisten(t *TLS) {
+	panic(todo(""))
+}
+
+func XlstrcmpiA(t *TLS) {
+	panic(todo(""))
+}
+
+func XlstrlenW(t *TLS) {
+	panic(todo(""))
+}
+
+func Xputenv(t *TLS) {
+	panic(todo(""))
+}
+
+func Xrecv(t *TLS) {
+	panic(todo(""))
+}
+
+func Xselect(t *TLS) {
+	panic(todo(""))
+}
+
+func Xsend(t *TLS) {
+	panic(todo(""))
+}
+
+func Xsetsockopt(t *TLS) {
+	panic(todo(""))
+}
+
+func Xshutdown(t *TLS) {
+	panic(todo(""))
+}
+
+func Xsocket(t *TLS) {
+	panic(todo(""))
+}
+
+func Xstrerror(t *TLS) {
+	panic(todo(""))
+}
+
+func Xwcschr(t *TLS) {
+	panic(todo(""))
+}
+
+func Xwcscmp(t *TLS) {
+	panic(todo(""))
+}
+
+func Xwcscpy(t *TLS) {
+	panic(todo(""))
+}
+
+func Xwcsicmp(t *TLS) {
+	panic(todo(""))
+}
+
+func Xwcslen(t *TLS) {
+	panic(todo(""))
+}
+
+func Xwcsncmp(t *TLS) {
+	panic(todo(""))
+}
+
+func XwsprintfA(t *TLS) {
+	panic(todo(""))
+}
+
+func XwsprintfW(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetConsoleCP(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetCurrentThread(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetACP(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetCommandLineW(t *TLS) {
+	panic(todo(""))
+}
+
+func XAddAccessDeniedAce(t *TLS) {
+	panic(todo(""))
+}
+
+func XAddAce(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetAce(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetAclInformation(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetFileSecurityA(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetLengthSid(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetSecurityDescriptorDacl(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetSidLengthRequired(t *TLS) {
+	panic(todo(""))
+}
+
+func XGetSidSubAuthority(t *TLS) {
+	panic(todo(""))
+}
+
+func XInitializeAcl(t *TLS) {
+	panic(todo(""))
+}
+
+func XInitializeSid(t *TLS) {
+	panic(todo(""))
+}
+
+func XRaiseException(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetErrorMode(t *TLS) {
+	panic(todo(""))
+}
+
+func XSetNamedSecurityInfoA(t *TLS) {
+	panic(todo(""))
+}
+
+func Xchmod(t *TLS) {
+	panic(todo(""))
+}
+
+func Xsscanf(t *TLS) {
+	panic(todo(""))
+}
+
+func Xwrite(t *TLS) {
+	panic(todo(""))
 }
