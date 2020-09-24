@@ -1382,323 +1382,439 @@ func XSetEvent(t *TLS, hEvent uintptr) int32 {
 	return int32(sys(t, setEvent, hEvent))
 }
 
-func XAccessCheck(t *TLS, _ ...interface{}) {
+func XAccessCheck(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XBuildCommDCBW(t *TLS, _ ...interface{}) {
+func XBuildCommDCBW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XCharLowerW(t *TLS, _ ...interface{}) {
+func XCharLowerW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XClearCommError(t *TLS, _ ...interface{}) {
+func XClearCommError(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XCopyFileW(t *TLS, _ ...interface{}) {
+func XCopyFileW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XCreateDirectoryW(t *TLS, _ ...interface{}) {
+func XCreateDirectoryW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XCreateEventW(t *TLS, _ ...interface{}) {
+// HANDLE CreateEventW(
+//   LPSECURITY_ATTRIBUTES lpEventAttributes,
+//   BOOL                  bManualReset,
+//   BOOL                  bInitialState,
+//   LPCWSTR               lpName
+// );
+func XCreateEventW(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XCreateHardLinkW(t *TLS, _ ...interface{}) {
+func XCreateHardLinkW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XCreatePipe(t *TLS, _ ...interface{}) {
+func XCreatePipe(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XCreateThread(t *TLS, _ ...interface{}) {
+// HANDLE CreateThread(
+//   LPSECURITY_ATTRIBUTES   lpThreadAttributes,
+//   SIZE_T                  dwStackSize,
+//   LPTHREAD_START_ROUTINE  lpStartAddress,
+//   __drv_aliasesMem LPVOID lpParameter,
+//   DWORD                   dwCreationFlags,
+//   LPDWORD                 lpThreadId
+// );
+func XCreateThread(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XCreateWindowExW(t *TLS, _ ...interface{}) {
+// HWND CreateWindowExW(
+//   DWORD     dwExStyle,
+//   LPCWSTR   lpClassName,
+//   LPCWSTR   lpWindowName,
+//   DWORD     dwStyle,
+//   int       X,
+//   int       Y,
+//   int       nWidth,
+//   int       nHeight,
+//   HWND      hWndParent,
+//   HMENU     hMenu,
+//   HINSTANCE hInstance,
+//   LPVOID    lpParam
+// );
+func XCreateWindowExW(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XDdeAbandonTransaction(t *TLS, _ ...interface{}) {
+func XDdeAbandonTransaction(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDdeAccessData(t *TLS, _ ...interface{}) {
+func XDdeAccessData(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XDdeClientTransaction(t *TLS, _ ...interface{}) {
+func XDdeClientTransaction(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XDdeConnect(t *TLS, _ ...interface{}) {
+func XDdeConnect(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XDdeCreateDataHandle(t *TLS, _ ...interface{}) {
+func XDdeCreateDataHandle(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XDdeCreateStringHandleW(t *TLS, _ ...interface{}) {
+func XDdeCreateStringHandleW(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XDdeDisconnect(t *TLS, _ ...interface{}) {
+func XDdeDisconnect(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDdeFreeDataHandle(t *TLS, _ ...interface{}) {
+func XDdeFreeDataHandle(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDdeFreeStringHandle(t *TLS, _ ...interface{}) {
+func XDdeFreeStringHandle(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDdeGetData(t *TLS, _ ...interface{}) {
+func XDdeGetData(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDdeGetLastError(t *TLS, _ ...interface{}) {
+func XDdeGetLastError(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XDdeInitializeW(t *TLS, _ ...interface{}) {
+func XDdeInitializeW(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XDdeNameService(t *TLS, _ ...interface{}) {
+func XDdeNameService(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDdeQueryStringW(t *TLS, _ ...interface{}) {
+func XDdeQueryStringW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDdeUnaccessData(t *TLS, _ ...interface{}) {
+func XDdeUnaccessData(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDdeUninitialize(t *TLS, _ ...interface{}) {
+func XDdeUninitialize(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDefWindowProcW(t *TLS, _ ...interface{}) {
+// LRESULT LRESULT DefWindowProcW(
+//   HWND   hWnd,
+//   UINT   Msg,
+//   WPARAM wParam,
+//   LPARAM lParam
+// );
+func XDefWindowProcW(t *TLS, _ ...interface{}) int64 {
 	panic(todo(""))
 }
 
-func XDeleteCriticalSection(t *TLS, _ ...interface{}) {
+func XDeleteCriticalSection(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDestroyWindow(t *TLS, _ ...interface{}) {
+func XDestroyWindow(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDeviceIoControl(t *TLS, _ ...interface{}) {
+func XDeviceIoControl(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDispatchMessageW(t *TLS, _ ...interface{}) {
+func XDispatchMessageW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDuplicateHandle(t *TLS, _ ...interface{}) {
+// BOOL DuplicateHandle(
+//   HANDLE   hSourceProcessHandle,
+//   HANDLE   hSourceHandle,
+//   HANDLE   hTargetProcessHandle,
+//   LPHANDLE lpTargetHandle,
+//   DWORD    dwDesiredAccess,
+//   BOOL     bInheritHandle,
+//   DWORD    dwOptions
+// );
+func XDuplicateHandle(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XEnterCriticalSection(t *TLS, _ ...interface{}) {
+func XEnterCriticalSection(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XEnumWindows(t *TLS, _ ...interface{}) {
+func XEnumWindows(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XEqualSid(t *TLS, _ ...interface{}) {
+func XEqualSid(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XEscapeCommFunction(t *TLS, _ ...interface{}) {
+func XEscapeCommFunction(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XExitProcess(t *TLS, _ ...interface{}) {
+func XExitProcess(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XFindFirstFileExW(t *TLS, _ ...interface{}) {
+// HANDLE FindFirstFileExW(
+//   LPCWSTR            lpFileName,
+//   FINDEX_INFO_LEVELS fInfoLevelId,
+//   LPVOID             lpFindFileData,
+//   FINDEX_SEARCH_OPS  fSearchOp,
+//   LPVOID             lpSearchFilter,
+//   DWORD              dwAdditionalFlags
+// );
+func XFindFirstFileExW(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XFindNextFileW(t *TLS, _ ...interface{}) {
+func XFindNextFileW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetCommModemStatus(t *TLS, _ ...interface{}) {
+func XGetCommModemStatus(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetCommState(t *TLS, _ ...interface{}) {
+// BOOL GetCommState(
+//   HANDLE hFile,
+//   LPDCB  lpDCB
+// );
+func XGetCommState(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetComputerNameW(t *TLS, _ ...interface{}) {
+func XGetComputerNameW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetConsoleMode(t *TLS, _ ...interface{}) {
+// BOOL WINAPI GetConsoleMode(
+//   _In_  HANDLE  hConsoleHandle,
+//   _Out_ LPDWORD lpMode
+// );
+func XGetConsoleMode(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetCurrentDirectoryW(t *TLS, _ ...interface{}) {
+// DWORD GetCurrentDirectory(
+//   DWORD  nBufferLength,
+//   LPWTSTR lpBuffer
+// );
+func XGetCurrentDirectoryW(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XGetCurrentThreadId(t *TLS, _ ...interface{}) {
+// DWORD GetCurrentThreadId();
+func XGetCurrentThreadId(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XGetEnvironmentVariableA(t *TLS, _ ...interface{}) {
+func XGetEnvironmentVariableA(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetEnvironmentVariableW(t *TLS, _ ...interface{}) {
+// DWORD GetEnvironmentVariableW(
+//   LPCWSTR lpName,
+//   LPWSTR  lpBuffer,
+//   DWORD   nSize
+// );
+func XGetEnvironmentVariableW(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XGetExitCodeProcess(t *TLS, _ ...interface{}) {
+func XGetExitCodeProcess(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetExitCodeThread(t *TLS, _ ...interface{}) {
+func XGetExitCodeThread(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetFileInformationByHandle(t *TLS, _ ...interface{}) {
+func XGetFileInformationByHandle(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetFileSecurityW(t *TLS, _ ...interface{}) {
+func XGetFileSecurityW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetFileType(t *TLS, _ ...interface{}) {
+// DWORD GetFileType(
+//   HANDLE hFile
+// );
+func XGetFileType(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XGetLogicalDriveStringsA(t *TLS, _ ...interface{}) {
+// DWORD GetLogicalDriveStringsA(
+//   DWORD nBufferLength,
+//   LPSTR lpBuffer
+// );
+func XGetLogicalDriveStringsA(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XGetMessageW(t *TLS, _ ...interface{}) {
+func XGetMessageW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetModuleFileNameA(t *TLS, _ ...interface{}) {
+func XGetModuleFileNameA(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetModuleFileNameW(t *TLS, _ ...interface{}) {
+// DWORD GetModuleFileNameW(
+//   HMODULE hModule,
+//   LPWSTR  lpFilename,
+//   DWORD   nSize
+// );
+func XGetModuleFileNameW(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XGetModuleHandleW(t *TLS, _ ...interface{}) {
+// HMODULE GetModuleHandleW(
+//   LPCWSTR lpModuleName
+// );
+func XGetModuleHandleW(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XGetNamedSecurityInfoW(t *TLS, _ ...interface{}) {
+// DWORD GetNamedSecurityInfoW(
+//   LPCWSTR              pObjectName,
+//   SE_OBJECT_TYPE       ObjectType,
+//   SECURITY_INFORMATION SecurityInfo,
+//   PSID                 *ppsidOwner,
+//   PSID                 *ppsidGroup,
+//   PACL                 *ppDacl,
+//   PACL                 *ppSacl,
+//   PSECURITY_DESCRIPTOR *ppSecurityDescriptor
+// );
+func XGetNamedSecurityInfoW(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XGetOverlappedResult(t *TLS, _ ...interface{}) {
+func XGetOverlappedResult(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetPrivateProfileStringA(t *TLS, _ ...interface{}) {
+// DWORD GetPrivateProfileStringA(
+//   LPCSTR lpAppName,
+//   LPCSTR lpKeyName,
+//   LPCSTR lpDefault,
+//   LPSTR  lpReturnedString,
+//   DWORD  nSize,
+//   LPCSTR lpFileName
+// );
+func XGetPrivateProfileStringA(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XGetProfilesDirectoryW(t *TLS, _ ...interface{}) {
+func XGetProfilesDirectoryW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetSecurityDescriptorOwner(t *TLS, _ ...interface{}) {
+func XGetSecurityDescriptorOwner(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetShortPathNameW(t *TLS, _ ...interface{}) {
+func XGetShortPathNameW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetSidIdentifierAuthority(t *TLS, _ ...interface{}) {
+// PSID_IDENTIFIER_AUTHORITY GetSidIdentifierAuthority(
+//   PSID pSid
+// );
+func XGetSidIdentifierAuthority(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XGetTempFileNameW(t *TLS, _ ...interface{}) {
+// UINT GetTempFileNameW(
+//   LPCWSTR lpPathName,
+//   LPCWSTR lpPrefixString,
+//   UINT    uUnique,
+//   LPWSTR  lpTempFileName
+// );
+func XGetTempFileNameW(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XGetTokenInformation(t *TLS, _ ...interface{}) {
+func XGetTokenInformation(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetUserNameW(t *TLS, _ ...interface{}) {
+func XGetUserNameW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetVolumeInformationA(t *TLS, _ ...interface{}) {
+func XGetVolumeInformationA(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetVolumeInformationW(t *TLS, _ ...interface{}) {
+func XGetVolumeInformationW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetVolumeNameForVolumeMountPointW(t *TLS, _ ...interface{}) {
+// BOOL GetVolumeNameForVolumeMountPointW(
+//   LPCWSTR lpszVolumeMountPoint,
+//   LPWSTR  lpszVolumeName,
+//   DWORD   cchBufferLength
+// );
+func XGetVolumeNameForVolumeMountPointW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetWindowLongPtrW(t *TLS, _ ...interface{}) {
+func XGetWindowLongPtrW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetWindowsDirectoryA(t *TLS, _ ...interface{}) {
+func XGetWindowsDirectoryA(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGlobalAddAtomW(t *TLS, _ ...interface{}) {
+func XGlobalAddAtomW(t *TLS, _ ...interface{}) uint16 {
 	panic(todo(""))
 }
 
-func XGlobalDeleteAtom(t *TLS, _ ...interface{}) {
+func XGlobalDeleteAtom(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGlobalGetAtomNameW(t *TLS, _ ...interface{}) {
+func XGlobalGetAtomNameW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XIN6_ADDR_EQUAL(t *TLS, _ ...interface{}) {
+func XIN6_ADDR_EQUAL(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XIN6_IS_ADDR_V4MAPPED(t *TLS, _ ...interface{}) {
+func XIN6_IS_ADDR_V4MAPPED(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XImpersonateSelf(t *TLS, _ ...interface{}) {
+func XImpersonateSelf(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XInitializeCriticalSection(t *TLS, _ ...interface{}) {
+func XInitializeCriticalSection(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
@@ -1707,231 +1823,263 @@ func XIsDebuggerPresent(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XIsWindow(t *TLS, _ ...interface{}) {
+func XIsWindow(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XKillTimer(t *TLS, _ ...interface{}) {
+func XKillTimer(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XLeaveCriticalSection(t *TLS, _ ...interface{}) {
+func XLeaveCriticalSection(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XLoadLibraryExW(t *TLS, _ ...interface{}) {
+// HMODULE LoadLibraryExW(
+//   LPCWSTR lpLibFileName,
+//   HANDLE  hFile,
+//   DWORD   dwFlags
+// );
+func XLoadLibraryExW(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XMessageBeep(t *TLS, _ ...interface{}) {
+func XMessageBeep(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XMessageBoxW(t *TLS, _ ...interface{}) {
+func XMessageBoxW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XMoveFileW(t *TLS, _ ...interface{}) {
+func XMoveFileW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XMsgWaitForMultipleObjectsEx(t *TLS, _ ...interface{}) {
+// DWORD MsgWaitForMultipleObjectsEx(
+//   DWORD        nCount,
+//   const HANDLE *pHandles,
+//   DWORD        dwMilliseconds,
+//   DWORD        dwWakeMask,
+//   DWORD        dwFlags
+// );
+func XMsgWaitForMultipleObjectsEx(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XNetApiBufferFree(t *TLS, _ ...interface{}) {
+func XNetApiBufferFree(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XNetGetDCName(t *TLS, _ ...interface{}) {
+func XNetGetDCName(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XNetUserGetInfo(t *TLS, _ ...interface{}) {
+// NET_API_STATUS NET_API_FUNCTION NetUserGetInfo(
+//   LPCWSTR servername,
+//   LPCWSTR username,
+//   DWORD   level,
+//   LPBYTE  *bufptr
+// );
+func XNetUserGetInfo(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XOpenProcessToken(t *TLS, _ ...interface{}) {
+func XOpenProcessToken(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XOpenThreadToken(t *TLS, _ ...interface{}) {
+func XOpenThreadToken(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XPeekConsoleInputW(t *TLS, _ ...interface{}) {
+func XPeekConsoleInputW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XPeekMessageW(t *TLS, _ ...interface{}) {
+func XPeekMessageW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XPeekNamedPipe(t *TLS, _ ...interface{}) {
+func XPeekNamedPipe(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XPostMessageW(t *TLS, _ ...interface{}) {
+func XPostMessageW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XPostQuitMessage(t *TLS, _ ...interface{}) {
+func XPostQuitMessage(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XPurgeComm(t *TLS, _ ...interface{}) {
+func XPurgeComm(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XQueryPerformanceFrequency(t *TLS, _ ...interface{}) {
+func XQueryPerformanceFrequency(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XReadConsoleW(t *TLS, _ ...interface{}) {
+// BOOL WINAPI ReadConsole(
+//   _In_     HANDLE  hConsoleInput,
+//   _Out_    LPVOID  lpBuffer,
+//   _In_     DWORD   nNumberOfCharsToRead,
+//   _Out_    LPDWORD lpNumberOfCharsRead,
+//   _In_opt_ LPVOID  pInputControl
+// );
+func XReadConsoleW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegCloseKey(t *TLS, _ ...interface{}) {
+func XRegCloseKey(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegConnectRegistryW(t *TLS, _ ...interface{}) {
+func XRegConnectRegistryW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegCreateKeyExW(t *TLS, _ ...interface{}) {
+func XRegCreateKeyExW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegDeleteKeyW(t *TLS, _ ...interface{}) {
+func XRegDeleteKeyW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegDeleteValueW(t *TLS, _ ...interface{}) {
+func XRegDeleteValueW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegEnumKeyExW(t *TLS, _ ...interface{}) {
+func XRegEnumKeyExW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegEnumValueW(t *TLS, _ ...interface{}) {
+func XRegEnumValueW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegOpenKeyExW(t *TLS, _ ...interface{}) {
+func XRegOpenKeyExW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegQueryValueExW(t *TLS, _ ...interface{}) {
+func XRegQueryValueExW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegSetValueExW(t *TLS, _ ...interface{}) {
+func XRegSetValueExW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegisterClassExW(t *TLS, _ ...interface{}) {
+func XRegisterClassExW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegisterClassW(t *TLS, _ ...interface{}) {
+func XRegisterClassW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRemoveDirectoryW(t *TLS, _ ...interface{}) {
+func XRemoveDirectoryW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XResetEvent(t *TLS, _ ...interface{}) {
+func XResetEvent(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRevertToSelf(t *TLS, _ ...interface{}) {
+func XRevertToSelf(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSearchPathW(t *TLS, _ ...interface{}) {
+func XSearchPathW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSendMessageTimeoutW(t *TLS, _ ...interface{}) {
+func XSendMessageTimeoutW(t *TLS, _ ...interface{}) int64 {
 	panic(todo(""))
 }
 
-func XSendMessageW(t *TLS, _ ...interface{}) {
+func XSendMessageW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetCommState(t *TLS, _ ...interface{}) {
+func XSetCommState(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetCommTimeouts(t *TLS, _ ...interface{}) {
+func XSetCommTimeouts(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetConsoleMode(t *TLS, _ ...interface{}) {
+func XSetConsoleMode(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetFileAttributesW(t *TLS, _ ...interface{}) {
+func XSetFileAttributesW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetHandleInformation(t *TLS, _ ...interface{}) {
+func XSetHandleInformation(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetThreadPriority(t *TLS, _ ...interface{}) {
+func XSetThreadPriority(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetTimer(t *TLS, _ ...interface{}) {
+func XSetTimer(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetWindowLongPtrW(t *TLS, _ ...interface{}) {
+func XSetWindowLongPtrW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetupComm(t *TLS, _ ...interface{}) {
+func XSetupComm(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSleepEx(t *TLS, _ ...interface{}) {
+func XSleepEx(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XTerminateThread(t *TLS, _ ...interface{}) {
+func XTerminateThread(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XTranslateMessage(t *TLS, _ ...interface{}) {
+func XTranslateMessage(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XUnregisterClassW(t *TLS, _ ...interface{}) {
+func XUnregisterClassW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XWSAAsyncSelect(t *TLS, _ ...interface{}) {
+func XWSAAsyncSelect(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XWSAGetLastError(t *TLS, _ ...interface{}) {
+func XWSAGetLastError(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XWSAStartup(t *TLS, _ ...interface{}) {
+func XWSAStartup(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XWriteConsoleW(t *TLS, _ ...interface{}) {
+// BOOL WINAPI WriteConsole(
+//   _In_             HANDLE  hConsoleOutput,
+//   _In_       const VOID    *lpBuffer,
+//   _In_             DWORD   nNumberOfCharsToWrite,
+//   _Out_opt_        LPDWORD lpNumberOfCharsWritten,
+//   _Reserved_       LPVOID  lpReserved
+// );
+func XWriteConsoleW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XWspiapiFreeAddrInfo(t *TLS, _ ...interface{}) {
+func XWspiapiFreeAddrInfo(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
@@ -1945,11 +2093,11 @@ func XWspiapiGetAddrInfo(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XWspiapiGetNameInfo(t *TLS, _ ...interface{}) {
+func XWspiapiGetNameInfo(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func X_InterlockedExchange(t *TLS, _ ...interface{}) {
+func X_InterlockedExchange(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
@@ -1958,55 +2106,65 @@ func X__builtin_huge_val(t *TLS, _ ...interface{}) float64 {
 	panic(todo(""))
 }
 
-func X__ccgo_in6addr_anyp(t *TLS, _ ...interface{}) {
+func X__ccgo_in6addr_anyp(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func X_beginthreadex(t *TLS, _ ...interface{}) {
+func X_beginthreadex(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func X_controlfp(t *TLS, _ ...interface{}) {
+func X_controlfp(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func X_endthreadex(t *TLS, _ ...interface{}) {
+func X_endthreadex(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func X_ftime(t *TLS, _ ...interface{}) {
+func X_ftime(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func X_snwprintf(t *TLS, _ ...interface{}) {
+func X_snwprintf(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func X_strnicmp(t *TLS, _ ...interface{}) {
+func X_strnicmp(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func X_wcsicmp(t *TLS, _ ...interface{}) {
+func X_wcsicmp(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func X_wcsnicmp(t *TLS, _ ...interface{}) {
+// int _wcsnicmp(
+//    const wchar_t *string1,
+//    const wchar_t *string2,
+//    size_t count
+// );
+func X_wcsnicmp(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xaccept(t *TLS, _ ...interface{}) {
+// SOCKET WSAAPI accept(
+//   SOCKET   s,
+//   sockaddr *addr,
+//   int      *addrlen
+// );
+func Xaccept(t *TLS, _ ...interface{}) uint64 {
 	panic(todo(""))
 }
 
-func Xbind(t *TLS, _ ...interface{}) {
+func Xbind(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xclosesocket(t *TLS, _ ...interface{}) {
+func Xclosesocket(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xconnect(t *TLS, _ ...interface{}) {
+func Xconnect(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
@@ -2017,11 +2175,11 @@ func Xgai_strerrorW(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func Xgethostname(t *TLS, _ ...interface{}) {
+func Xgethostname(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xgetpeername(t *TLS, _ ...interface{}) {
+func Xgetpeername(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
@@ -2033,63 +2191,68 @@ func Xgetservbyname(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func Xgetsockname(t *TLS, _ ...interface{}) {
+func Xgetsockname(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xgetsockopt(t *TLS, _ ...interface{}) {
+func Xgetsockopt(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xgmtime(t *TLS, _ ...interface{}) {
+func Xgmtime(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func Xinet_ntoa(t *TLS, _ ...interface{}) {
+func Xinet_ntoa(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func Xioctlsocket(t *TLS, _ ...interface{}) {
+func Xioctlsocket(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xlisten(t *TLS, _ ...interface{}) {
+func Xlisten(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XlstrcmpiA(t *TLS, _ ...interface{}) {
+func XlstrcmpiA(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XlstrlenW(t *TLS, _ ...interface{}) {
+func XlstrlenW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xputenv(t *TLS, _ ...interface{}) {
+func Xputenv(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xrecv(t *TLS, _ ...interface{}) {
+func Xrecv(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xselect(t *TLS, _ ...interface{}) {
+func Xselect(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xsend(t *TLS, _ ...interface{}) {
+func Xsend(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xsetsockopt(t *TLS, _ ...interface{}) {
+func Xsetsockopt(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xshutdown(t *TLS, _ ...interface{}) {
+func Xshutdown(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xsocket(t *TLS, _ ...interface{}) {
+// SOCKET WSAAPI socket(
+//   int af,
+//   int type,
+//   int protocol
+// );
+func Xsocket(t *TLS, _ ...interface{}) uint64 {
 	panic(todo(""))
 }
 
@@ -2098,7 +2261,7 @@ func Xstrerror(t *TLS, errnum int32) uintptr {
 	panic(todo(""))
 }
 
-func Xwcschr(t *TLS, _ ...interface{}) {
+func Xwcschr(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
@@ -2110,118 +2273,125 @@ func Xwcscmp(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xwcscpy(t *TLS, _ ...interface{}) {
+func Xwcscpy(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xwcsicmp(t *TLS, _ ...interface{}) {
+func Xwcsicmp(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xwcslen(t *TLS, _ ...interface{}) {
+// size_t wcslen(
+//    const wchar_t *str
+// );
+func Xwcslen(t *TLS, _ ...interface{}) types.Size_t {
 	panic(todo(""))
 }
 
-func Xwcsncmp(t *TLS, _ ...interface{}) {
+func Xwcsncmp(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XwsprintfA(t *TLS, _ ...interface{}) {
+func XwsprintfA(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XwsprintfW(t *TLS, _ ...interface{}) {
+func XwsprintfW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetConsoleCP(t *TLS, _ ...interface{}) {
+func XGetConsoleCP(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetCurrentThread(t *TLS, _ ...interface{}) {
+func XGetCurrentThread(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetACP(t *TLS, _ ...interface{}) {
+func XGetACP(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetCommandLineW(t *TLS, _ ...interface{}) {
+func XGetCommandLineW(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XAddAccessDeniedAce(t *TLS, _ ...interface{}) {
+func XAddAccessDeniedAce(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XAddAce(t *TLS, _ ...interface{}) {
+func XAddAce(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetAce(t *TLS, _ ...interface{}) {
+func XGetAce(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetAclInformation(t *TLS, _ ...interface{}) {
+func XGetAclInformation(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetFileSecurityA(t *TLS, _ ...interface{}) {
+func XGetFileSecurityA(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetLengthSid(t *TLS, _ ...interface{}) {
+func XGetLengthSid(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetSecurityDescriptorDacl(t *TLS, _ ...interface{}) {
+func XGetSecurityDescriptorDacl(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetSidLengthRequired(t *TLS, _ ...interface{}) {
+func XGetSidLengthRequired(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetSidSubAuthority(t *TLS, _ ...interface{}) {
+// PDWORD GetSidSubAuthority(
+//   PSID  pSid,
+//   DWORD nSubAuthority
+// );
+func XGetSidSubAuthority(t *TLS, _ ...interface{}) uintptr {
 	panic(todo(""))
 }
 
-func XInitializeAcl(t *TLS, _ ...interface{}) {
+func XInitializeAcl(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XInitializeSid(t *TLS, _ ...interface{}) {
+func XInitializeSid(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRaiseException(t *TLS, _ ...interface{}) {
+func XRaiseException(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetErrorMode(t *TLS, _ ...interface{}) {
+func XSetErrorMode(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSetNamedSecurityInfoA(t *TLS, _ ...interface{}) {
+func XSetNamedSecurityInfoA(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func Xchmod(t *TLS, _ ...interface{}) {
+func Xchmod(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xsscanf(t *TLS, _ ...interface{}) {
+func Xsscanf(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xwrite(t *TLS, _ ...interface{}) {
+func Xwrite(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XCreateProcessW(t *TLS, _ ...interface{}) {
+func XCreateProcessW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XWaitForInputIdle(t *TLS, _ ...interface{}) {
+func XWaitForInputIdle(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }

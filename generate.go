@@ -37,18 +37,18 @@ func main() {
 	}
 	_, _, hostSysIncludes, err := cc.HostConfig(os.Getenv("CCGO_CPP"))
 	if err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 
 	g := []string{"libc.go"}
 	x, err := filepath.Glob(fmt.Sprintf("*_%s.go", goos))
 	if err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 
 	g = append(g, x...)
 	if x, err = filepath.Glob(fmt.Sprintf("*_%s_%s.go", goos, goarch)); err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 
 	g = append(g, x...)
@@ -56,7 +56,7 @@ func main() {
 	for _, v := range g {
 		f, err := os.Open(v)
 		if err != nil {
-			fail(err)
+			fail("%v", err)
 		}
 
 		sc := bufio.NewScanner(f)
@@ -78,7 +78,7 @@ func main() {
 			m[s] = struct{}{}
 		}
 		if err := sc.Err(); err != nil {
-			fail(err)
+			fail("%v", err)
 		}
 
 		f.Close()
@@ -100,24 +100,24 @@ var CAPI = map[string]struct{}{`)
 	}
 	b.WriteString("\n}")
 	if err := ioutil.WriteFile(fmt.Sprintf("capi_%s_%s.go", goos, goarch), b.Bytes(), 0660); err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 
 	ccgoHelpers()
 
 	if err := libcHeaders(hostSysIncludes); err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 }
 
 func makeMusl(goos, goarch string) {
 	wd, err := os.Getwd()
 	if err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 
 	if err := os.Chdir("musl"); err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 
 	var arch string
@@ -131,11 +131,11 @@ func makeMusl(goos, goarch string) {
 	case "arm64":
 		arch = "aarch64"
 	default:
-		fail(fmt.Errorf("unknown/unsupported GOARCH: %q", goarch))
+		fail("unknown/unsupported GOARCH: %q", goarch)
 	}
 	defer func() {
 		if err := os.Chdir(wd); err != nil {
-			fail(err)
+			fail("%v", err)
 		}
 	}()
 
@@ -203,11 +203,11 @@ func makeMusl(goos, goarch string) {
 func makeMuslWin(goos, goarch string) {
 	wd, err := os.Getwd()
 	if err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 
 	if err := os.Chdir("musl"); err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 
 	var arch string
@@ -221,11 +221,11 @@ func makeMuslWin(goos, goarch string) {
 	case "arm64":
 		arch = "aarch64"
 	default:
-		fail(fmt.Errorf("unknown/unsupported GOARCH: %q", goarch))
+		fail("unknown/unsupported GOARCH: %q", goarch)
 	}
 	defer func() {
 		if err := os.Chdir(wd); err != nil {
-			fail(err)
+			fail("%v", err)
 		}
 	}()
 
@@ -237,6 +237,7 @@ func makeMuslWin(goos, goarch string) {
 		"ccgo",
 		"-D__attribute__(x)=",
 		"-ccgo-export-externs", "X",
+		"-ccgo-hide", "__syscall0,__syscall1,__syscall2,__syscall3,__syscall4,__syscall5,__syscall6",
 		"-ccgo-libc",
 		"-ccgo-long-double-is-double",
 		"-ccgo-pkgname", "libc",
@@ -279,7 +280,7 @@ func run(arg0 string, args ...string) []byte {
 	if err != nil {
 		sout := strings.TrimSpace(string(out) + "\n")
 		fmt.Fprintf(os.Stderr, "==== FAIL\n%s\n%s\n", sout, err)
-		fail(err)
+		fail("%v", err)
 	}
 	return out
 }
@@ -347,9 +348,23 @@ static char _;
 	})
 }
 
-func fail(err error) {
-	fmt.Fprintln(os.Stderr, err)
+func fail(s string, args ...interface{}) {
+	s = fmt.Sprintf(s, args...)
+	fmt.Fprintf(os.Stderr, "\n%v: FAIL\n%s\n", origin(2), s)
 	os.Exit(1)
+}
+
+func origin(skip int) string {
+	pc, fn, fl, _ := runtime.Caller(skip)
+	f := runtime.FuncForPC(pc)
+	var fns string
+	if f != nil {
+		fns = f.Name()
+		if x := strings.LastIndex(fns, "."); x > 0 {
+			fns = fns[x+1:]
+		}
+	}
+	return fmt.Sprintf("%s:%d:%s", fn, fl, fns)
 }
 
 func ccgoHelpers() {
@@ -669,7 +684,7 @@ func PostIncBitFieldPtr%dUint%d(p uintptr, d uint%[2]d, w, off int, mask uint%[1
 
 	b.WriteString("\n")
 	if err := ioutil.WriteFile(fmt.Sprintf("ccgo.go"), b.Bytes(), 0660); err != nil {
-		fail(err)
+		fail("%v", err)
 	}
 }
 
