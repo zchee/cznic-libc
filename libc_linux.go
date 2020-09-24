@@ -18,7 +18,7 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/unix"
-	gonetdb "honnef.co/go/netdb"
+	gonetdb "modernc.org/libc/honnef.co/go/netdb"
 	"modernc.org/libc/errno"
 	"modernc.org/libc/fcntl"
 	"modernc.org/libc/fts"
