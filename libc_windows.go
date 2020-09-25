@@ -28,39 +28,67 @@ type (
 )
 
 // Keep these outside of the var block otherwise go generate will miss them.
-var X__imp__environ uintptr
+var X__imp__environ = uintptr(unsafe.Pointer(&Xenviron))
 
 var (
 	// msvcrt.dll
-	_access  uintptr
-	_isatty  uintptr
-	_setmode uintptr
-	_stricmp uintptr
+	_access   uintptr
+	_isatty   uintptr
+	_setmode  uintptr
+	_stricmp  uintptr
+	setlocale uintptr
+	wcslen    uintptr
+	putenv    uintptr
+	wcschr    uintptr
+	wcscmp    uintptr
 
 	// kernel32.dll
-	closeHandle             uintptr
-	createFileW             uintptr
-	formatMessageW          uintptr
-	getCurrentProcessId     uintptr
-	getFileAttributesExW    uintptr
-	getFullPathNameW        uintptr
-	getSystemInfo           uintptr
-	getVersionExA           uintptr
-	localFree               uintptr
-	multiByteToWideChar     uintptr
-	readFile                uintptr
-	wideCharToMultiByte     uintptr
-	lockFileEx              uintptr
-	unlockFileEx            uintptr
-	getFileSize             uintptr
-	getSystemTime           uintptr
-	getTickCount            uintptr
-	queryPerformanceCounter uintptr
-	writeFile               uintptr
-	flushFileBuffers        uintptr
-	getFileAttributesW      uintptr
-	deleteFileW             uintptr
-	setEvent                uintptr
+	closeHandle               uintptr
+	createFileW               uintptr
+	formatMessageW            uintptr
+	getCurrentProcessId       uintptr
+	getFileAttributesExW      uintptr
+	getFullPathNameW          uintptr
+	getSystemInfo             uintptr
+	getVersionExA             uintptr
+	localFree                 uintptr
+	multiByteToWideChar       uintptr
+	readFile                  uintptr
+	wideCharToMultiByte       uintptr
+	lockFileEx                uintptr
+	unlockFileEx              uintptr
+	getFileSize               uintptr
+	getSystemTime             uintptr
+	getTickCount              uintptr
+	queryPerformanceCounter   uintptr
+	writeFile                 uintptr
+	flushFileBuffers          uintptr
+	getFileAttributesW        uintptr
+	deleteFileW               uintptr
+	setEvent                  uintptr
+	getCommandLineW           uintptr
+	initializeCriticalSection uintptr
+	enterCriticalSection      uintptr
+	getModuleHandleW          uintptr
+	getVersionExW             uintptr
+	leaveCriticalSection      uintptr
+	getCurrentThreadId        uintptr
+	createEventW              uintptr
+	getModuleFileNameW        uintptr
+	getACP                    uintptr
+	getEnvironmentVariableW   uintptr
+	getEnvironmentVariableA   uintptr
+	findFirstFileW            uintptr
+	findClose                 uintptr
+	getStdHandle              uintptr
+	getFileType               uintptr
+
+	// WS2_32.dll.
+	wSAStartup uintptr
+
+	// user32.dll
+	registerClassW uintptr
+	wsprintfA      uintptr
 )
 
 func init() {
@@ -69,6 +97,11 @@ func init() {
 		{"_isatty", &_isatty},
 		{"_setmode", &_setmode},
 		{"_stricmp", &_stricmp},
+		{"setlocale", &setlocale},
+		{"wcslen", &wcslen},
+		{"_putenv", &putenv},
+		{"wcschr", &wcschr},
+		{"wcscmp", &wcscmp},
 	})
 	mustLinkDll("kernel32.dll", []linkFunc{
 		{"CloseHandle", &closeHandle},
@@ -94,6 +127,29 @@ func init() {
 		{"GetFileAttributesW", &getFileAttributesW},
 		{"DeleteFileW", &deleteFileW},
 		{"SetEvent", &setEvent},
+		{"GetCommandLineW", &getCommandLineW},
+		{"InitializeCriticalSection", &initializeCriticalSection},
+		{"EnterCriticalSection", &enterCriticalSection},
+		{"GetModuleHandleW", &getModuleHandleW},
+		{"GetVersionExW", &getVersionExW},
+		{"LeaveCriticalSection", &leaveCriticalSection},
+		{"GetCurrentThreadId", &getCurrentThreadId},
+		{"CreateEventW", &createEventW},
+		{"GetModuleFileNameW", &getModuleFileNameW},
+		{"GetACP", &getACP},
+		{"GetEnvironmentVariableW", &getEnvironmentVariableW},
+		{"GetEnvironmentVariableA", &getEnvironmentVariableA},
+		{"FindFirstFileW", &findFirstFileW},
+		{"FindClose", &findClose},
+		{"GetStdHandle", &getStdHandle},
+		{"GetFileType", &getFileType},
+	})
+	mustLinkDll("WS2_32.dll", []linkFunc{
+		{"WSAStartup", &wSAStartup},
+	})
+	mustLinkDll("user32.dll", []linkFunc{
+		{"RegisterClassW", &registerClassW},
+		{"wsprintfA", &wsprintfA},
 	})
 }
 
@@ -428,12 +484,12 @@ func XDeleteFileW(t *TLS, lpFileName uintptr) int32 {
 
 // BOOL FindClose(HANDLE hFindFile);
 func XFindClose(t *TLS, hFindFile uintptr) int32 {
-	panic(todo(""))
+	return int32(sys(t, findClose, hFindFile))
 }
 
 // HANDLE FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
 func XFindFirstFileW(t *TLS, lpFileName, lpFindFileData uintptr) uintptr {
-	panic(todo(""))
+	return sys(t, findFirstFileW, lpFileName, lpFindFileData)
 }
 
 // BOOL FlushFileBuffers(
@@ -587,7 +643,7 @@ func XGetLastError(t *TLS) uint32 {
 
 // FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName);
 func XGetProcAddress(t *TLS, hModule, lpProcName uintptr) uintptr {
-	panic(todo(""))
+	return 0 //TODO need some trampoline mechanism
 }
 
 // HANDLE GetProcessHeap();
@@ -599,7 +655,7 @@ func XGetProcessHeap(t *TLS) uintptr {
 //   _In_ DWORD nStdHandle
 // );
 func XGetStdHandle(t *TLS, nStdHandle uint32) uintptr {
-	panic(todo(""))
+	return sys(t, getStdHandle, nStdHandle)
 }
 
 // void GetSystemInfo(
@@ -653,7 +709,7 @@ func XGetVersionExA(t *TLS, lpVersionInformation uintptr) int32 {
 //   LPOSVERSIONINFOW lpVersionInformation
 // );
 func XGetVersionExW(t *TLS, lpVersionInformation uintptr) int32 {
-	panic(todo(""))
+	return int32(sys(t, getVersionExW, lpVersionInformation))
 }
 
 // LPVOID HeapAlloc(
@@ -1303,9 +1359,13 @@ func sys2(t *TLS, proc uintptr, args ...interface{}) (r uintptr, err error) { //
 		switch x := v.(type) {
 		case uintptr:
 			a[i] = x
+		case int16:
+			a[i] = uintptr(x)
 		case int32:
 			a[i] = uintptr(x)
 		case int64:
+			a[i] = uintptr(x)
+		case uint16:
 			a[i] = uintptr(x)
 		case uint32:
 			a[i] = uintptr(x)
@@ -1343,11 +1403,13 @@ type TLS struct {
 	errnop    uintptr
 	lastError syscall.Errno
 	stack     stackHeader
+
+	locked bool // LockOSThread
 }
 
 // char *setlocale(int category, const char *locale);
 func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
-	panic(todo(""))
+	return sys(t, setlocale, category, locale)
 }
 
 func goWideString(p uintptr) string {
@@ -1412,8 +1474,8 @@ func XCreateDirectoryW(t *TLS, _ ...interface{}) int32 {
 //   BOOL                  bInitialState,
 //   LPCWSTR               lpName
 // );
-func XCreateEventW(t *TLS, _ ...interface{}) uintptr {
-	panic(todo(""))
+func XCreateEventW(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialState int32, lpName uintptr) uintptr {
+	return sys(t, createEventW, lpEventAttributes, bManualReset, bInitialState, lpName)
 }
 
 func XCreateHardLinkW(t *TLS, _ ...interface{}) int32 {
@@ -1557,8 +1619,11 @@ func XDuplicateHandle(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XEnterCriticalSection(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// void EnterCriticalSection(
+//   LPCRITICAL_SECTION lpCriticalSection
+// );
+func XEnterCriticalSection(t *TLS, lpCriticalSection uintptr) int32 {
+	return int32(sys(t, enterCriticalSection, lpCriticalSection))
 }
 
 func XEnumWindows(t *TLS, _ ...interface{}) int32 {
@@ -1626,12 +1691,18 @@ func XGetCurrentDirectoryW(t *TLS, _ ...interface{}) uint32 {
 }
 
 // DWORD GetCurrentThreadId();
-func XGetCurrentThreadId(t *TLS, _ ...interface{}) uint32 {
-	panic(todo(""))
+func XGetCurrentThreadId(t *TLS) uint32 {
+	t.lockOSThread()
+	return uint32(sys(t, getCurrentThreadId))
 }
 
-func XGetEnvironmentVariableA(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// DWORD GetEnvironmentVariableA(
+//   LPCSTR lpName,
+//   LPSTR  lpBuffer,
+//   DWORD  nSize
+// );
+func XGetEnvironmentVariableA(t *TLS, lpName, lpBuffer uintptr, nSize uint32) int32 {
+	return int32(sys(t, getEnvironmentVariableA, lpName, lpBuffer, nSize))
 }
 
 // DWORD GetEnvironmentVariableW(
@@ -1639,8 +1710,8 @@ func XGetEnvironmentVariableA(t *TLS, _ ...interface{}) int32 {
 //   LPWSTR  lpBuffer,
 //   DWORD   nSize
 // );
-func XGetEnvironmentVariableW(t *TLS, _ ...interface{}) uint32 {
-	panic(todo(""))
+func XGetEnvironmentVariableW(t *TLS, lpName, lpBuffer uintptr, nSize uint32) uint32 {
+	return uint32(sys(t, getEnvironmentVariableW, lpName, lpBuffer, nSize))
 }
 
 func XGetExitCodeProcess(t *TLS, _ ...interface{}) int32 {
@@ -1662,8 +1733,8 @@ func XGetFileSecurityW(t *TLS, _ ...interface{}) int32 {
 // DWORD GetFileType(
 //   HANDLE hFile
 // );
-func XGetFileType(t *TLS, _ ...interface{}) uint32 {
-	panic(todo(""))
+func XGetFileType(t *TLS, hFile uintptr) uint32 {
+	return uint32(sys(t, getFileType, hFile))
 }
 
 // DWORD GetLogicalDriveStringsA(
@@ -1687,15 +1758,15 @@ func XGetModuleFileNameA(t *TLS, _ ...interface{}) int32 {
 //   LPWSTR  lpFilename,
 //   DWORD   nSize
 // );
-func XGetModuleFileNameW(t *TLS, _ ...interface{}) uint32 {
-	panic(todo(""))
+func XGetModuleFileNameW(t *TLS, hModule, lpFileName uintptr, nSize uint32) uint32 {
+	return uint32(sys(t, getModuleFileNameW, hModule, lpFileName, nSize))
 }
 
 // HMODULE GetModuleHandleW(
 //   LPCWSTR lpModuleName
 // );
-func XGetModuleHandleW(t *TLS, _ ...interface{}) uintptr {
-	panic(todo(""))
+func XGetModuleHandleW(t *TLS, lpModuleName uintptr) uintptr {
+	return sys(t, getModuleHandleW, lpModuleName)
 }
 
 // DWORD GetNamedSecurityInfoW(
@@ -1814,8 +1885,11 @@ func XImpersonateSelf(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XInitializeCriticalSection(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// void InitializeCriticalSection(
+//   LPCRITICAL_SECTION lpCriticalSection
+// );
+func XInitializeCriticalSection(t *TLS, lpCriticalSection uintptr) int32 {
+	return int32(sys(t, initializeCriticalSection, lpCriticalSection))
 }
 
 // BOOL IsDebuggerPresent();
@@ -1831,8 +1905,11 @@ func XKillTimer(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XLeaveCriticalSection(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// void LeaveCriticalSection(
+//   LPCRITICAL_SECTION lpCriticalSection
+// );
+func XLeaveCriticalSection(t *TLS, lpCriticalSection uintptr) int32 {
+	return int32(sys(t, leaveCriticalSection, lpCriticalSection))
 }
 
 // HMODULE LoadLibraryExW(
@@ -1976,8 +2053,11 @@ func XRegisterClassExW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XRegisterClassW(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// ATOM RegisterClassW(
+//   const WNDCLASSW *lpWndClass
+// );
+func XRegisterClassW(t *TLS, lpWndClass uintptr) int32 {
+	return int32(sys(t, registerClassW, lpWndClass))
 }
 
 func XRemoveDirectoryW(t *TLS, _ ...interface{}) int32 {
@@ -2064,8 +2144,12 @@ func XWSAGetLastError(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XWSAStartup(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// int WSAStartup(
+//   WORD      wVersionRequired,
+//   LPWSADATA lpWSAData
+// );
+func XWSAStartup(t *TLS, wVersionRequired uint16, lpWSAData uintptr) int32 {
+	return int32(sys(t, wSAStartup, wVersionRequired, lpWSAData))
 }
 
 // BOOL WINAPI WriteConsole(
@@ -2223,8 +2307,11 @@ func XlstrlenW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func Xputenv(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// int putenv(
+//    const char *envstring
+// );
+func Xputenv(t *TLS, envstring uintptr) int32 {
+	return int32(sys(t, putenv, envstring))
 }
 
 func Xrecv(t *TLS, _ ...interface{}) int32 {
@@ -2261,16 +2348,20 @@ func Xstrerror(t *TLS, errnum int32) uintptr {
 	panic(todo(""))
 }
 
-func Xwcschr(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// wchar_t *wcschr(
+//    const wchar_t *str,
+//    wchar_t c
+// );
+func Xwcschr(t *TLS, str uintptr, c wchar_t) wchar_t {
+	return wchar_t(sys(t, wcschr, str, c))
 }
 
 // int wcscmp(
 //    const wchar_t *string1,
 //    const wchar_t *string2
 // );
-func Xwcscmp(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+func Xwcscmp(t *TLS, string1, string2 uintptr) int32 {
+	return int32(sys(t, wcscmp, string1, string2))
 }
 
 func Xwcscpy(t *TLS, _ ...interface{}) int32 {
@@ -2284,16 +2375,21 @@ func Xwcsicmp(t *TLS, _ ...interface{}) int32 {
 // size_t wcslen(
 //    const wchar_t *str
 // );
-func Xwcslen(t *TLS, _ ...interface{}) types.Size_t {
-	panic(todo(""))
+func Xwcslen(t *TLS, str uintptr) types.Size_t {
+	return types.Size_t(sys(t, wcslen, str))
 }
 
 func Xwcsncmp(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XwsprintfA(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// int WINAPIV wsprintfA(
+//   LPSTR  ,
+//   LPCSTR ,
+//   ...
+// );
+func XwsprintfA(t *TLS, a, b, va uintptr) int32 {
+	return int32(sysv(t, wsprintfA, a, b, va))
 }
 
 func XwsprintfW(t *TLS, _ ...interface{}) int32 {
@@ -2308,12 +2404,14 @@ func XGetCurrentThread(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XGetACP(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// UINT GetACP();
+func XGetACP(t *TLS) int32 {
+	return int32(sys(t, getACP))
 }
 
-func XGetCommandLineW(t *TLS, _ ...interface{}) uintptr {
-	panic(todo(""))
+// LPWSTR GetCommandLineW();
+func XGetCommandLineW(t *TLS) uintptr {
+	return sys(t, getCommandLineW)
 }
 
 func XAddAccessDeniedAce(t *TLS, _ ...interface{}) int32 {
@@ -2394,4 +2492,12 @@ func XCreateProcessW(t *TLS, _ ...interface{}) int32 {
 
 func XWaitForInputIdle(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
+}
+
+func Environ() uintptr {
+	return *(*uintptr)(unsafe.Pointer(X__imp__environ))
+}
+
+func EnvironP() uintptr {
+	return X__imp__environ
 }

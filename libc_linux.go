@@ -1531,6 +1531,8 @@ type TLS struct {
 	ID     int32
 	errnop uintptr
 	stack  stackHeader
+
+	locked bool // LockOSThread
 }
 
 func goWideString(p uintptr) string {
@@ -1548,4 +1550,12 @@ func goWideString(p uintptr) string {
 		a = append(a, c)
 		p += unsafe.Sizeof(rune(0))
 	}
+}
+
+func Environ() uintptr {
+	return Xenviron
+}
+
+func EnvironP() uintptr {
+	return uintptr(unsafe.Pointer(&Xenviron))
 }

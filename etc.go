@@ -189,6 +189,13 @@ again:
 	}
 }
 
+func (t *TLS) lockOSThread() {
+	if !t.locked {
+		runtime.LockOSThread()
+		t.locked = true
+	}
+}
+
 func (t *TLS) Close() {
 	Xfree(t, t.errnop)
 }

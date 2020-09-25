@@ -23,7 +23,6 @@ import (
 	"math/bits"
 	"os"
 	gosignal "os/signal"
-	"runtime"
 	"runtime/debug"
 	"sort"
 	"strings"
@@ -137,14 +136,6 @@ func X__builtin_memset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
 	return Xmemset(t, s, c, n)
 }
 
-func Environ() uintptr {
-	return Xenviron
-}
-
-func EnvironP() uintptr {
-	return uintptr(unsafe.Pointer(&Xenviron))
-}
-
 func X___errno_location(t *TLS) uintptr {
 	return X__errno_location(t)
 }
@@ -155,8 +146,8 @@ func X__errno_location(t *TLS) uintptr {
 }
 
 func Start(main func(*TLS, int32, uintptr) int32) {
-	runtime.LockOSThread()
 	t := NewTLS()
+	t.lockOSThread()
 	argv := mustCalloc(t, types.Size_t((len(os.Args)+1)*int(uintptrSize)))
 	p := argv
 	for _, v := range os.Args {
@@ -993,6 +984,10 @@ func Xprintf(t *TLS, format, args uintptr) int32 {
 
 func X__ccgo_print_debug_stack(t *TLS) {
 	fmt.Printf("%s\n", debug.Stack())
+}
+
+func X__ccgo_debug_print(s string, args ...interface{}) {
+	fmt.Printf(s, args...)
 }
 
 // void tzset (void);
