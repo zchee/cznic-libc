@@ -250,6 +250,8 @@ var CAPI = map[string]struct{}{
 	"__builtin_abs":                     {},
 	"__builtin_add_overflow":            {},
 	"__builtin_add_overflowInt64":       {},
+	"__builtin_add_overflowUint32":      {},
+	"__builtin_add_overflowUint64":      {},
 	"__builtin_bswap16":                 {},
 	"__builtin_bswap32":                 {},
 	"__builtin_clzll":                   {},
