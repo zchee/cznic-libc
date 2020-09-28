@@ -47,7 +47,7 @@ linux_arm64:
 
 windows_amd64:
 	CCGO_CPP=x86_64-w64-mingw32-cpp TARGET_GOOS=windows TARGET_GOARCH=amd64 go generate
-	GOOS=windows GOARCH=amd64 go build -v ./...
+	CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 go build -v ./...
 
 devbench:
 	date 2>&1 | tee log-devbench
@@ -76,7 +76,7 @@ edit:
 	&
 
 editor:
-	go generate 2>&1 | tee log
+	make windows_amd64
 	gofmt -l -s -w *.go
 	go test -i
 	go test -short 2>&1 | tee -a log

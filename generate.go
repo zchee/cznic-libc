@@ -40,7 +40,7 @@ func main() {
 		fail("%v", err)
 	}
 
-	g := []string{"libc.go"}
+	g := []string{"libc.go", "libc_posix.go"}
 	x, err := filepath.Glob(fmt.Sprintf("*_%s.go", goos))
 	if err != nil {
 		fail("%v", err)
