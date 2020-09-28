@@ -7,7 +7,6 @@ package libc // import "modernc.org/libc"
 import (
 	"bytes"
 	"fmt"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -43,7 +42,7 @@ func printf(format, args uintptr) []byte {
 			format = printfConversion(buf, format, &args)
 		case 0:
 			if dmesgs {
-				dmesg("%v: %q: %q\n%s", origin(1), GoString(f0), buf.Bytes(), debug.Stack())
+				dmesg("%v: %q: %q", origin(1), GoString(f0), buf.Bytes())
 			}
 			return buf.Bytes()
 		default:
