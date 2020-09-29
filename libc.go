@@ -11,15 +11,58 @@
 package libc // import "modernc.org/libc"
 
 import (
+	"fmt"
 	"math"
 	"math/bits"
+	"os"
 	"sort"
 	"unsafe"
 
 	"modernc.org/libc/sys/types"
 )
 
-func X__builtin_inff(t *TLS) float32 { return float32(math.Inf(0)) }
+func X__builtin_abs(t *TLS, j int32) int32                           { return Xabs(t, j) }
+func X__builtin_copysign(t *TLS, x, y float64) float64               { return Xcopysign(t, x, y) }
+func X__builtin_copysignf(t *TLS, x, y float32) float32              { return Xcopysignf(t, x, y) }
+func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, status) }
+func X__builtin_expect(t *TLS, exp, c long) long                     { return exp }
+func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
+func X__builtin_free(t *TLS, ptr uintptr)                            { Xfree(t, ptr) }
+func X__builtin_inff(t *TLS) float32                                 { return float32(math.Inf(0)) }
+func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
+func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
+func X__builtin_prefetch(t *TLS, addr, args uintptr)                 {}
+func X__builtin_printf(t *TLS, s, args uintptr) int32                { return Xprintf(t, s, args) }
+func X__builtin_strchr(t *TLS, s uintptr, c int32) uintptr           { return Xstrchr(t, s, c) }
+func X__builtin_strcmp(t *TLS, s1, s2 uintptr) int32                 { return Xstrcmp(t, s1, s2) }
+func X__builtin_strcpy(t *TLS, dest, src uintptr) uintptr            { return Xstrcpy(t, dest, src) }
+func X__builtin_strlen(t *TLS, s uintptr) types.Size_t               { return Xstrlen(t, s) }
+func X__builtin_trap(t *TLS)                                         { Xabort(t) }
+
+// int vprintf(const char *format, va_list ap);
+func Xvprintf(t *TLS, s, ap uintptr) int32 { return Xprintf(t, s, ap) }
+
+func X__builtin_unreachable(t *TLS) {
+	fmt.Fprintf(os.Stderr, "unrechable\n")
+	os.Stderr.Sync()
+	Xexit(t, 1)
+}
+
+func X__builtin_sprintf(t *TLS, str, format, args uintptr) (r int32) {
+	return Xsprintf(t, str, format, args)
+}
+
+func X__builtin_snprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) int32 {
+	return Xsnprintf(t, str, size, format, args)
+}
+
+func X__builtin_memset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
+	return Xmemset(t, s, c, n)
+}
+
+func X__builtin_memcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
+	return Xmemcpy(t, dest, src, n)
+}
 
 // uint16_t __builtin_bswap16 (uint32_t x)
 func X__builtin_bswap16(t *TLS, x uint16) uint16 {
@@ -34,6 +77,13 @@ func X__builtin_bswap32(t *TLS, x uint32) uint32 {
 // bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_add_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
 	panic(todo(""))
+}
+
+// bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_add_overflowUint32(t *TLS, a, b uint32, res uintptr) int32 {
+	r := a + b
+	*(*uint32)(unsafe.Pointer(res)) = r
+	return Bool32(r < a)
 }
 
 // bool __builtin_sub_overflow (type1 a, type2 b, type3 *res)

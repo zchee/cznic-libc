@@ -16,7 +16,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 	"unsafe"
 
@@ -69,8 +68,7 @@ func trc(s string, args ...interface{}) string { //TODO-
 	default:
 		s = fmt.Sprintf(s, args...)
 	}
-	_, fn, fl, _ := runtime.Caller(1)
-	r := fmt.Sprintf("\n%s:%d: TRC %s", fn, fl, s)
+	r := fmt.Sprintf("\n%s: TRC %s", origin(2), s)
 	fmt.Fprintf(os.Stdout, "%s\n", r)
 	os.Stdout.Sync()
 	return r
@@ -159,45 +157,11 @@ func removeObject(t uintptr) {
 	objectMu.Unlock()
 }
 
-func NewTLS() *TLS {
-	id := atomic.AddInt32(&tid, 1)
-	t := &TLS{ID: id}
-	t.errnop = mustCalloc(t, types.Size_t(unsafe.Sizeof(int32(0))))
-	return t
-}
-
-func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
-	// if dmesgs {
-	// 	dmesg("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
-	// }
-again:
-	switch x := err.(type) {
-	case int:
-		*(*int32)(unsafe.Pointer(t.errnop)) = int32(x)
-	case int32:
-		*(*int32)(unsafe.Pointer(t.errnop)) = x
-	case *os.PathError:
-		err = x.Err
-		goto again
-	case syscall.Errno:
-		*(*int32)(unsafe.Pointer(t.errnop)) = int32(x)
-	case *os.SyscallError:
-		err = x.Err
-		goto again
-	default:
-		panic(todo("%T", x))
-	}
-}
-
 func (t *TLS) lockOSThread() {
 	if !t.locked {
 		runtime.LockOSThread()
 		t.locked = true
 	}
-}
-
-func (t *TLS) Close() {
-	Xfree(t, t.errnop)
 }
 
 func (t *TLS) Alloc(n int) (r uintptr) {

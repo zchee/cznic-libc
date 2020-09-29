@@ -21,6 +21,10 @@ void *__ccgo_errno_location() {
 	return &errno;
 }
 
+unsigned __ccgo_getLastError() {
+	return GetLastError();
+}
+
 */
 import "C"
 
@@ -28,6 +32,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sync/atomic"
 	"syscall"
 	"unsafe"
 
@@ -82,12 +87,19 @@ func mustLinkDll(lib string, a []linkFunc) {
 }
 
 type TLS struct {
-	ID        int32
-	errnop    uintptr
+	ID int32
+	//TODO errnop    uintptr
 	lastError syscall.Errno
 	stack     stackHeader
 
 	locked bool
+}
+
+func NewTLS() *TLS {
+	id := atomic.AddInt32(&tid, 1)
+	t := &TLS{ID: id}
+	//TODO t.errnop = mustCalloc(t, types.Size_t(unsafe.Sizeof(int32(0))))
+	return t
 }
 
 // void free(void *ptr);
@@ -469,7 +481,7 @@ func Xfputs(t *TLS, s, stream uintptr) int32 {
 
 // int fprintf(FILE *stream, const char *format, ...);
 func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
-	panic(todo(""))
+	return int32(sysv(t, fprintf, stream, format, args))
 }
 
 // char *fgets(char *s, int size, FILE *stream);
@@ -692,7 +704,7 @@ func Xftell(t *TLS, stream uintptr) long {
 
 // size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
-	panic(todo(""))
+	return types.Size_t(C.fread(unsafe.Pointer(ptr), C.size_t(size), C.size_t(nmemb), (*C.FILE)(unsafe.Pointer(stream))))
 }
 
 // int _unlink(
@@ -723,7 +735,7 @@ func XGetSystemInfo(t *TLS, lpSystemInfo uintptr) {
 
 // DWORD GetTickCount();
 func XGetTickCount(t *TLS) uint32 {
-	panic(todo(""))
+	return uint32(C.GetTickCount())
 }
 
 // BOOL GetVersionExA(
@@ -869,14 +881,14 @@ func X_chmod(t *TLS, filename uintptr, pmode int32) int32 {
 
 // void GetSystemTime(LPSYSTEMTIME lpSystemTime);
 func XGetSystemTime(t *TLS, lpSystemTime uintptr) {
-	panic(todo(""))
+	C.GetSystemTime((*C.struct__SYSTEMTIME)(unsafe.Pointer(lpSystemTime)))
 }
 
 // DWORD GetFileAttributesW(
 //   LPCWSTR lpFileName
 // );
 func XGetFileAttributesW(t *TLS, lpFileName uintptr) uint32 {
-	panic(todo(""))
+	return uint32(C.GetFileAttributesW((*C.ushort)(unsafe.Pointer(lpFileName))))
 }
 
 // DWORD GetFileSize(
@@ -884,7 +896,7 @@ func XGetFileAttributesW(t *TLS, lpFileName uintptr) uint32 {
 //   LPDWORD lpFileSizeHigh
 // );
 func XGetFileSize(t *TLS, hFile, lpFileSizeHigh uintptr) uint32 {
-	panic(todo(""))
+	return uint32(C.GetFileSize(C.HANDLE(hFile), (*C.ulong)(unsafe.Pointer(lpFileSizeHigh))))
 }
 
 // DWORD SetFilePointer(
@@ -1007,7 +1019,7 @@ func XSetEndOfFile(t *TLS, hFile uintptr) int32 {
 //   LPOVERLAPPED lpOverlapped
 // );
 func XUnlockFileEx(t *TLS, hFile uintptr, dwReserved, nNumberOfBytesToUnlockLow, nNumberOfBytesToUnlockHigh uint32, lpOverlapped uintptr) int32 {
-	panic(todo(""))
+	return int32(C.UnlockFileEx(C.HANDLE(hFile), C.ulong(dwReserved), C.ulong(nNumberOfBytesToUnlockLow), C.ulong(nNumberOfBytesToUnlockHigh), (*C.struct__OVERLAPPED)(unsafe.Pointer(lpOverlapped))))
 }
 
 // BOOL WriteFile(
@@ -1018,7 +1030,7 @@ func XUnlockFileEx(t *TLS, hFile uintptr, dwReserved, nNumberOfBytesToUnlockLow,
 //   LPOVERLAPPED lpOverlapped
 // );
 func XWriteFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToWrite uint32, lpNumberOfBytesWritten, lpOverlapped uintptr) int32 {
-	panic(todo(""))
+	return int32(C.WriteFile(C.HANDLE(hFile), C.LPCVOID(lpBuffer), C.ulong(nNumberOfBytesToWrite), (*C.ulong)(unsafe.Pointer(lpNumberOfBytesWritten)), (*C.struct__OVERLAPPED)(unsafe.Pointer(lpOverlapped))))
 }
 
 // LPVOID HeapAlloc(
@@ -1136,14 +1148,14 @@ func XMapViewOfFile(t *TLS, hFileMappingObject uintptr, dwDesiredAccess, dwFileO
 
 // DWORD GetCurrentProcessId();
 func XGetCurrentProcessId(t *TLS) uint32 {
-	panic(todo(""))
+	return uint32(C.GetCurrentProcessId())
 }
 
 // BOOL QueryPerformanceCounter(
 //   LARGE_INTEGER *lpPerformanceCount
 // );
 func XQueryPerformanceCounter(t *TLS, lpPerformanceCount uintptr) int32 {
-	panic(todo(""))
+	return int32(C.QueryPerformanceCounter((*C.LARGE_INTEGER)(unsafe.Pointer(lpPerformanceCount))))
 }
 
 // int MultiByteToWideChar(
@@ -1211,11 +1223,7 @@ func XOutputDebugStringA(t *TLS, lpOutputString uintptr) {
 
 // DWORD GetLastError();
 func XGetLastError(t *TLS) uint32 {
-	r := uint32(t.lastError)
-	if dmesgs {
-		dmesg("%v: %q", origin(1), syscall.Errno(r))
-	}
-	return r
+	return uint32(C.__ccgo_getLastError())
 }
 
 // BOOL DeleteFileA(
@@ -1229,14 +1237,14 @@ func XDeleteFileA(t *TLS, lpFileName uintptr) int32 {
 //   LPCWSTR lpFileName
 // );
 func XDeleteFileW(t *TLS, lpFileName uintptr) int32 {
-	panic(todo(""))
+	return int32(C.DeleteFileW((*C.ushort)(unsafe.Pointer(lpFileName))))
 }
 
 // BOOL FlushFileBuffers(
 //   HANDLE hFile
 // );
 func XFlushFileBuffers(t *TLS, hFile uintptr) int32 {
-	panic(todo(""))
+	return int32(C.FlushFileBuffers(C.HANDLE(hFile)))
 }
 
 // BOOL GetFileAttributesExW(
@@ -1264,8 +1272,8 @@ func XGetTempPathW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
 //   DWORD        nNumberOfBytesToLockHigh,
 //   LPOVERLAPPED lpOverlapped
 // );
-func XLockFileEx(t *TLS, hFile uintptr, dwFileOffsetLow, dwFileOffsetHigh, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh uint32, lpOverlapped uintptr) int32 {
-	panic(todo(""))
+func XLockFileEx(t *TLS, hFile uintptr, dwFlags, dwReserved, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh uint32, lpOverlapped uintptr) int32 {
+	return int32(C.LockFileEx(C.HANDLE(hFile), C.ulong(dwFlags), C.ulong(dwReserved), C.ulong(nNumberOfBytesToLockLow), C.ulong(nNumberOfBytesToLockHigh), (*C.struct__OVERLAPPED)(unsafe.Pointer(lpOverlapped))))
 }
 
 // DWORD WaitForSingleObject(
@@ -1285,7 +1293,7 @@ func XOutputDebugStringW(t *TLS, lpOutputString uintptr) {
 
 // int fflush(FILE *stream);
 func Xfflush(t *TLS, stream uintptr) int32 {
-	panic(todo(""))
+	return int32(C.fflush((*C.FILE)(unsafe.Pointer(stream))))
 }
 
 func Xvfprintf(t *TLS, stream, format, ap uintptr) int32 {
@@ -1299,7 +1307,7 @@ func Xrewind(t *TLS, stream uintptr) {
 
 // void *memmove(void *dest, const void *src, size_t n);
 func Xmemmove(t *TLS, dest, src uintptr, n types.Size_t) uintptr {
-	panic(todo(""))
+	return uintptr(C.memmove(unsafe.Pointer(dest), unsafe.Pointer(src), C.size_t(n)))
 }
 
 // char *getenv(const char *name);
@@ -1332,10 +1340,15 @@ func Xstrcspn(t *TLS, s, reject uintptr) (r types.Size_t) {
 	panic(todo(""))
 }
 
-// func Xabort(t *TLS) {
-// 	panic(todo(""))
-// }
-//
+func Xabort(t *TLS) {
+	C.abort()
+}
+
+// int snprintf(char *str, size_t size, const char *format, ...);
+func Xsnprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) (r int32) {
+	panic(todo(""))
+}
+
 // // int close(int fd);
 // func Xclose(t *TLS, fd int32) int32 {
 // 	panic(todo(""))

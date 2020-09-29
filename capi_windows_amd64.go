@@ -168,6 +168,7 @@ var CAPI = map[string]struct{}{
 	"_unlink":                      {},
 	"_vsnwprintf":                  {},
 	"_wunlink":                     {},
+	"abort":                        {},
 	"abs":                          {},
 	"acos":                         {},
 	"asin":                         {},
