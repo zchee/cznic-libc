@@ -238,9 +238,6 @@ func write(w io.Writer, b []byte) (int, error) {
 	return len(b), nil
 }
 
-func X__isnan(t *TLS, arg float64) int32                 { return Xisnan(t, arg) }
-func X__isnanf(t *TLS, arg float32) int32                { return Xisnanf(t, arg) }
-func X__isnanl(t *TLS, arg float64) int32                { return Xisnanl(t, arg) }
 func Xvfprintf(t *TLS, stream, format, ap uintptr) int32 { return Xfprintf(t, stream, format, ap) }
 
 // int sprintf(char *str, const char *format, ...);

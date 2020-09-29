@@ -8,6 +8,7 @@ package libc // import "modernc.org/libc"
 
 #include <ctype.h>
 #include <fcntl.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,8 @@ package libc // import "modernc.org/libc"
 void *__ccgo_environ() {
 	return (void*)environ;
 }
+
+extern char ***__imp_environ;
 
 void *__ccgo_errno_location() {
 	return &errno;
@@ -31,9 +34,11 @@ import "C"
 import (
 	"bufio"
 	"fmt"
+	"golang.org/x/sys/windows"
 	"os"
 	"sync/atomic"
 	"syscall"
+	"unicode/utf16"
 	"unsafe"
 
 	"modernc.org/libc/sys/types"
@@ -43,6 +48,10 @@ type (
 	long     = int32
 	longlong = int64
 )
+
+// Keep these outside of the var block otherwise go generate will miss them.
+// var X__imp__environ = uintptr(C.__ccgo_environ_location())
+var X__imp__environ = uintptr(unsafe.Pointer(C.__imp__environ))
 
 var (
 	// msvcrt.dll
@@ -100,6 +109,10 @@ func NewTLS() *TLS {
 	t := &TLS{ID: id}
 	//TODO t.errnop = mustCalloc(t, types.Size_t(unsafe.Sizeof(int32(0))))
 	return t
+}
+
+func (t *TLS) Close() {
+	//TODO Xfree(t, t.errnop)
 }
 
 // void free(void *ptr);
@@ -749,7 +762,7 @@ func XGetVersionExA(t *TLS, lpVersionInformation uintptr) int32 {
 //   LPOSVERSIONINFOW lpVersionInformation
 // );
 func XGetVersionExW(t *TLS, lpVersionInformation uintptr) int32 {
-	panic(todo(""))
+	return int32(C.GetVersionExA((*C.struct__OSVERSIONINFOA)(unsafe.Pointer(lpVersionInformation))))
 }
 
 // HLOCAL LocalFree(
@@ -1340,6 +1353,7 @@ func Xstrcspn(t *TLS, s, reject uintptr) (r types.Size_t) {
 	panic(todo(""))
 }
 
+// void abort(void);
 func Xabort(t *TLS) {
 	C.abort()
 }
@@ -1349,1421 +1363,1241 @@ func Xsnprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) (r 
 	panic(todo(""))
 }
 
-// // int close(int fd);
-// func Xclose(t *TLS, fd int32) int32 {
-// 	panic(todo(""))
-// 	if err := windows.Close(windows.Handle(fd)); err != nil {
-// 		t.setErrno(err)
-// 		return -1
-// 	}
-//
-// 	if dmesgs {
-// 		dmesg("%v: %d: ok", origin(1), fd)
-// 	}
-// 	return 0
-// }
-//
-// // int vfprintf(FILE * restrict stream, const char * restrict format, va_list arg);
-// func X__mingw_vfprintf(t *TLS, stream, format, ap uintptr) int32 {
-// 	if dmesgs {
-// 		dmesg("%v: %#x %q %#x", stream, GoString(format), ap)
-// 	}
-// 	return Xvfprintf(t, stream, format, ap)
-// }
-//
-// // int __isoc99_sscanf(const char *str, const char *format, ...);
-// // func Xgnu_sscanf(t *TLS, str, format, va uintptr) int32 {
-// // 	return scanf(strings.NewReader(GoString(str)), format, va)
-// // }
-//
-// // NTSYSAPI NTSTATUS RtlGetVersion( // ntdll.dll
-// //   PRTL_OSVERSIONINFOW lpVersionInformation
-// // );
-// func XRtlGetVersion(t *TLS, lpVersionInformation uintptr) uintptr {
-// 	r := sys(t, rtlGetVersion, lpVersionInformation)
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %#x", origin(1), lpVersionInformation, r)
-// 	}
-// 	return r
-// }
-//
-// // BOOL WINAPI CancelSynchronousIo(
-// //   _In_ HANDLE hThread
-// // );
-// func XCancelSynchronousIo(t *TLS, hThread uintptr) int32 {
-// 	panic(todo("%#x", hThread))
-// }
-//
-// // __atomic_load_n
-// func X__atomic_load_n(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __atomic_store_n
-// func X__atomic_store_n(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_add_overflow
-// func X__builtin_add_overflow(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_mul_overflow
-// func X__builtin_mul_overflow(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // __builtin_sub_overflow
-// func X__builtin_sub_overflow(t *TLS) {
-// 	panic(todo(""))
-// }
-//
-// // char *setlocale(int category, const char *locale);
-// func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
-// 	if dmesgs {
-// 		dmesg("%v: %d %q", origin(1), category, GoString(locale))
-// 	}
-// 	return sys(t, setlocale, category, locale)
-// }
-//
-// func goWideString(p uintptr) string {
-// 	if p == 0 {
-// 		return ""
-// 	}
-//
-// 	var a []uint16
-// 	for {
-// 		c := *(*uint16)(unsafe.Pointer(p))
-// 		if c == 0 {
-// 			return string(utf16.Decode(a))
-// 		}
-//
-// 		a = append(a, c)
-// 		p += unsafe.Sizeof(uint16(0))
-// 	}
-// }
-//
-// // int _stricmp(
-// //    const char *string1,
-// //    const char *string2
-// // );
-// func X_stricmp(t *TLS, string1, string2 uintptr) int32 {
-// 	r := int32(sys(t, _stricmp, string1, string2))
-// 	if dmesgs {
-// 		dmesg("%v: %q %q: %v", origin(1), GoString(string1), GoString(string2), r)
-// 	}
-// 	return r
-// }
-//
-// // BOOL SetEvent(
-// //   HANDLE hEvent
-// // );
-// func XSetEvent(t *TLS, hEvent uintptr) int32 {
-// 	r := int32(sys(t, setEvent, hEvent))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), hEvent, r)
-// 	}
-// 	return r
-// }
-//
-// func XAccessCheck(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XBuildCommDCBW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XCharLowerW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XClearCommError(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XCopyFileW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XCreateDirectoryW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // HANDLE CreateEventW(
-// //   LPSECURITY_ATTRIBUTES lpEventAttributes,
-// //   BOOL                  bManualReset,
-// //   BOOL                  bInitialState,
-// //   LPCWSTR               lpName
-// // );
-// func XCreateEventW(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialState int32, lpName uintptr) uintptr {
-// 	r := sys(t, createEventW, lpEventAttributes, bManualReset, bInitialState, lpName)
-// 	if dmesgs {
-// 		dmesg("%v: %s: %#x", origin(1), goWideString(lpName), r)
-// 	}
-// 	return r
-// }
-//
-// func XCreateHardLinkW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XCreatePipe(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // HANDLE CreateThread(
-// //   LPSECURITY_ATTRIBUTES   lpThreadAttributes,
-// //   SIZE_T                  dwStackSize,
-// //   LPTHREAD_START_ROUTINE  lpStartAddress,
-// //   __drv_aliasesMem LPVOID lpParameter,
-// //   DWORD                   dwCreationFlags,
-// //   LPDWORD                 lpThreadId
-// // );
-// func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t, lpStartAddress, lpParameter uintptr, dwCreationFlags uint32, lpThreadId uintptr) (r uintptr) {
-// 	const CREATE_SUSPENDED = 0x00000004
-// 	// DWORD WINAPI ThreadProc(
-// 	//   _In_ LPVOID lpParameter
-// 	// );
-// 	if dwCreationFlags&CREATE_SUSPENDED != 0 {
-// 		panic(todo(""))
-// 	}
-//
-// 	nt := NewTLS()
-// 	if lpThreadId != 0 {
-// 		*(*uint32)(unsafe.Pointer(lpThreadId)) = uint32(nt.ID)
-// 	}
-// 	defer func() {
-// 		// trc("created thread id %d, handle %#x", nt.ID, r)
-// 		go func() {
-// 			nt.result = (*(*func(*TLS, uintptr) uint32)(unsafe.Pointer(&lpStartAddress)))(nt, lpParameter)
-// 		}()
-// 	}()
-// 	o := addObject(nt)
-// 	p := Xmalloc(t, types.Size_t(unsafe.Sizeof(uintptr(0))))
-// 	*(*uintptr)(unsafe.Pointer(p)) = o
-// 	if dmesgs {
-// 		dmesg("%v: %#x", origin(1), p)
-// 	}
-// 	return p
-// }
-//
-// // HWND CreateWindowExW(
-// //   DWORD     dwExStyle,
-// //   LPCWSTR   lpClassName,
-// //   LPCWSTR   lpWindowName,
-// //   DWORD     dwStyle,
-// //   int       X,
-// //   int       Y,
-// //   int       nWidth,
-// //   int       nHeight,
-// //   HWND      hWndParent,
-// //   HMENU     hMenu,
-// //   HINSTANCE hInstance,
-// //   LPVOID    lpParam
-// // );
-// func XCreateWindowExW(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func XDdeAbandonTransaction(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeAccessData(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func XDdeClientTransaction(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func XDdeConnect(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func XDdeCreateDataHandle(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func XDdeCreateStringHandleW(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func XDdeDisconnect(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeFreeDataHandle(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeFreeStringHandle(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeGetData(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeGetLastError(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeInitializeW(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeNameService(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeQueryStringW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeUnaccessData(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDdeUninitialize(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // LRESULT LRESULT DefWindowProcW(
-// //   HWND   hWnd,
-// //   UINT   Msg,
-// //   WPARAM wParam,
-// //   LPARAM lParam
-// // );
-// func XDefWindowProcW(t *TLS, _ ...interface{}) int64 {
-// 	panic(todo(""))
-// }
-//
-// // void DeleteCriticalSection(
-// //   LPCRITICAL_SECTION lpCriticalSection
-// // );
-// func XDeleteCriticalSection(t *TLS, lpCriticalSection uintptr) int32 {
-// 	panic(todo(""))
-// 	return int32(sys(t, deleteCriticalSection, lpCriticalSection))
-// }
-//
-// func XDestroyWindow(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDeviceIoControl(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XDispatchMessageW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL DuplicateHandle(
-// //   HANDLE   hSourceProcessHandle,
-// //   HANDLE   hSourceHandle,
-// //   HANDLE   hTargetProcessHandle,
-// //   LPHANDLE lpTargetHandle,
-// //   DWORD    dwDesiredAccess,
-// //   BOOL     bInheritHandle,
-// //   DWORD    dwOptions
-// // );
-// func XDuplicateHandle(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // void EnterCriticalSection(
-// //   LPCRITICAL_SECTION lpCriticalSection
-// // );
-// func XEnterCriticalSection(t *TLS, lpCriticalSection uintptr) int32 {
-// 	r := int32(sys(t, enterCriticalSection, lpCriticalSection))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), lpCriticalSection, r)
-// 	}
-// 	return r
-// }
-//
-// func XEnumWindows(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XEqualSid(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XEscapeCommFunction(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XExitProcess(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // HANDLE FindFirstFileExW(
-// //   LPCWSTR            lpFileName,
-// //   FINDEX_INFO_LEVELS fInfoLevelId,
-// //   LPVOID             lpFindFileData,
-// //   FINDEX_SEARCH_OPS  fSearchOp,
-// //   LPVOID             lpSearchFilter,
-// //   DWORD              dwAdditionalFlags
-// // );
-// func XFindFirstFileExW(t *TLS, lpFileName uintptr, fInfoLevelId int32, lpFindFileData uintptr, fSearchOp int32, lpSearchFilter uintptr, dwAdditionalFlags uint32) uintptr {
-// 	panic(todo(""))
-// 	r := sys(t, findFirstFileExW, lpFileName, fInfoLevelId, lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags)
-// 	if dmesgs {
-// 		dmesg("%v: %v", origin(1), r)
-// 	}
-// 	return r
-// }
-//
-// // BOOL FindNextFileW(
-// //   HANDLE             hFindFile,
-// //   LPWIN32_FIND_DATAW lpFindFileData
-// // );
-// func XFindNextFileW(t *TLS, hFindFile, lpFindFileData uintptr) int32 {
-// 	panic(todo(""))
-// 	r := int32(sys(t, findNextFileW, hFindFile, lpFindFileData))
-// 	if dmesgs {
-// 		dmesg("%v: %v", origin(1), r)
-// 	}
-// 	return r
-// }
-//
-// func XGetCommModemStatus(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL GetCommState(
-// //   HANDLE hFile,
-// //   LPDCB  lpDCB
-// // );
-// func XGetCommState(t *TLS, hFile, lpDCB uintptr) int32 {
-// 	r := int32(sys(t, getCommState, hFile, lpDCB))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), hFile, r)
-// 	}
-// 	return r
-// }
-//
-// func XGetComputerNameW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL WINAPI GetConsoleMode(
-// //   _In_  HANDLE  hConsoleHandle,
-// //   _Out_ LPDWORD lpMode
-// // );
-// func XGetConsoleMode(t *TLS, hConsoleHandle, lpMode uintptr) int32 {
-// 	r := int32(sys(t, getConsoleMode, hConsoleHandle, lpMode))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), hConsoleHandle, r)
-// 	}
-// 	return r
-// }
-//
-// // DWORD GetCurrentDirectory(
-// //   DWORD  nBufferLength,
-// //   LPWTSTR lpBuffer
-// // );
-// func XGetCurrentDirectoryW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
-// 	panic(todo(""))
-// 	r := uint32(sys(t, getCurrentDirectoryW, nBufferLength, lpBuffer))
-// 	if dmesgs {
-// 		dmesg("%v: %v", origin(1), r)
-// 	}
-// 	return r
-// }
-//
-// // DWORD GetCurrentThreadId();
-// func XGetCurrentThreadId(t *TLS) uint32 {
-// 	r := uint32(t.ID)
-// 	if dmesgs {
-// 		dmesg("%v: %#x", origin(1), r)
-// 	}
-// 	return r
-// }
-//
-// // DWORD GetEnvironmentVariableA(
-// //   LPCSTR lpName,
-// //   LPSTR  lpBuffer,
-// //   DWORD  nSize
-// // );
-// func XGetEnvironmentVariableA(t *TLS, lpName, lpBuffer uintptr, nSize uint32) int32 {
-// 	panic(todo(""))
-// 	return int32(sys(t, getEnvironmentVariableA, lpName, lpBuffer, nSize))
-// }
-//
-// // DWORD GetEnvironmentVariableW(
-// //   LPCWSTR lpName,
-// //   LPWSTR  lpBuffer,
-// //   DWORD   nSize
-// // );
-// func XGetEnvironmentVariableW(t *TLS, lpName, lpBuffer uintptr, nSize uint32) uint32 {
-// 	r := uint32(sys(t, getEnvironmentVariableW, lpName, lpBuffer, nSize))
-// 	if dmesgs {
-// 		dmesg("%v: %q %#x %v: %v %q", origin(1), goWideString(lpName), lpBuffer, nSize, r, goWideStringN(lpBuffer, int(r)))
-// 	}
-// 	return r
-// }
-//
-// func XGetExitCodeProcess(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetExitCodeThread(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL GetFileInformationByHandle(
-// //   HANDLE                       hFile,
-// //   LPBY_HANDLE_FILE_INFORMATION lpFileInformation
-// // );
-// func XGetFileInformationByHandle(t *TLS, hFile, lpFileInformation uintptr) int32 {
-// 	r := int32(sys(t, getFileInformationByHandle, hFile, lpFileInformation))
-// 	if dmesgs {
-// 		dmesg("%v: %#x, %#x: %v", origin(1), hFile, lpFileInformation, r)
-// 	}
-// 	return r
-// }
-//
-// // BOOL GetFileSecurityW(
-// //   LPCSTR               lpFileName,
-// //   SECURITY_INFORMATION RequestedInformation,
-// //   PSECURITY_DESCRIPTOR pSecurityDescriptor,
-// //   DWORD                nLength,
-// //   LPDWORD              lpnLengthNeeded
-// // );
-// func XGetFileSecurityW(t *TLS, lpFileName uintptr, RequestedInformation uint32, pSecurityDescriptor uintptr, nLength uint32, lpnLengthNeeded uintptr) int32 {
-// 	panic(todo(""))
-// 	r := int32(sys(t, getFileSecurityW, lpFileName, RequestedInformation, pSecurityDescriptor, nLength, lpnLengthNeeded))
-// 	if dmesgs {
-// 		dmesg("%v:  %v", origin(1), r)
-// 	}
-// 	return r
-// }
-//
-// // DWORD GetFileType(
-// //   HANDLE hFile
-// // );
-// func XGetFileType(t *TLS, hFile uintptr) uint32 {
-// 	r := uint32(sys(t, getFileType, hFile))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), hFile, r)
-// 	}
-// 	return r
-// }
-//
-// // DWORD GetLogicalDriveStringsA(
-// //   DWORD nBufferLength,
-// //   LPSTR lpBuffer
-// // );
-// func XGetLogicalDriveStringsA(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetMessageW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetModuleFileNameA(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // DWORD GetModuleFileNameW(
-// //   HMODULE hModule,
-// //   LPWSTR  lpFileName,
-// //   DWORD   nSize
-// // );
-// func XGetModuleFileNameW(t *TLS, hModule, lpFileName uintptr, nSize uint32) uint32 {
-// 	r := uint32(sys(t, getModuleFileNameW, hModule, lpFileName, nSize))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v %q", origin(1), hModule, r, goWideStringN(lpFileName, int(r)))
-// 	}
-// 	return r
-// }
-//
-// func goWideBytes(p uintptr, n int) []uint16 {
-// 	b := GoBytes(p, 2*n)
-// 	var w []uint16
-// 	for i := 0; i < len(b); i += 2 {
-// 		w = append(w, *(*uint16)(unsafe.Pointer(&b[i])))
-// 	}
-// 	return w
-// }
-//
-// func goWideStringN(p uintptr, n int) string {
-// 	return string(utf16.Decode(goWideBytes(p, n)))
-// }
-//
-// // HMODULE GetModuleHandleW(
-// //   LPCWSTR lpModuleName
-// // );
-// func XGetModuleHandleW(t *TLS, lpModuleName uintptr) uintptr {
-// 	r := sys(t, getModuleHandleW, lpModuleName)
-// 	if dmesgs {
-// 		dmesg("%v: %#x %q: %#x", origin(1), lpModuleName, goWideString(lpModuleName), r)
-// 	}
-// 	return r
-// }
-//
-// // DWORD GetNamedSecurityInfoW(
-// //   LPCWSTR              pObjectName,
-// //   SE_OBJECT_TYPE       ObjectType,
-// //   SECURITY_INFORMATION SecurityInfo,
-// //   PSID                 *ppsidOwner,
-// //   PSID                 *ppsidGroup,
-// //   PACL                 *ppDacl,
-// //   PACL                 *ppSacl,
-// //   PSECURITY_DESCRIPTOR *ppSecurityDescriptor
-// // );
-// func XGetNamedSecurityInfoW(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetOverlappedResult(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // DWORD GetPrivateProfileStringA(
-// //   LPCSTR lpAppName,
-// //   LPCSTR lpKeyName,
-// //   LPCSTR lpDefault,
-// //   LPSTR  lpReturnedString,
-// //   DWORD  nSize,
-// //   LPCSTR lpFileName
-// // );
-// func XGetPrivateProfileStringA(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetProfilesDirectoryW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL GetSecurityDescriptorOwner(
-// //   PSECURITY_DESCRIPTOR pSecurityDescriptor,
-// //   PSID                 *pOwner,
-// //   LPBOOL               lpbOwnerDefaulted
-// // );
-// func XGetSecurityDescriptorOwner(t *TLS, pSecurityDescriptor, pOwner, lpbOwnerDefaulted uintptr) int32 {
-// 	panic(todo(""))
-// 	r := int32(sys(t, getSecurityDescriptorOwner, pSecurityDescriptor, pOwner, lpbOwnerDefaulted))
-// 	if dmesgs {
-// 		dmesg("%v: %v", origin(1), r)
-// 	}
-// 	return r
-// }
-//
-// func XGetShortPathNameW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // PSID_IDENTIFIER_AUTHORITY GetSidIdentifierAuthority(
-// //   PSID pSid
-// // );
-// func XGetSidIdentifierAuthority(t *TLS, pSid uintptr) uintptr {
-// 	panic(todo(""))
-// 	r := sys(t, getSidIdentifierAuthority)
-// 	if dmesgs {
-// 		dmesg("%v: %#x", origin(1), r)
-// 	}
-// 	return r
-// }
-//
-// // UINT GetTempFileNameW(
-// //   LPCWSTR lpPathName,
-// //   LPCWSTR lpPrefixString,
-// //   UINT    uUnique,
-// //   LPWSTR  lpTempFileName
-// // );
-// func XGetTempFileNameW(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetTokenInformation(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetUserNameW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetVolumeInformationA(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetVolumeInformationW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL GetVolumeNameForVolumeMountPointW(
-// //   LPCWSTR lpszVolumeMountPoint,
-// //   LPWSTR  lpszVolumeName,
-// //   DWORD   cchBufferLength
-// // );
-// func XGetVolumeNameForVolumeMountPointW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetWindowLongPtrW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetWindowsDirectoryA(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGlobalAddAtomW(t *TLS, _ ...interface{}) uint16 {
-// 	panic(todo(""))
-// }
-//
-// func XGlobalDeleteAtom(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGlobalGetAtomNameW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XIN6_ADDR_EQUAL(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XIN6_IS_ADDR_V4MAPPED(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XImpersonateSelf(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // void InitializeCriticalSection(
-// //   LPCRITICAL_SECTION lpCriticalSection
-// // );
-// func XInitializeCriticalSection(t *TLS, lpCriticalSection uintptr) int32 {
-// 	r := int32(sys(t, initializeCriticalSection, lpCriticalSection))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), lpCriticalSection, r)
-// 	}
-// 	return r
-// }
-//
-// // BOOL IsDebuggerPresent();
-// func XIsDebuggerPresent(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XIsWindow(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XKillTimer(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // void LeaveCriticalSection(
-// //   LPCRITICAL_SECTION lpCriticalSection
-// // );
-// func XLeaveCriticalSection(t *TLS, lpCriticalSection uintptr) {
-// 	if dmesgs {
-// 		dmesg("%v: %#x", origin(1), lpCriticalSection)
-// 	}
-// 	sys(t, leaveCriticalSection, lpCriticalSection)
-// }
-//
-// // HMODULE LoadLibraryExW(
-// //   LPCWSTR lpLibFileName,
-// //   HANDLE  hFile,
-// //   DWORD   dwFlags
-// // );
-// func XLoadLibraryExW(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func XMessageBeep(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XMessageBoxW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XMoveFileW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // DWORD MsgWaitForMultipleObjectsEx(
-// //   DWORD        nCount,
-// //   const HANDLE *pHandles,
-// //   DWORD        dwMilliseconds,
-// //   DWORD        dwWakeMask,
-// //   DWORD        dwFlags
-// // );
-// func XMsgWaitForMultipleObjectsEx(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func XNetApiBufferFree(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XNetGetDCName(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // NET_API_STATUS NET_API_FUNCTION NetUserGetInfo(
-// //   LPCWSTR servername,
-// //   LPCWSTR username,
-// //   DWORD   level,
-// //   LPBYTE  *bufptr
-// // );
-// func XNetUserGetInfo(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func XOpenProcessToken(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XOpenThreadToken(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL WINAPI PeekConsoleInput(
-// //   _In_  HANDLE        hConsoleInput,
-// //   _Out_ PINPUT_RECORD lpBuffer,
-// //   _In_  DWORD         nLength,
-// //   _Out_ LPDWORD       lpNumberOfEventsRead
-// // );
-// func XPeekConsoleInputW(t *TLS, hConsoleInput, lpBuffer uintptr, nLength uint32, lpNumberOfEventsRead uintptr) int32 {
-// 	r := int32(sys(t, peekConsoleInputW, hConsoleInput, lpBuffer, nLength, lpNumberOfEventsRead))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), hConsoleInput, r)
-// 	}
-// 	return r
-// }
-//
-// func XPeekMessageW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XPeekNamedPipe(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XPostMessageW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XPostQuitMessage(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XPurgeComm(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XQueryPerformanceFrequency(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL WINAPI ReadConsole(
-// //   _In_     HANDLE  hConsoleInput,
-// //   _Out_    LPVOID  lpBuffer,
-// //   _In_     DWORD   nNumberOfCharsToRead,
-// //   _Out_    LPDWORD lpNumberOfCharsRead,
-// //   _In_opt_ LPVOID  pInputControl
-// // );
-// func XReadConsoleW(t *TLS, hConsoleInput, lpBuffer uintptr, nNumberOfCharsToRead uint32, lpNumberOfCharsRead, pInputControl uintptr) int32 {
-// 	r := int32(sys(t, readConsoleW, hConsoleInput, lpBuffer, nNumberOfCharsToRead, lpNumberOfCharsRead, pInputControl))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), hConsoleInput, r)
-// 	}
-// 	return r
-// }
-//
-// func XRegCloseKey(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegConnectRegistryW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegCreateKeyExW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegDeleteKeyW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegDeleteValueW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegEnumKeyExW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegEnumValueW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegOpenKeyExW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegQueryValueExW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegSetValueExW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRegisterClassExW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // ATOM RegisterClassW(
-// //   const WNDCLASSW *lpWndClass
-// // );
-// func XRegisterClassW(t *TLS, lpWndClass uintptr) int32 {
-// 	r := int32(sys(t, registerClassW, lpWndClass))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), lpWndClass, r)
-// 	}
-// 	return r
-// }
-//
-// func XRemoveDirectoryW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL ResetEvent(
-// //   HANDLE hEvent
-// // );
-// func XResetEvent(t *TLS, hEvent uintptr) int32 {
-// 	r := int32(sys(t, resetEvent, hEvent))
-// 	if dmesgs {
-// 		dmesg("%v: %#x: %v", origin(1), hEvent, r)
-// 	}
-// 	return r
-// }
-//
-// func XRevertToSelf(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSearchPathW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSendMessageTimeoutW(t *TLS, _ ...interface{}) int64 {
-// 	panic(todo(""))
-// }
-//
-// func XSendMessageW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSetCommState(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSetCommTimeouts(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL WINAPI SetConsoleMode(
-// //   _In_ HANDLE hConsoleHandle,
-// //   _In_ DWORD  dwMode
-// // );
-// func XSetConsoleMode(t *TLS, hConsoleHandle uintptr, dwMode uint32) int32 {
-// 	r := int32(sys(t, setConsoleMode, hConsoleHandle, dwMode))
-// 	if dmesgs {
-// 		dmesg("%v: %#x %#x: %v", origin(1), hConsoleHandle, dwMode, r)
-// 	}
-// 	return r
-// }
-//
-// func XSetFileAttributesW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSetHandleInformation(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL SetThreadPriority(
-// //   HANDLE hThread,
-// //   int    nPriority
-// // );
-// func XSetThreadPriority(t *TLS, hThread uintptr, nPriority int32) int32 {
-// 	r := int32(1)
-// 	if dmesgs {
-// 		dmesg("%v: %#x %v: %v", origin(1), hThread, nPriority, r)
-// 	}
-// 	return r
-// }
-//
-// func XSetTimer(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSetWindowLongPtrW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSetupComm(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSleepEx(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XTerminateThread(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XTranslateMessage(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // BOOL UnregisterClassW(
-// //   LPCWSTR   lpClassName,
-// //   HINSTANCE hInstance
-// // );
-// func XUnregisterClassW(t *TLS, lpClassName, hInstance uintptr) int32 {
-// 	panic(todo(""))
-// 	return int32(sys(t, unregisterClassW, lpClassName, hInstance))
-// }
-//
-// func XWSAAsyncSelect(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XWSAGetLastError(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int WSAStartup(
-// //   WORD      wVersionRequired,
-// //   LPWSADATA lpWSAData
-// // );
-// func XWSAStartup(t *TLS, wVersionRequired uint16, lpWSAData uintptr) int32 {
-// 	if dmesgs {
-// 		dmesg("%v: %d %x", origin(1), wVersionRequired, lpWSAData)
-// 	}
-// 	return int32(sys(t, wSAStartup, wVersionRequired, lpWSAData))
-// }
-//
-// // BOOL WINAPI WriteConsoleW(
-// //   _In_             HANDLE  hConsoleOutput,
-// //   _In_       const VOID    *lpBuffer,
-// //   _In_             DWORD   nNumberOfCharsToWrite,
-// //   _Out_opt_        LPDWORD lpNumberOfCharsWritten,
-// //   _Reserved_       LPVOID  lpReserved
-// // );
-// func XWriteConsoleW(t *TLS, hConsoleOutput, lpBuffer uintptr, nNumberOfCharsToWrite uint32, lpNumberOfCharsWritten, lpReserved uintptr) int32 {
-// 	panic(todo(""))
-// 	r := int32(sys(t, writeConsoleW, hConsoleOutput, lpBuffer, nNumberOfCharsToWrite, lpNumberOfCharsWritten, lpReserved))
-// 	if dmesgs {
-// 		dmesg("%v: %#x %q: %v", origin(1), hConsoleOutput, goWideStringN(lpBuffer, int(nNumberOfCharsToWrite)), r)
-// 	}
-// 	return r
-// }
-//
-// func XWspiapiFreeAddrInfo(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // INT WSAAPI getaddrinfo(
-// //   PCSTR           pNodeName,
-// //   PCSTR           pServiceName,
-// //   const ADDRINFOA *pHints,
-// //   PADDRINFOA      *ppResult
-// // );
-// func XWspiapiGetAddrInfo(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XWspiapiGetNameInfo(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // long _InterlockedExchange(
-// //    long volatile * Target,
-// //    long Value
-// // );
-// func X_InterlockedExchange(t *TLS, Target uintptr, Value long) long {
-// 	panic(todo(""))
-// 	return long(atomic.SwapInt32((*int32)(unsafe.Pointer(Target)), Value))
-// }
-//
-// // double __builtin_huge_val (void)
-// func X__builtin_huge_val(t *TLS, _ ...interface{}) float64 {
-// 	panic(todo(""))
-// }
-//
-// func X__ccgo_in6addr_anyp(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func X_beginthreadex(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func X_controlfp(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func X_endthreadex(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func X_ftime(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func X_snwprintf(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func X_strnicmp(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func X_wcsicmp(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int _wcsnicmp(
-// //    const wchar_t *string1,
-// //    const wchar_t *string2,
-// //    size_t count
-// // );
-// func X_wcsnicmp(t *TLS, string1, string2 uintptr, count types.Size_t) int32 {
-// 	r := int32(sys(t, _wcsnicmp, string1, string2))
-// 	if dmesgs {
-// 		dmesg("%v: %q %q: %v", origin(1), goWideStringN(string1, int(count)), goWideStringN(string2, int(count)), r)
-// 	}
-// 	return r
-// }
-//
-// // SOCKET WSAAPI accept(
-// //   SOCKET   s,
-// //   sockaddr *addr,
-// //   int      *addrlen
-// // );
-// func Xaccept(t *TLS, _ ...interface{}) uint64 {
-// 	panic(todo(""))
-// }
-//
-// func Xbind(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xclosesocket(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xconnect(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // WCHAR * gai_strerrorW(
-// //   int ecode
-// // );
-// func Xgai_strerrorW(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func Xgethostname(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xgetpeername(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // servent * getservbyname(
-// //   const char *name,
-// //   const char *proto
-// // );
-// func Xgetservbyname(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func Xgetsockname(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xgetsockopt(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xgmtime(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func Xinet_ntoa(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func Xioctlsocket(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xlisten(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int lstrcmpiA(
-// //   LPCSTR lpString1,
-// //   LPCSTR lpString2
-// // );
-// func XlstrcmpiA(t *TLS, lpString1, lpString2 uintptr) int32 {
-// 	r := int32(sys(t, lstrcmpiA, lpString1, lpString2))
-// 	if dmesgs {
-// 		dmesg("%v: %q %q: %v", origin(1), GoString(lpString1), GoString(lpString2), r)
-// 	}
-// 	return r
-// }
-//
-// func XlstrlenW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int putenv(
-// //    const char *envstring
-// // );
-// func Xputenv(t *TLS, envstring uintptr) int32 {
-// 	r := int32(sys(t, putenv, envstring))
-// 	if dmesgs {
-// 		dmesg("%v: %q: %v", origin(1), GoString(envstring), r)
-// 	}
-// 	return r
-// }
-//
-// func Xrecv(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xselect(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xsend(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xsetsockopt(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xshutdown(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // SOCKET WSAAPI socket(
-// //   int af,
-// //   int type,
-// //   int protocol
-// // );
-// func Xsocket(t *TLS, _ ...interface{}) uint64 {
-// 	panic(todo(""))
-// }
-//
-// // char *strerror(int errnum);
-// func Xstrerror(t *TLS, errnum int32) uintptr {
-// 	panic(todo(""))
-// }
-//
-// // wchar_t *wcschr(
-// //    const wchar_t *str,
-// //    wchar_t c
-// // );
-// func Xwcschr(t *TLS, str uintptr, c wchar_t) wchar_t {
-// 	r := wchar_t(sys(t, wcschr, str, c))
-// 	if dmesgs {
-// 		dmesg("%v: %q %q: %v", origin(1), goWideString(str), string(rune(c)), r)
-// 	}
-// 	return r
-// }
-//
-// // int wcscmp(
-// //    const wchar_t *string1,
-// //    const wchar_t *string2
-// // );
-// func Xwcscmp(t *TLS, string1, string2 uintptr) int32 {
-// 	r := int32(sys(t, wcscmp, string1, string2))
-// 	if dmesgs {
-// 		dmesg("%v: %q %q: %v", origin(1), goWideString(string1), goWideString(string2), r)
-// 	}
-// 	return r
-// }
-//
-// func Xwcscpy(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int _wcsicmp(
-// //    const wchar_t *string1,
-// //    const wchar_t *string2
-// // );
-// func Xwcsicmp(t *TLS, string1, string2 uintptr) int32 {
-// 	r := int32(sys(t, _wcsicmp, string1, string2))
-// 	if dmesgs {
-// 		dmesg("%v: %q %q: %v", origin(1), goWideString(string1), goWideString(string2), r)
-// 	}
-// 	return r
-// }
-//
-// // size_t wcslen(
-// //    const wchar_t *str
-// // );
-// func Xwcslen(t *TLS, str uintptr) types.Size_t {
-// 	r := types.Size_t(sys(t, wcslen, str))
-// 	if dmesgs {
-// 		s := goWideString(str)
-// 		dmesg("%v: %q (%d): %d", origin(1), s, len(utf16.Encode([]rune(s))), r)
-// 	}
-// 	return r
-// }
-//
-// func Xwcsncmp(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // int WINAPIV wsprintfA(
-// //   LPSTR  ,
-// //   LPCSTR ,
-// //   ...
-// // );
-// func XwsprintfA(t *TLS, a, b, va uintptr) int32 {
-// 	r := int32(sysv(t, wsprintfA, a, b, va))
-// 	if dmesgs {
-// 		dmesg("%v: %q %q %#x: %v", origin(1), GoString(a), GoString(b), va, r)
-// 	}
-// 	return r
-// }
-//
-// func XwsprintfW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // UINT WINAPI GetConsoleCP(void);
-// func XGetConsoleCP(t *TLS) uint32 {
-// 	r := uint32(sys(t, getConsoleCP))
-// 	if dmesgs {
-// 		dmesg("%v: %v", origin(1), r)
-// 	}
-// 	return r
-// }
-//
-// func XGetCurrentThread(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // UINT GetACP();
-// func XGetACP(t *TLS) uint32 {
-// 	r := uint32(sys(t, getACP))
-// 	if dmesgs {
-// 		dmesg("%v: %v", origin(1), r)
-// 	}
-// 	return r
-// }
-//
-// // LPWSTR GetCommandLineW();
-// func XGetCommandLineW(t *TLS) uintptr {
-// 	return sys(t, getCommandLineW)
-// }
-//
-// func XAddAccessDeniedAce(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XAddAce(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetAce(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetAclInformation(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetFileSecurityA(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetLengthSid(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetSecurityDescriptorDacl(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XGetSidLengthRequired(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// // PDWORD GetSidSubAuthority(
-// //   PSID  pSid,
-// //   DWORD nSubAuthority
-// // );
-// func XGetSidSubAuthority(t *TLS, _ ...interface{}) uintptr {
-// 	panic(todo(""))
-// }
-//
-// func XInitializeAcl(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XInitializeSid(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XRaiseException(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSetErrorMode(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XSetNamedSecurityInfoA(t *TLS, _ ...interface{}) uint32 {
-// 	panic(todo(""))
-// }
-//
-// func Xchmod(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xsscanf(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Xwrite(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XCreateProcessW(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func XWaitForInputIdle(t *TLS, _ ...interface{}) int32 {
-// 	panic(todo(""))
-// }
-//
-// func Environ() uintptr {
-// 	return *(*uintptr)(unsafe.Pointer(X__imp__environ))
-// }
+// time_t mktime(struct tm *tm);
+func Xmktime(t *TLS, ptm uintptr) types.Time_t {
+	panic(todo(""))
+}
+
+// void tzset (void);
+func Xtzset(t *TLS) {
+	panic(todo(""))
+}
+
+// BOOL SetEvent(
+//   HANDLE hEvent
+// );
+func XSetEvent(t *TLS, hEvent uintptr) int32 {
+	panic(todo(""))
+}
+
+// char *strpbrk(const char *s, const char *accept);
+func Xstrpbrk(t *TLS, s, accept uintptr) uintptr {
+	panic(todo(""))
+}
+
+// int _stricmp(
+//    const char *string1,
+//    const char *string2
+// );
+func X_stricmp(t *TLS, string1, string2 uintptr) int32 {
+	panic(todo(""))
+}
+
+// int putenv(
+//    const char *envstring
+// );
+func Xputenv(t *TLS, envstring uintptr) int32 {
+	panic(todo(""))
+}
+
+// void *memchr(const void *s, int c, size_t n);
+func Xmemchr(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
+	panic(todo(""))
+}
+
+// WCHAR * gai_strerrorW(
+//   int ecode
+// );
+func Xgai_strerrorW(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+// servent * getservbyname(
+//   const char *name,
+//   const char *proto
+// );
+func Xgetservbyname(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func Xntohs(t *TLS, netshort uint16) uint16 {
+	panic(todo(""))
+}
+
+// uint16_t htons(uint16_t hostshort);
+func Xhtons(t *TLS, hostshort uint16) uint16 {
+	panic(todo(""))
+}
+
+func Xgetsockopt(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xsetsockopt(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// INT WSAAPI getaddrinfo(
+//   PCSTR           pNodeName,
+//   PCSTR           pServiceName,
+//   const ADDRINFOA *pHints,
+//   PADDRINFOA      *ppResult
+// );
+func XWspiapiGetAddrInfo(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// int wcscmp(
+//    const wchar_t *string1,
+//    const wchar_t *string2
+// );
+func Xwcscmp(t *TLS, string1, string2 uintptr) int32 {
+	panic(todo(""))
+}
+
+// int isatty(int fd);
+func Xisatty(t *TLS, fd int32) int32 {
+	panic(todo(""))
+}
+
+// BOOL IsDebuggerPresent();
+func XIsDebuggerPresent(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XExitProcess(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// char *strerror(int errnum);
+func Xstrerror(t *TLS, errnum int32) uintptr {
+	panic(todo(""))
+}
+
+// BOOL GetVolumeNameForVolumeMountPointW(
+//   LPCWSTR lpszVolumeMountPoint,
+//   LPWSTR  lpszVolumeName,
+//   DWORD   cchBufferLength
+// );
+func XGetVolumeNameForVolumeMountPointW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// size_t wcslen(
+//    const wchar_t *str
+// );
+func Xwcslen(t *TLS, str uintptr) types.Size_t {
+	return types.Size_t(C.wcslen((*C.ushort)(unsafe.Pointer(str))))
+}
+
+// BOOL DuplicateHandle(
+//   HANDLE   hSourceProcessHandle,
+//   HANDLE   hSourceHandle,
+//   HANDLE   hTargetProcessHandle,
+//   LPHANDLE lpTargetHandle,
+//   DWORD    dwDesiredAccess,
+//   BOOL     bInheritHandle,
+//   DWORD    dwOptions
+// );
+func XDuplicateHandle(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// DWORD GetFileType(
+//   HANDLE hFile
+// );
+func XGetFileType(t *TLS, hFile uintptr) uint32 {
+	panic(todo(""))
+}
+
+// BOOL WINAPI GetConsoleMode(
+//   _In_  HANDLE  hConsoleHandle,
+//   _Out_ LPDWORD lpMode
+// );
+func XGetConsoleMode(t *TLS, hConsoleHandle, lpMode uintptr) int32 {
+	panic(todo(""))
+}
+
+// BOOL GetCommState(
+//   HANDLE hFile,
+//   LPDCB  lpDCB
+// );
+func XGetCommState(t *TLS, hFile, lpDCB uintptr) int32 {
+	panic(todo(""))
+}
+
+// int _wcsnicmp(
+//    const wchar_t *string1,
+//    const wchar_t *string2,
+//    size_t count
+// );
+func X_wcsnicmp(t *TLS, string1, string2 uintptr, count types.Size_t) int32 {
+	panic(todo(""))
+}
+
+func XAccessCheck(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XBuildCommDCBW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XCharLowerW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XClearCommError(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// xxxx
+
+// int __isoc99_sscanf(const char *str, const char *format, ...);
+// func Xgnu_sscanf(t *TLS, str, format, va uintptr) int32 {
+// 	return scanf(strings.NewReader(GoString(str)), format, va)
+// }
+
+// NTSYSAPI NTSTATUS RtlGetVersion( // ntdll.dll
+//   PRTL_OSVERSIONINFOW lpVersionInformation
+// );
+func XRtlGetVersion(t *TLS, lpVersionInformation uintptr) uintptr {
+	panic(todo(""))
+}
+
+// BOOL WINAPI CancelSynchronousIo(
+//   _In_ HANDLE hThread
+// );
+func XCancelSynchronousIo(t *TLS, hThread uintptr) int32 {
+	panic(todo(""))
+}
+
+// __atomic_load_n
+func X__atomic_load_n(t *TLS) {
+	panic(todo(""))
+}
+
+// __atomic_store_n
+func X__atomic_store_n(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// __builtin_add_overflow
+func X__builtin_add_overflow(t *TLS) {
+	panic(todo(""))
+}
+
+// __builtin_mul_overflow
+func X__builtin_mul_overflow(t *TLS) {
+	panic(todo(""))
+}
+
+// __builtin_sub_overflow
+func X__builtin_sub_overflow(t *TLS) {
+	panic(todo(""))
+}
+
+// char *setlocale(int category, const char *locale);
+func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
+	return uintptr(unsafe.Pointer(C.setlocale(C.int(category), (*C.char)(unsafe.Pointer(locale)))))
+}
+
+func goWideString(p uintptr) string {
+	if p == 0 {
+		return ""
+	}
+
+	var a []uint16
+	for {
+		c := *(*uint16)(unsafe.Pointer(p))
+		if c == 0 {
+			return string(utf16.Decode(a))
+		}
+
+		a = append(a, c)
+		p += unsafe.Sizeof(uint16(0))
+	}
+}
+
+func XCopyFileW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XCreateDirectoryW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// HANDLE CreateEventW(
+//   LPSECURITY_ATTRIBUTES lpEventAttributes,
+//   BOOL                  bManualReset,
+//   BOOL                  bInitialState,
+//   LPCWSTR               lpName
+// );
+func XCreateEventW(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialState int32, lpName uintptr) uintptr {
+	panic(todo(""))
+}
+
+func XCreateHardLinkW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XCreatePipe(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// HANDLE CreateThread(
+//   LPSECURITY_ATTRIBUTES   lpThreadAttributes,
+//   SIZE_T                  dwStackSize,
+//   LPTHREAD_START_ROUTINE  lpStartAddress,
+//   __drv_aliasesMem LPVOID lpParameter,
+//   DWORD                   dwCreationFlags,
+//   LPDWORD                 lpThreadId
+// );
+func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t, lpStartAddress, lpParameter uintptr, dwCreationFlags uint32, lpThreadId uintptr) (r uintptr) {
+	panic(todo(""))
+}
+
+// HWND CreateWindowExW(
+//   DWORD     dwExStyle,
+//   LPCWSTR   lpClassName,
+//   LPCWSTR   lpWindowName,
+//   DWORD     dwStyle,
+//   int       X,
+//   int       Y,
+//   int       nWidth,
+//   int       nHeight,
+//   HWND      hWndParent,
+//   HMENU     hMenu,
+//   HINSTANCE hInstance,
+//   LPVOID    lpParam
+// );
+func XCreateWindowExW(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func XDdeAbandonTransaction(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDdeAccessData(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func XDdeClientTransaction(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func XDdeConnect(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func XDdeCreateDataHandle(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func XDdeCreateStringHandleW(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func XDdeDisconnect(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDdeFreeDataHandle(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDdeFreeStringHandle(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDdeGetData(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDdeGetLastError(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func XDdeInitializeW(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func XDdeNameService(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDdeQueryStringW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDdeUnaccessData(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDdeUninitialize(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// LRESULT LRESULT DefWindowProcW(
+//   HWND   hWnd,
+//   UINT   Msg,
+//   WPARAM wParam,
+//   LPARAM lParam
+// );
+func XDefWindowProcW(t *TLS, _ ...interface{}) int64 {
+	panic(todo(""))
+}
+
+// void DeleteCriticalSection(
+//   LPCRITICAL_SECTION lpCriticalSection
+// );
+func XDeleteCriticalSection(t *TLS, lpCriticalSection uintptr) int32 {
+	panic(todo(""))
+}
+
+func XDestroyWindow(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDeviceIoControl(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XDispatchMessageW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// void EnterCriticalSection(
+//   LPCRITICAL_SECTION lpCriticalSection
+// );
+func XEnterCriticalSection(t *TLS, lpCriticalSection uintptr) {
+	C.EnterCriticalSection((*C.struct__RTL_CRITICAL_SECTION)(unsafe.Pointer(lpCriticalSection)))
+}
+
+func XEnumWindows(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XEqualSid(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XEscapeCommFunction(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// HANDLE FindFirstFileExW(
+//   LPCWSTR            lpFileName,
+//   FINDEX_INFO_LEVELS fInfoLevelId,
+//   LPVOID             lpFindFileData,
+//   FINDEX_SEARCH_OPS  fSearchOp,
+//   LPVOID             lpSearchFilter,
+//   DWORD              dwAdditionalFlags
+// );
+func XFindFirstFileExW(t *TLS, lpFileName uintptr, fInfoLevelId int32, lpFindFileData uintptr, fSearchOp int32, lpSearchFilter uintptr, dwAdditionalFlags uint32) uintptr {
+	panic(todo(""))
+}
+
+// BOOL FindNextFileW(
+//   HANDLE             hFindFile,
+//   LPWIN32_FIND_DATAW lpFindFileData
+// );
+func XFindNextFileW(t *TLS, hFindFile, lpFindFileData uintptr) int32 {
+	panic(todo(""))
+}
+
+func XGetCommModemStatus(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetComputerNameW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// DWORD GetCurrentDirectory(
+//   DWORD  nBufferLength,
+//   LPWTSTR lpBuffer
+// );
+func XGetCurrentDirectoryW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
+	panic(todo(""))
+}
+
+// DWORD GetCurrentThreadId();
+func XGetCurrentThreadId(t *TLS) uint32 {
+	r := uint32(t.ID)
+	if dmesgs {
+		dmesg("%v: %#x", origin(1), r)
+	}
+	return r
+}
+
+// DWORD GetEnvironmentVariableA(
+//   LPCSTR lpName,
+//   LPSTR  lpBuffer,
+//   DWORD  nSize
+// );
+func XGetEnvironmentVariableA(t *TLS, lpName, lpBuffer uintptr, nSize uint32) int32 {
+	panic(todo(""))
+}
+
+// DWORD GetEnvironmentVariableW(
+//   LPCWSTR lpName,
+//   LPWSTR  lpBuffer,
+//   DWORD   nSize
+// );
+func XGetEnvironmentVariableW(t *TLS, lpName, lpBuffer uintptr, nSize uint32) uint32 {
+	panic(todo(""))
+}
+
+func XGetExitCodeProcess(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetExitCodeThread(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// BOOL GetFileInformationByHandle(
+//   HANDLE                       hFile,
+//   LPBY_HANDLE_FILE_INFORMATION lpFileInformation
+// );
+func XGetFileInformationByHandle(t *TLS, hFile, lpFileInformation uintptr) int32 {
+	panic(todo(""))
+}
+
+// BOOL GetFileSecurityW(
+//   LPCSTR               lpFileName,
+//   SECURITY_INFORMATION RequestedInformation,
+//   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+//   DWORD                nLength,
+//   LPDWORD              lpnLengthNeeded
+// );
+func XGetFileSecurityW(t *TLS, lpFileName uintptr, RequestedInformation uint32, pSecurityDescriptor uintptr, nLength uint32, lpnLengthNeeded uintptr) int32 {
+	panic(todo(""))
+}
+
+// DWORD GetLogicalDriveStringsA(
+//   DWORD nBufferLength,
+//   LPSTR lpBuffer
+// );
+func XGetLogicalDriveStringsA(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func XGetMessageW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetModuleFileNameA(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// DWORD GetModuleFileNameW(
+//   HMODULE hModule,
+//   LPWSTR  lpFileName,
+//   DWORD   nSize
+// );
+func XGetModuleFileNameW(t *TLS, hModule, lpFileName uintptr, nSize uint32) uint32 {
+	panic(todo(""))
+}
+
+func goWideBytes(p uintptr, n int) []uint16 {
+	b := GoBytes(p, 2*n)
+	var w []uint16
+	for i := 0; i < len(b); i += 2 {
+		w = append(w, *(*uint16)(unsafe.Pointer(&b[i])))
+	}
+	return w
+}
+
+func goWideStringN(p uintptr, n int) string {
+	return string(utf16.Decode(goWideBytes(p, n)))
+}
+
+// HMODULE GetModuleHandleW(
+//   LPCWSTR lpModuleName
+// );
+func XGetModuleHandleW(t *TLS, lpModuleName uintptr) uintptr {
+	return uintptr(unsafe.Pointer(C.GetModuleHandleW((*C.ushort)(unsafe.Pointer(lpModuleName)))))
+}
+
+// DWORD GetNamedSecurityInfoW(
+//   LPCWSTR              pObjectName,
+//   SE_OBJECT_TYPE       ObjectType,
+//   SECURITY_INFORMATION SecurityInfo,
+//   PSID                 *ppsidOwner,
+//   PSID                 *ppsidGroup,
+//   PACL                 *ppDacl,
+//   PACL                 *ppSacl,
+//   PSECURITY_DESCRIPTOR *ppSecurityDescriptor
+// );
+func XGetNamedSecurityInfoW(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func XGetOverlappedResult(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// DWORD GetPrivateProfileStringA(
+//   LPCSTR lpAppName,
+//   LPCSTR lpKeyName,
+//   LPCSTR lpDefault,
+//   LPSTR  lpReturnedString,
+//   DWORD  nSize,
+//   LPCSTR lpFileName
+// );
+func XGetPrivateProfileStringA(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func XGetProfilesDirectoryW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// BOOL GetSecurityDescriptorOwner(
+//   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+//   PSID                 *pOwner,
+//   LPBOOL               lpbOwnerDefaulted
+// );
+func XGetSecurityDescriptorOwner(t *TLS, pSecurityDescriptor, pOwner, lpbOwnerDefaulted uintptr) int32 {
+	panic(todo(""))
+}
+
+func XGetShortPathNameW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// PSID_IDENTIFIER_AUTHORITY GetSidIdentifierAuthority(
+//   PSID pSid
+// );
+func XGetSidIdentifierAuthority(t *TLS, pSid uintptr) uintptr {
+	panic(todo(""))
+}
+
+// UINT GetTempFileNameW(
+//   LPCWSTR lpPathName,
+//   LPCWSTR lpPrefixString,
+//   UINT    uUnique,
+//   LPWSTR  lpTempFileName
+// );
+func XGetTempFileNameW(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func XGetTokenInformation(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetUserNameW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetVolumeInformationA(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetVolumeInformationW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetWindowLongPtrW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetWindowsDirectoryA(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGlobalAddAtomW(t *TLS, _ ...interface{}) uint16 {
+	panic(todo(""))
+}
+
+func XGlobalDeleteAtom(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGlobalGetAtomNameW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XIN6_ADDR_EQUAL(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XIN6_IS_ADDR_V4MAPPED(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XImpersonateSelf(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// void InitializeCriticalSection(
+//   LPCRITICAL_SECTION lpCriticalSection
+// );
+func XInitializeCriticalSection(t *TLS, lpCriticalSection uintptr) {
+	C.InitializeCriticalSection((*C.struct__RTL_CRITICAL_SECTION)(unsafe.Pointer(lpCriticalSection)))
+}
+
+func XIsWindow(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XKillTimer(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// void LeaveCriticalSection(
+//   LPCRITICAL_SECTION lpCriticalSection
+// );
+func XLeaveCriticalSection(t *TLS, lpCriticalSection uintptr) {
+	panic(todo(""))
+}
+
+// HMODULE LoadLibraryExW(
+//   LPCWSTR lpLibFileName,
+//   HANDLE  hFile,
+//   DWORD   dwFlags
+// );
+func XLoadLibraryExW(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func XMessageBeep(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XMessageBoxW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XMoveFileW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// DWORD MsgWaitForMultipleObjectsEx(
+//   DWORD        nCount,
+//   const HANDLE *pHandles,
+//   DWORD        dwMilliseconds,
+//   DWORD        dwWakeMask,
+//   DWORD        dwFlags
+// );
+func XMsgWaitForMultipleObjectsEx(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func XNetApiBufferFree(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XNetGetDCName(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// NET_API_STATUS NET_API_FUNCTION NetUserGetInfo(
+//   LPCWSTR servername,
+//   LPCWSTR username,
+//   DWORD   level,
+//   LPBYTE  *bufptr
+// );
+func XNetUserGetInfo(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func XOpenProcessToken(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XOpenThreadToken(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// BOOL WINAPI PeekConsoleInput(
+//   _In_  HANDLE        hConsoleInput,
+//   _Out_ PINPUT_RECORD lpBuffer,
+//   _In_  DWORD         nLength,
+//   _Out_ LPDWORD       lpNumberOfEventsRead
+// );
+func XPeekConsoleInputW(t *TLS, hConsoleInput, lpBuffer uintptr, nLength uint32, lpNumberOfEventsRead uintptr) int32 {
+	panic(todo(""))
+}
+
+func XPeekMessageW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XPeekNamedPipe(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XPostMessageW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XPostQuitMessage(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XPurgeComm(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XQueryPerformanceFrequency(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// BOOL WINAPI ReadConsole(
+//   _In_     HANDLE  hConsoleInput,
+//   _Out_    LPVOID  lpBuffer,
+//   _In_     DWORD   nNumberOfCharsToRead,
+//   _Out_    LPDWORD lpNumberOfCharsRead,
+//   _In_opt_ LPVOID  pInputControl
+// );
+func XReadConsoleW(t *TLS, hConsoleInput, lpBuffer uintptr, nNumberOfCharsToRead uint32, lpNumberOfCharsRead, pInputControl uintptr) int32 {
+	panic(todo(""))
+}
+
+func XRegCloseKey(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegConnectRegistryW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegCreateKeyExW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegDeleteKeyW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegDeleteValueW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegEnumKeyExW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegEnumValueW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegOpenKeyExW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegQueryValueExW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegSetValueExW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRegisterClassExW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// ATOM RegisterClassW(
+//   const WNDCLASSW *lpWndClass
+// );
+func XRegisterClassW(t *TLS, lpWndClass uintptr) int32 {
+	panic(todo(""))
+}
+
+func XRemoveDirectoryW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// BOOL ResetEvent(
+//   HANDLE hEvent
+// );
+func XResetEvent(t *TLS, hEvent uintptr) int32 {
+	panic(todo(""))
+}
+
+func XRevertToSelf(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSearchPathW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSendMessageTimeoutW(t *TLS, _ ...interface{}) int64 {
+	panic(todo(""))
+}
+
+func XSendMessageW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSetCommState(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSetCommTimeouts(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// BOOL WINAPI SetConsoleMode(
+//   _In_ HANDLE hConsoleHandle,
+//   _In_ DWORD  dwMode
+// );
+func XSetConsoleMode(t *TLS, hConsoleHandle uintptr, dwMode uint32) int32 {
+	panic(todo(""))
+}
+
+func XSetFileAttributesW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSetHandleInformation(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// BOOL SetThreadPriority(
+//   HANDLE hThread,
+//   int    nPriority
+// );
+func XSetThreadPriority(t *TLS, hThread uintptr, nPriority int32) int32 {
+	panic(todo(""))
+}
+
+func XSetTimer(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSetWindowLongPtrW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSetupComm(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSleepEx(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XTerminateThread(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XTranslateMessage(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// BOOL UnregisterClassW(
+//   LPCWSTR   lpClassName,
+//   HINSTANCE hInstance
+// );
+func XUnregisterClassW(t *TLS, lpClassName, hInstance uintptr) int32 {
+	panic(todo(""))
+}
+
+func XWSAAsyncSelect(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XWSAGetLastError(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// int WSAStartup(
+//   WORD      wVersionRequired,
+//   LPWSADATA lpWSAData
+// );
+func XWSAStartup(t *TLS, wVersionRequired uint16, lpWSAData uintptr) int32 {
+	if err := windows.WSAStartup(uint32(wVersionRequired), (*windows.WSAData)(unsafe.Pointer(lpWSAData))); err != nil {
+		return int32(err.(syscall.Errno))
+	}
+
+	return 0
+}
+
+// BOOL WINAPI WriteConsoleW(
+//   _In_             HANDLE  hConsoleOutput,
+//   _In_       const VOID    *lpBuffer,
+//   _In_             DWORD   nNumberOfCharsToWrite,
+//   _Out_opt_        LPDWORD lpNumberOfCharsWritten,
+//   _Reserved_       LPVOID  lpReserved
+// );
+func XWriteConsoleW(t *TLS, hConsoleOutput, lpBuffer uintptr, nNumberOfCharsToWrite uint32, lpNumberOfCharsWritten, lpReserved uintptr) int32 {
+	panic(todo(""))
+}
+
+func XWspiapiFreeAddrInfo(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XWspiapiGetNameInfo(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// long _InterlockedExchange(
+//    long volatile * Target,
+//    long Value
+// );
+func X_InterlockedExchange(t *TLS, Target uintptr, Value long) long {
+	panic(todo(""))
+}
+
+func X__ccgo_in6addr_anyp(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func X_beginthreadex(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func X_controlfp(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func X_endthreadex(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func X_ftime(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func X_snwprintf(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func X_strnicmp(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func X_wcsicmp(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// SOCKET WSAAPI accept(
+//   SOCKET   s,
+//   sockaddr *addr,
+//   int      *addrlen
+// );
+func Xaccept(t *TLS, _ ...interface{}) uint64 {
+	panic(todo(""))
+}
+
+func Xbind(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xclosesocket(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xconnect(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xgethostname(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xgetpeername(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xgetsockname(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xgmtime(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func Xinet_ntoa(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func Xioctlsocket(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xlisten(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// int lstrcmpiA(
+//   LPCSTR lpString1,
+//   LPCSTR lpString2
+// );
+func XlstrcmpiA(t *TLS, lpString1, lpString2 uintptr) int32 {
+	panic(todo(""))
+}
+
+func XlstrlenW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xrecv(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xselect(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xsend(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xshutdown(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// SOCKET WSAAPI socket(
+//   int af,
+//   int type,
+//   int protocol
+// );
+func Xsocket(t *TLS, _ ...interface{}) uint64 {
+	panic(todo(""))
+}
+
+// wchar_t *wcschr(
+//    const wchar_t *str,
+//    wchar_t c
+// );
+func Xwcschr(t *TLS, str uintptr, c wchar_t) wchar_t {
+	panic(todo(""))
+}
+
+func Xwcscpy(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// int _wcsicmp(
+//    const wchar_t *string1,
+//    const wchar_t *string2
+// );
+func Xwcsicmp(t *TLS, string1, string2 uintptr) int32 {
+	panic(todo(""))
+}
+
+func Xwcsncmp(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// int WINAPIV wsprintfA(
+//   LPSTR  ,
+//   LPCSTR ,
+//   ...
+// );
+func XwsprintfA(t *TLS, a, b, va uintptr) int32 {
+	panic(todo(""))
+}
+
+func XwsprintfW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// UINT WINAPI GetConsoleCP(void);
+func XGetConsoleCP(t *TLS) uint32 {
+	panic(todo(""))
+}
+
+func XGetCurrentThread(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// UINT GetACP();
+func XGetACP(t *TLS) uint32 {
+	panic(todo(""))
+}
+
+// LPWSTR GetCommandLineW();
+func XGetCommandLineW(t *TLS) uintptr {
+	return uintptr(unsafe.Pointer(C.GetCommandLineW()))
+}
+
+func XAddAccessDeniedAce(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XAddAce(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetAce(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetAclInformation(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetFileSecurityA(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetLengthSid(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetSecurityDescriptorDacl(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XGetSidLengthRequired(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// PDWORD GetSidSubAuthority(
+//   PSID  pSid,
+//   DWORD nSubAuthority
+// );
+func XGetSidSubAuthority(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+func XInitializeAcl(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XInitializeSid(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XRaiseException(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSetErrorMode(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSetNamedSecurityInfoA(t *TLS, _ ...interface{}) uint32 {
+	panic(todo(""))
+}
+
+func Xchmod(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xsscanf(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func Xwrite(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XCreateProcessW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XWaitForInputIdle(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}

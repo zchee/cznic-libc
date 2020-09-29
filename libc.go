@@ -38,6 +38,14 @@ func X__builtin_strcmp(t *TLS, s1, s2 uintptr) int32                 { return Xs
 func X__builtin_strcpy(t *TLS, dest, src uintptr) uintptr            { return Xstrcpy(t, dest, src) }
 func X__builtin_strlen(t *TLS, s uintptr) types.Size_t               { return Xstrlen(t, s) }
 func X__builtin_trap(t *TLS)                                         { Xabort(t) }
+func X__isnan(t *TLS, arg float64) int32                             { return Xisnan(t, arg) }
+func X__isnanf(t *TLS, arg float32) int32                            { return Xisnanf(t, arg) }
+func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
+
+// double __builtin_huge_val (void)
+func X__builtin_huge_val(t *TLS) float64 {
+	panic(todo(""))
+}
 
 // int vprintf(const char *format, va_list ap);
 func Xvprintf(t *TLS, s, ap uintptr) int32 { return Xprintf(t, s, ap) }
