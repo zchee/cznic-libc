@@ -291,6 +291,10 @@ func VaFloat64(app *uintptr) float64 {
 
 func VaUintptr(app *uintptr) uintptr {
 	ap := *(*uintptr)(unsafe.Pointer(app))
+	if ap == 0 {
+		return 0
+	}
+
 	ap = roundup(ap, 8)
 	v := *(*uintptr)(unsafe.Pointer(ap))
 	ap += 8
