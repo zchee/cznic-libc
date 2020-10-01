@@ -28,6 +28,7 @@ func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, 
 func X__builtin_expect(t *TLS, exp, c long) long                     { return exp }
 func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
 func X__builtin_free(t *TLS, ptr uintptr)                            { Xfree(t, ptr) }
+func X__builtin_huge_val(t *TLS) float64                             { return math.Inf(1) }
 func X__builtin_inff(t *TLS) float32                                 { return float32(math.Inf(0)) }
 func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
 func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
@@ -41,11 +42,6 @@ func X__builtin_trap(t *TLS)                                         { Xabort(t)
 func X__isnan(t *TLS, arg float64) int32                             { return Xisnan(t, arg) }
 func X__isnanf(t *TLS, arg float32) int32                            { return Xisnanf(t, arg) }
 func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
-
-// double __builtin_huge_val (void)
-func X__builtin_huge_val(t *TLS) float64 {
-	panic(todo(""))
-}
 
 // int vprintf(const char *format, va_list ap);
 func Xvprintf(t *TLS, s, ap uintptr) int32 { return Xprintf(t, s, ap) }
