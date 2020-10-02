@@ -2860,8 +2860,13 @@ func Xsscanf(t *TLS, str, format, va uintptr) int32 {
 	return int32(sysv(t, sscanf, str, format, va))
 }
 
-func Xwrite(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// int write(
+//    int fd,
+//    const void *buffer,
+//    unsigned int count
+// );
+func Xwrite(t *TLS, fd int32, buffer uintptr, count uint32) int32 {
+	return int32(C.write(C.int(fd), unsafe.Pointer(buffer), C.uint(count)))
 }
 
 // BOOL CreateProcessW(
