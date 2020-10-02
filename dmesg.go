@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"time"
 )
 
 const dmesgs = true
@@ -22,11 +24,24 @@ var (
 
 func init() {
 	var err error
-	if logf, err = os.OpenFile(filepath.Join(os.TempDir(), "libc.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644); err != nil {
+	var fn string
+	switch {
+	case runtime.GOOS == "windows":
+		fn = "y:\\libc.log"
+	default:
+		fn = filepath.Join(os.TempDir(), "libc.log")
+	}
+	new := false
+	if _, err := os.Stat(fn); os.IsNotExist(err) {
+		new = true
+	}
+	if logf, err = os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644); err != nil {
 		panic(err.Error())
 	}
-
-	fmt.Printf("dmesgs in %s\n", logf.Name())
+	if new {
+		fmt.Printf("dmesgs in %s\n", fn)
+		dmesg("%v", time.Now())
+	}
 }
 
 func dmesg(s string, args ...interface{}) {

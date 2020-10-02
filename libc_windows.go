@@ -273,9 +273,6 @@ func sysv(t *TLS, proc uintptr, args ...interface{}) uintptr {
 			args = append(args, VaInt64(&va))
 		}
 	}
-	if dmesgs {
-		dmesg("%v: %v", origin(1), args)
-	}
 	return sys(t, proc, args...)
 }
 
@@ -503,7 +500,7 @@ func Xputchar(t *TLS, c int32) int32 {
 
 // int atoi(const char *nptr);
 func Xatoi(t *TLS, nptr uintptr) int32 {
-	panic(todo(""))
+	return int32(C.atoi((*C.char)(unsafe.Pointer(nptr))))
 }
 
 // int putc(int c, FILE *stream);
@@ -819,13 +816,6 @@ func XFormatMessageA(t *TLS, dwFlagsAndAttributes uint32, lpSource uintptr, dwMe
 //   va_list *Arguments
 // );
 func XFormatMessageW(t *TLS, dwFlags uint32, lpSource uintptr, dwMessageId, dwLanguageId uint32, lpBuffer uintptr, nSize uint32, Arguments uintptr) uint32 {
-	if dmesgs {
-		var nargs uintptr
-		if Arguments != 0 {
-			nargs = *(*uintptr)(unsafe.Pointer(Arguments - 8))
-		}
-		dmesg("%v: %q nargs %v", GoString(lpSource), nargs)
-	}
 	return uint32(sysv(t, formatMessageW, dwFlags, lpSource, dwMessageId, dwLanguageId, lpBuffer, nSize, Arguments))
 }
 
@@ -879,9 +869,6 @@ func XGetCurrentProcess(t *TLS) uintptr {
 // FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName);
 func XGetProcAddress(t *TLS, hModule, lpProcName uintptr) uintptr {
 	s := GoString(lpProcName)
-	if dmesgs {
-		dmesg("%v: %#x %q", origin(1), hModule, s)
-	}
 	switch s {
 	case "CancelSynchronousIo":
 		return *(*uintptr)(unsafe.Pointer(&struct {
@@ -1511,7 +1498,7 @@ func XExitProcess(t *TLS, _ ...interface{}) int32 {
 
 // char *strerror(int errnum);
 func Xstrerror(t *TLS, errnum int32) uintptr {
-	panic(todo(""))
+	return uintptr(unsafe.Pointer(C.strerror(C.int(errnum))))
 }
 
 // BOOL GetVolumeNameForVolumeMountPointW(
@@ -1593,8 +1580,11 @@ func XBuildCommDCBW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XCharLowerW(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// LPWSTR CharLowerW(
+//   LPWSTR lpsz
+// );
+func XCharLowerW(t *TLS, lpsz uintptr) uintptr {
+	return uintptr(unsafe.Pointer((C.CharLowerW((*C.ushort)(unsafe.Pointer(lpsz))))))
 }
 
 func XClearCommError(t *TLS, _ ...interface{}) int32 {
@@ -1606,9 +1596,6 @@ func XClearCommError(t *TLS, _ ...interface{}) int32 {
 // );
 func XRtlGetVersion(t *TLS, lpVersionInformation uintptr) uintptr {
 	r := sys(t, rtlGetVersion, lpVersionInformation)
-	if dmesgs {
-		dmesg("%v: %#x: %#x", origin(1), lpVersionInformation, r)
-	}
 	return r
 }
 
@@ -1666,8 +1653,13 @@ func goWideString(p uintptr) string {
 	}
 }
 
-func XCopyFileW(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL CopyFileW(
+//   LPCWSTR lpExistingFileName,
+//   LPCWSTR lpNewFileName,
+//   BOOL    bFailIfExists
+// );
+func XCopyFileW(t *TLS, lpExistingFileName, lpNewFileName uintptr, bFailIfExists int32) int32 {
+	return int32(C.CopyFileW((*C.ushort)(unsafe.Pointer(lpExistingFileName)), (*C.ushort)(unsafe.Pointer(lpNewFileName)), C.int(bFailIfExists)))
 }
 
 // BOOL CreateDirectoryW(
@@ -1688,8 +1680,13 @@ func XCreateEventW(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialStat
 	return uintptr(C.CreateEventW((*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpEventAttributes)), C.int(bManualReset), C.int(bInitialState), (*C.ushort)(unsafe.Pointer(lpName))))
 }
 
-func XCreateHardLinkW(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL CreateHardLinkW(
+//   LPCWSTR               lpFileName,
+//   LPCWSTR               lpExistingFileName,
+//   LPSECURITY_ATTRIBUTES lpSecurityAttributes
+// );
+func XCreateHardLinkW(t *TLS, lpFileName, lpExistingFileName, lpSecurityAttributes uintptr) int32 {
+	return int32(C.CreateHardLinkW((*C.ushort)(unsafe.Pointer(lpFileName)), (*C.ushort)(unsafe.Pointer(lpExistingFileName)), (*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpSecurityAttributes))))
 }
 
 // BOOL CreatePipe(
@@ -1838,8 +1835,18 @@ func XDestroyWindow(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XDeviceIoControl(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL DeviceIoControl(
+//   HANDLE       hDevice,
+//   DWORD        dwIoControlCode,
+//   LPVOID       lpInBuffer,
+//   DWORD        nInBufferSize,
+//   LPVOID       lpOutBuffer,
+//   DWORD        nOutBufferSize,
+//   LPDWORD      lpBytesReturned,
+//   LPOVERLAPPED lpOverlapped
+// );
+func XDeviceIoControl(t *TLS, hDevice uintptr, dwIoControlCode uint32, lpInBuffer uintptr, nInBufferSize uint32, lpOutBuffer uintptr, nOutBufferSize uint32, lpBytesReturned, lpOverlapped uintptr) int32 {
+	return int32(C.DeviceIoControl(C.HANDLE(hDevice), C.ulong(dwIoControlCode), C.LPVOID(lpInBuffer), C.ulong(nInBufferSize), C.LPVOID(lpOutBuffer), C.ulong(nOutBufferSize), (*C.ulong)(unsafe.Pointer(lpBytesReturned)), (*C.struct__OVERLAPPED)(unsafe.Pointer(lpOverlapped))))
 }
 
 func XDispatchMessageW(t *TLS, _ ...interface{}) int32 {
@@ -1857,8 +1864,12 @@ func XEnumWindows(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XEqualSid(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL EqualSid(
+//   PSID pSid1,
+//   PSID pSid2
+// );
+func XEqualSid(t *TLS, pSid1, pSid2 uintptr) int32 {
+	return int32(C.EqualSid(C.PVOID(pSid1), C.PVOID(pSid2)))
 }
 
 func XEscapeCommFunction(t *TLS, _ ...interface{}) int32 {
@@ -1950,17 +1961,6 @@ func XGetExitCodeThread(t *TLS, hThread, lpExitCode uintptr) int32 {
 // );
 func XGetFileInformationByHandle(t *TLS, hFile, lpFileInformation uintptr) int32 {
 	return int32(C.GetFileInformationByHandle(C.HANDLE(hFile), (*C.struct__BY_HANDLE_FILE_INFORMATION)(unsafe.Pointer(lpFileInformation))))
-}
-
-// BOOL GetFileSecurityW(
-//   LPCSTR               lpFileName,
-//   SECURITY_INFORMATION RequestedInformation,
-//   PSECURITY_DESCRIPTOR pSecurityDescriptor,
-//   DWORD                nLength,
-//   LPDWORD              lpnLengthNeeded
-// );
-func XGetFileSecurityW(t *TLS, lpFileName uintptr, RequestedInformation uint32, pSecurityDescriptor uintptr, nLength uint32, lpnLengthNeeded uintptr) int32 {
-	return int32(C.GetFileSecurityW((*C.ushort)(unsafe.Pointer(lpFileName)), C.ulong(RequestedInformation), C.PVOID(pSecurityDescriptor), C.ulong(nLength), (*C.ulong)(unsafe.Pointer(lpnLengthNeeded))))
 }
 
 // DWORD GetLogicalDriveStringsA(
@@ -2072,12 +2072,23 @@ func XGetTempFileNameW(t *TLS, lpPathName, lpPrefixString uintptr, uUnique uint3
 	return uint32(C.GetTempFileNameW((*C.ushort)(unsafe.Pointer(lpPathName)), (*C.ushort)(unsafe.Pointer(lpPrefixString)), C.uint(uUnique), (*C.ushort)(unsafe.Pointer(lpTempFileName))))
 }
 
-func XGetTokenInformation(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL GetTokenInformation(
+//   HANDLE                  TokenHandle,
+//   TOKEN_INFORMATION_CLASS TokenInformationClass,
+//   LPVOID                  TokenInformation,
+//   DWORD                   TokenInformationLength,
+//   PDWORD                  ReturnLength
+// );
+func XGetTokenInformation(t *TLS, TokenHandle uintptr, TokenInformationClass uint32, TokenInformation uintptr, TokenInformationLength uint32, ReturnLength uintptr) int32 {
+	return int32(C.GetTokenInformation(C.HANDLE(TokenHandle), C.TOKEN_INFORMATION_CLASS(TokenInformationClass), C.LPVOID(TokenInformation), C.ulong(TokenInformationLength), (*C.ulong)(unsafe.Pointer(ReturnLength))))
 }
 
-func XGetUserNameW(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL GetUserNameW(
+//   LPWSTR  lpBuffer,
+//   LPDWORD pcbBuffer
+// );
+func XGetUserNameW(t *TLS, lpBuffer, pcbBuffer uintptr) int32 {
+	return int32(C.GetUserNameW((*C.ushort)(unsafe.Pointer(lpBuffer)), (*C.ulong)(unsafe.Pointer(pcbBuffer))))
 }
 
 // BOOL GetVolumeInformationA(
@@ -2224,8 +2235,13 @@ func XNetUserGetInfo(t *TLS, servername, username uintptr, level uint32, bufptr 
 	return uint32(sys(t, netUserGetInfo, servername, username, level, bufptr))
 }
 
-func XOpenProcessToken(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL OpenProcessToken(
+//   HANDLE  ProcessHandle,
+//   DWORD   DesiredAccess,
+//   PHANDLE TokenHandle
+// );
+func XOpenProcessToken(t *TLS, ProcessHandle uintptr, DesiredAccess uint32, TokenHandle uintptr) int32 {
+	return int32(C.OpenProcessToken(C.HANDLE(ProcessHandle), C.ulong(DesiredAccess), (*C.HANDLE)(unsafe.Pointer(TokenHandle))))
 }
 
 // BOOL OpenThreadToken(
@@ -2407,8 +2423,12 @@ func XSetConsoleMode(t *TLS, hConsoleHandle uintptr, dwMode uint32) int32 {
 	return int32(C.SetConsoleMode(C.HANDLE(hConsoleHandle), C.ulong(dwMode)))
 }
 
-func XSetFileAttributesW(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL SetFileAttributesW(
+//   LPCWSTR lpFileName,
+//   DWORD   dwFileAttributes
+// );
+func XSetFileAttributesW(t *TLS, lpFileName uintptr, dwFileAttributes uint32) int32 {
+	return int32(C.SetFileAttributesW((*C.ushort)(unsafe.Pointer(lpFileName)), C.ulong(dwFileAttributes)))
 }
 
 func XSetHandleInformation(t *TLS, _ ...interface{}) int32 {
@@ -2645,8 +2665,13 @@ func Xwcsicmp(t *TLS, string1, string2 uintptr) int32 {
 	return int32(C._wcsicmp((*C.ushort)(unsafe.Pointer(string1)), (*C.ushort)(unsafe.Pointer(string2))))
 }
 
-func Xwcsncmp(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// int wcsncmp(
+//    const wchar_t *string1,
+//    const wchar_t *string2,
+//    size_t count
+// );
+func Xwcsncmp(t *TLS, string1, string2 uintptr, count types.Size_t) int32 {
+	return int32(C.wcsncmp((*C.ushort)(unsafe.Pointer(string1)), (*C.ushort)(unsafe.Pointer(string2)), C.size_t(count)))
 }
 
 // int WINAPIV wsprintfA(
@@ -2656,9 +2681,6 @@ func Xwcsncmp(t *TLS, _ ...interface{}) int32 {
 // );
 func XwsprintfA(t *TLS, a, b, va uintptr) int32 {
 	r := int32(sysv(t, wsprintfA, a, b, va))
-	if dmesgs {
-		dmesg("%v: %q %q %#x: %v", origin(1), GoString(a), GoString(b), va, r)
-	}
 	return r
 }
 
@@ -2686,64 +2708,146 @@ func XGetCommandLineW(t *TLS) uintptr {
 	return uintptr(unsafe.Pointer(C.GetCommandLineW()))
 }
 
-func XAddAccessDeniedAce(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL AddAccessDeniedAce(
+//   PACL  pAcl,
+//   DWORD dwAceRevision,
+//   DWORD AccessMask,
+//   PSID  pSid
+// );
+func XAddAccessDeniedAce(t *TLS, pAcl uintptr, dwAceRevision, AccessMask uint32, pSid uintptr) int32 {
+	return int32(C.AddAccessDeniedAce((*C.struct__ACL)(unsafe.Pointer(pAcl)), C.ulong(dwAceRevision), C.ulong(AccessMask), C.PVOID(pSid)))
 }
 
-func XAddAce(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL AddAce(
+//   PACL   pAcl,
+//   DWORD  dwAceRevision,
+//   DWORD  dwStartingAceIndex,
+//   LPVOID pAceList,
+//   DWORD  nAceListLength
+// );
+func XAddAce(t *TLS, pAcl uintptr, dwAceRevision, dwStartingAceIndex uint32, pAceList uintptr, nAceListLength uint32) int32 {
+	return int32(C.AddAce((*C.struct__ACL)(unsafe.Pointer(pAcl)), C.ulong(dwAceRevision), C.ulong(dwStartingAceIndex), C.LPVOID(pAceList), C.ulong(nAceListLength)))
 }
 
-func XGetAce(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL GetAce(
+//   PACL   pAcl,
+//   DWORD  dwAceIndex,
+//   LPVOID *pAce
+// );
+func XGetAce(t *TLS, pAcl uintptr, dwAceIndex uint32, pAce uintptr) int32 {
+	return int32(C.GetAce((*C.struct__ACL)(unsafe.Pointer(pAcl)), C.ulong(dwAceIndex), (*C.LPVOID)(unsafe.Pointer(pAce))))
 }
 
-func XGetAclInformation(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL GetAclInformation(
+//   PACL                  pAcl,
+//   LPVOID                pAclInformation,
+//   DWORD                 nAclInformationLength,
+//   ACL_INFORMATION_CLASS dwAclInformationClass
+// );
+func XGetAclInformation(t *TLS, pAcl, pAclInformation uintptr, nAclInformationLength, dwAclInformationClass uint32) int32 {
+	return int32(C.GetAclInformation((*C.struct__ACL)(unsafe.Pointer(pAcl)), C.LPVOID(pAclInformation), C.ulong(nAclInformationLength), C.ACL_INFORMATION_CLASS(dwAclInformationClass)))
 }
 
-func XGetFileSecurityA(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL GetFileSecurityA(
+//   LPCSTR               lpFileName,
+//   SECURITY_INFORMATION RequestedInformation,
+//   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+//   DWORD                nLength,
+//   LPDWORD              lpnLengthNeeded
+// );
+func XGetFileSecurityA(t *TLS, lpFileName uintptr, RequestedInformation uint32, pSecurityDescriptor uintptr, nLength uint32, lpnLengthNeeded uintptr) int32 {
+	return int32(C.GetFileSecurityA((*C.char)(unsafe.Pointer(lpFileName)), C.ulong(RequestedInformation), C.PVOID(pSecurityDescriptor), C.ulong(nLength), (*C.ulong)(unsafe.Pointer(lpnLengthNeeded))))
 }
 
-func XGetLengthSid(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL GetFileSecurityW(
+//   LPCSTR               lpFileName,
+//   SECURITY_INFORMATION RequestedInformation,
+//   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+//   DWORD                nLength,
+//   LPDWORD              lpnLengthNeeded
+// );
+func XGetFileSecurityW(t *TLS, lpFileName uintptr, RequestedInformation uint32, pSecurityDescriptor uintptr, nLength uint32, lpnLengthNeeded uintptr) int32 {
+	return int32(C.GetFileSecurityW((*C.ushort)(unsafe.Pointer(lpFileName)), C.ulong(RequestedInformation), C.PVOID(pSecurityDescriptor), C.ulong(nLength), (*C.ulong)(unsafe.Pointer(lpnLengthNeeded))))
 }
 
-func XGetSecurityDescriptorDacl(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// DWORD GetLengthSid(
+//   PSID pSid
+// );
+func XGetLengthSid(t *TLS, pSid uintptr) int32 {
+	return int32(C.GetLengthSid(C.PVOID(pSid)))
 }
 
-func XGetSidLengthRequired(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL GetSecurityDescriptorDacl(
+//   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+//   LPBOOL               lpbDaclPresent,
+//   PACL                 *pDacl,
+//   LPBOOL               lpbDaclDefaulted
+// );
+func XGetSecurityDescriptorDacl(t *TLS, pSecurityDescriptor, lpbDaclPresent, pDacl, lpbDaclDefaulted uintptr) int32 {
+	return int32(C.GetSecurityDescriptorDacl(C.PVOID(pSecurityDescriptor), (*C.int)(unsafe.Pointer(lpbDaclPresent)), (*C.PACL)(unsafe.Pointer(pDacl)), (*C.int)(unsafe.Pointer(lpbDaclDefaulted))))
+}
+
+// DWORD GetSidLengthRequired(
+//   UCHAR nSubAuthorityCount
+// );
+func XGetSidLengthRequired(t *TLS, nSubAuthorityCount uint8) int32 {
+	return int32(C.GetSidLengthRequired(C.uchar(nSubAuthorityCount)))
 }
 
 // PDWORD GetSidSubAuthority(
 //   PSID  pSid,
 //   DWORD nSubAuthority
 // );
-func XGetSidSubAuthority(t *TLS, _ ...interface{}) uintptr {
-	panic(todo(""))
+func XGetSidSubAuthority(t *TLS, pSid uintptr, nSubAuthority uint32) uintptr {
+	return uintptr(unsafe.Pointer(C.GetSidSubAuthority(C.PVOID(pSid), C.ulong(nSubAuthority))))
 }
 
-func XInitializeAcl(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL InitializeAcl(
+//   PACL  pAcl,
+//   DWORD nAclLength,
+//   DWORD dwAclRevision
+// );
+func XInitializeAcl(t *TLS, pAcl uintptr, nAclLength, dwAclRevision uint32) int32 {
+	return int32(C.InitializeAcl((*C.struct__ACL)(unsafe.Pointer(pAcl)), C.ulong(nAclLength), C.ulong(dwAclRevision)))
 }
 
-func XInitializeSid(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// BOOL InitializeSid(
+//   PSID                      Sid,
+//   PSID_IDENTIFIER_AUTHORITY pIdentifierAuthority,
+//   BYTE                      nSubAuthorityCount
+// );
+func XInitializeSid(t *TLS, Sid, pIdentifierAuthority uintptr, nSubAuthorityCount uint8) int32 {
+	return int32(C.InitializeSid(C.PVOID(Sid), (*C.struct__SID_IDENTIFIER_AUTHORITY)(unsafe.Pointer(pIdentifierAuthority)), C.uchar(nSubAuthorityCount)))
 }
 
-func XRaiseException(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// VOID RaiseException(
+//   DWORD           dwExceptionCode,
+//   DWORD           dwExceptionFlags,
+//   DWORD           nNumberOfArguments,
+//   const ULONG_PTR *lpArguments
+// );
+func XRaiseException(t *TLS, dwExceptionCode, dwExceptionFlags, nNumberOfArguments uint32, lpArguments uintptr) {
+	C.RaiseException(C.ulong(dwExceptionCode), C.ulong(dwExceptionFlags), C.ulong(nNumberOfArguments), (*C.ulonglong)(unsafe.Pointer(lpArguments)))
 }
 
-func XSetErrorMode(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// UINT SetErrorMode(
+//   UINT uMode
+// );
+func XSetErrorMode(t *TLS, uMode uint32) int32 {
+	return int32(C.SetErrorMode(C.uint(uMode)))
 }
 
-func XSetNamedSecurityInfoA(t *TLS, _ ...interface{}) uint32 {
-	panic(todo(""))
+// DWORD SetNamedSecurityInfoA(
+//   LPSTR                pObjectName,
+//   SE_OBJECT_TYPE       ObjectType,
+//   SECURITY_INFORMATION SecurityInfo,
+//   PSID                 psidOwner,
+//   PSID                 psidGroup,
+//   PACL                 pDacl,
+//   PACL                 pSacl
+// );
+func XSetNamedSecurityInfoA(t *TLS, pObjectName uintptr, ObjectType, SecurityInfo uint32, psidOwner, psidGroup, pDacl, pSacl uintptr) uint32 {
+	return uint32(C.SetNamedSecurityInfoA((*C.char)(unsafe.Pointer(pObjectName)), C.SE_OBJECT_TYPE(ObjectType), C.ulong(SecurityInfo), C.PVOID(psidOwner), C.PVOID(psidGroup), (*C.struct__ACL)(unsafe.Pointer(pDacl)), (*C.struct__ACL)(unsafe.Pointer(pSacl))))
 }
 
 // int chmod(const char *pathname, mode_t mode)
