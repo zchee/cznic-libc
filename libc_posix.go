@@ -831,14 +831,6 @@ func Xprintf(t *TLS, format, args uintptr) int32 {
 	return int32(n)
 }
 
-func X__ccgo_print_debug_stack(t *TLS) {
-	fmt.Printf("%s\n", debug.Stack())
-}
-
-func X__ccgo_debug_print(s string, args ...interface{}) {
-	fmt.Printf(s, args...)
-}
-
 // void tzset (void);
 func Xtzset(t *TLS) {
 	//TODO

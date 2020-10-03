@@ -1,5 +1,9 @@
 #include "_cgo_export.h"
 
+int __ccgo_errno() {
+	return errno;
+}
+
 void *__ccgo_environ()
 {
 	return (void *)environ;

@@ -18,6 +18,7 @@ extern char ***__imp_environ;
 extern unsigned __ccgo_getLastError();
 extern void *__ccgo_environ();
 extern void *__ccgo_errno_location();
+extern int __ccgo_errno();
 
 extern HANDLE __ccgo_CreateThread(
   LPSECURITY_ATTRIBUTES   lpThreadAttributes,
@@ -33,7 +34,6 @@ import "C"
 import (
 	"bufio"
 	"fmt"
-	"golang.org/x/sys/windows"
 	"os"
 	"runtime"
 	"sync/atomic"
@@ -41,12 +41,14 @@ import (
 	"unicode/utf16"
 	"unsafe"
 
+	"golang.org/x/sys/windows"
 	"modernc.org/libc/sys/types"
 )
 
 type (
 	long     = int32
 	longlong = int64
+	ulong    = uint32
 )
 
 // Keep these outside of the var block otherwise go generate will miss them.
@@ -435,7 +437,22 @@ func Xmemcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 {
 
 // int sprintf(char *str, const char *format, ...);
 func Xsprintf(t *TLS, str, format, args uintptr) (r int32) {
-	return int32(sysv(t, sprintf, str, format, args))
+	r = int32(sysv(t, sprintf, str, format, args))
+	// if dmesgs {
+	// 	dmesg("%v: %q %v: %q %v", origin(1), GoString(format), varargs(args), GoString(str), r)
+	// }
+	return r
+}
+
+func varargs(va uintptr) (r []uint64) {
+	if va != 0 {
+		va -= 8
+		n := int(VaInt32(&va))
+		for i := 0; i < n; i++ {
+			r = append(r, VaUint64(&va))
+		}
+	}
+	return r
 }
 
 // int vfscanf(FILE * restrict stream, const char * restrict format, va_list arg);
@@ -2681,6 +2698,9 @@ func Xwcsncmp(t *TLS, string1, string2 uintptr, count types.Size_t) int32 {
 // );
 func XwsprintfA(t *TLS, a, b, va uintptr) int32 {
 	r := int32(sysv(t, wsprintfA, a, b, va))
+	// if dmesgs {
+	// 	dmesg("%v: %q %v: %q %v", origin(1), GoString(b), varargs(va), GoString(a), r)
+	// }
 	return r
 }
 
@@ -2857,7 +2877,18 @@ func Xchmod(t *TLS, pathname uintptr, mode int32) int32 {
 
 // int sscanf(const char *str, const char *format, ...);
 func Xsscanf(t *TLS, str, format, va uintptr) int32 {
-	return int32(sysv(t, sscanf, str, format, va))
+	if dmesgs {
+		dmesg("%v: %q %q, errno %v", origin(1), GoString(str), GoString(format), __ccgo_errno())
+	}
+	r := int32(sysv(t, sscanf, str, format, va))
+	if dmesgs {
+		dmesg("%v: errno %v", origin(1), __ccgo_errno())
+	}
+	return r
+}
+
+func __ccgo_errno() int32 {
+	return int32(C.__ccgo_errno())
 }
 
 // int write(
@@ -2891,4 +2922,56 @@ func XCreateProcessW(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttribut
 // );
 func XWaitForInputIdle(t *TLS, hProcess uintptr, dwMilliseconds uint32) int32 {
 	return int32(C.WaitForInputIdle(C.HANDLE(hProcess), C.ulong(dwMilliseconds)))
+}
+
+// long int strtol(const char *nptr, char **endptr, int base);
+func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
+	return long(C.strtol((*C.char)(unsafe.Pointer(nptr)), (**C.char)(unsafe.Pointer(endptr)), C.int(base)))
+	//TODO seenDigits, neg, next, n, _ := strToUint64(t, nptr, base)
+	//TODO if endptr != 0 {
+	//TODO 	*(*uintptr)(unsafe.Pointer(endptr)) = next
+	//TODO }
+	//TODO if !seenDigits {
+	//TODO 	*(*int32)(unsafe.Pointer(X_errno(t))) = errno.EINVAL
+	//TODO 	return 0
+	//TODO }
+
+	//TODO if n > limits.LONG_MAX {
+	//TODO 	*(*int32)(unsafe.Pointer(X_errno(t))) = errno.ERANGE
+	//TODO 	return limits.LONG_MAX
+	//TODO }
+
+	//TODO if neg {
+	//TODO 	n = -n
+	//TODO }
+	//TODO n1 := int64(n)
+	//TODO if n1 < limits.LONG_MIN {
+	//TODO 	*(*int32)(unsafe.Pointer(X_errno(t))) = errno.ERANGE
+	//TODO 	return limits.LONG_MIN
+	//TODO }
+
+	//TODO return long(n1)
+}
+
+// unsigned long int strtoul(const char *nptr, char **endptr, int base);
+func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
+	return ulong(C.strtoul((*C.char)(unsafe.Pointer(nptr)), (**C.char)(unsafe.Pointer(endptr)), C.int(base)))
+	// seenDigits, neg, next, n, _ := strToUint64(t, nptr, base)
+	// if endptr != 0 {
+	// 	*(*uintptr)(unsafe.Pointer(endptr)) = next
+	// }
+	// if !seenDigits {
+	// 	*(*int32)(unsafe.Pointer(X_errno(t))) = errno.EINVAL
+	// 	return 0
+	// }
+
+	// if n > limits.ULONG_MAX {
+	// 	*(*int32)(unsafe.Pointer(X_errno(t))) = errno.ERANGE
+	// 	return limits.ULONG_MAX
+	// }
+
+	// if neg {
+	// 	n = -n
+	// }
+	// return ulong(n)
 }

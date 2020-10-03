@@ -15,6 +15,7 @@ import (
 	"math"
 	"math/bits"
 	"os"
+	"runtime/debug"
 	"sort"
 	"unsafe"
 
@@ -215,4 +216,26 @@ func AtomicStoreNInt16(ptr uintptr, val int16, memorder int32) {
 
 func AtomicStoreNUint16(ptr uintptr, val uint16, memorder int32) {
 	panic(todo(""))
+}
+
+func DebugPrintStack() {
+	fmt.Printf("%s\n", debug.Stack())
+	if dmesgs {
+		dmesg("%v: %s", origin(2), debug.Stack())
+	}
+}
+
+func DebugPrint(s string, args ...interface{}) {
+	s = fmt.Sprintf(s, args...)
+	fmt.Printf("%v: %s", origin(2), s)
+	if dmesgs {
+		dmesg("%v: %s", origin(2), s)
+	}
+}
+
+func Dmesg(s string, args ...interface{}) {
+	if dmesgs {
+		s = fmt.Sprintf(s, args...)
+		dmesg("%v: %s", origin(2), s)
+	}
 }

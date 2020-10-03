@@ -264,11 +264,13 @@ func makeMuslWin(goos, goarch string) {
 		"src/ctype/isprint.c",
 		"src/ctype/isspace.c",
 		"src/ctype/isxdigit.c",
-		"src/internal/intscan.c",
-		"src/internal/shgetc.c",
-		"src/stdio/__toread.c",
-		"src/stdio/__uflow.c",
-		"src/stdlib/strtol.c",
+
+		// FAILS b/c Windows long is 32 bits
+		// "src/internal/intscan.c",
+		// "src/internal/shgetc.c",
+		// "src/stdio/__toread.c",
+		// "src/stdio/__uflow.c",
+		// "src/stdlib/strtol.c",
 	)
 	fmt.Printf("%s\n", out)
 }
