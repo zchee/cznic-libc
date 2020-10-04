@@ -18,7 +18,6 @@ import (
 	"math/big"
 	"os"
 	gosignal "os/signal"
-	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -771,13 +770,6 @@ func Xhtonl(t *TLS, hostlong uint32) uint32 {
 // FILE *fopen(const char *pathname, const char *mode);
 func Xfopen(t *TLS, pathname, mode uintptr) uintptr {
 	return Xfopen64(t, pathname, mode) //TODO 32 bit
-}
-
-// void sqlite3_log(int iErrCode, const char *zFormat, ...);
-func X__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr) {
-	if dmesgs {
-		dmesg("%v: iErrCode: %v, msg: %s\n%s", origin(1), iErrCode, printf(zFormat, args), debug.Stack())
-	}
 }
 
 // int _IO_putc(int __c, _IO_FILE *__fp);

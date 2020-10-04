@@ -17,6 +17,7 @@ import (
 	"os"
 	"runtime/debug"
 	"sort"
+	"sync"
 	"unsafe"
 
 	"modernc.org/libc/sys/types"
@@ -71,17 +72,35 @@ func X__builtin_memcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
 
 // uint16_t __builtin_bswap16 (uint32_t x)
 func X__builtin_bswap16(t *TLS, x uint16) uint16 {
-	return x<<8 | x>>8
+	return x<<8 |
+		x>>8
 }
 
 // uint32_t __builtin_bswap32 (uint32_t x)
 func X__builtin_bswap32(t *TLS, x uint32) uint32 {
-	return x<<24 | x&0xff00<<8 | x&0xff0000>>8 | x>>24
+	return x<<24 |
+		x&0xff00<<8 |
+		x&0xff0000>>8 |
+		x>>24
+}
+
+// uint64_t __builtin_bswap64 (uint64_t x)
+func X__builtin_bswap64(t *TLS, x uint64) uint64 {
+	return x<<56 |
+		x&0xff000000000000>>40 |
+		x&0xff0000000000>>24 |
+		x&0xff00000000>>8 |
+		x&0xff000000<<8 |
+		x&0xff0000<<24 |
+		x&0xff00<<40 |
+		x>>56
 }
 
 // bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_add_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
-	panic(todo(""))
+	r := a + b
+	*(*int64)(unsafe.Pointer(res)) = r
+	return Bool32(a > 0 && b > 0 && r < 0 || a < 0 && b < 0 && r >= 0)
 }
 
 // bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
@@ -93,7 +112,9 @@ func X__builtin_add_overflowUint32(t *TLS, a, b uint32, res uintptr) int32 {
 
 // bool __builtin_sub_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_sub_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
-	panic(todo(""))
+	r := a - b
+	*(*int64)(unsafe.Pointer(res)) = r
+	return Bool32(a > 0 && b > 0 && r > a || a < 0 && b < 0 && r < a)
 }
 
 // bool __builtin_mul_overflow (type1 a, type2 b, type3 *res)
@@ -214,8 +235,12 @@ func AtomicStoreNInt16(ptr uintptr, val int16, memorder int32) {
 	panic(todo(""))
 }
 
+var atomicStoreNUint16 sync.Mutex
+
 func AtomicStoreNUint16(ptr uintptr, val uint16, memorder int32) {
-	panic(todo(""))
+	atomicStoreNUint16.Lock()
+	*(*uint16)(unsafe.Pointer(ptr)) = val
+	atomicStoreNUint16.Unlock()
 }
 
 func DebugPrintStack() {
@@ -237,5 +262,12 @@ func Dmesg(s string, args ...interface{}) {
 	if dmesgs {
 		s = fmt.Sprintf(s, args...)
 		dmesg("%v: %s", origin(2), s)
+	}
+}
+
+// void sqlite3_log(int iErrCode, const char *zFormat, ...);
+func X__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr) {
+	if dmesgs {
+		dmesg("%v: iErrCode: %v, msg: %s\n%s", origin(1), iErrCode, printf(zFormat, args), debug.Stack())
 	}
 }
