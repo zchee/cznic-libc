@@ -1,17 +1,12 @@
-#include "_cgo_export.h"
+// +build !libc.ccgo
 
-int __ccgo_errno() {
-	return errno;
-}
+#include <windows.h>
+
+extern char **environ;
 
 void *__ccgo_environ()
 {
 	return (void *)environ;
-}
-
-void *__ccgo_errno_location()
-{
-	return &errno;
 }
 
 unsigned __ccgo_getLastError()
@@ -19,17 +14,7 @@ unsigned __ccgo_getLastError()
 	return GetLastError();
 }
 
-DWORD WINAPI __ccgo_thread_proc(LPVOID lpParameter)
+void *__ccgo_errno_location()
 {
-	return __ccgo_thread_proc_cb((unsigned long long)lpParameter);
-}
-
-HANDLE
-__ccgo_CreateThread(LPSECURITY_ATTRIBUTES lpThreadAttributes,
-		    SIZE_T dwStackSize,
-		    unsigned long long obj,
-		    DWORD dwCreationFlags, LPDWORD lpThreadId)
-{
-	return CreateThread(lpThreadAttributes, dwStackSize, __ccgo_thread_proc,
-			    (LPVOID) obj, dwCreationFlags, lpThreadId);
+	return &errno;
 }
