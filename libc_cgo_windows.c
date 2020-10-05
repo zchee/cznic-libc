@@ -1,4 +1,4 @@
-// +build libc.ccgo
+// +build libc.cgo
 
 #include "_cgo_export.h"
 
