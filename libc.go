@@ -224,7 +224,10 @@ func Xqsort(t *TLS, base uintptr, nmemb, size types.Size_t, compar uintptr) {
 }
 
 func AtomicLoadNUint16(ptr uintptr, memorder int16) uint16 {
-	panic(todo(""))
+	atomicLoadStore16.Lock()
+	r := *(*uint16)(unsafe.Pointer(ptr))
+	atomicLoadStore16.Unlock()
+	return r
 }
 
 func AtomicLoadNInt16(ptr uintptr, memorder int16) uint16 {
@@ -235,12 +238,12 @@ func AtomicStoreNInt16(ptr uintptr, val int16, memorder int32) {
 	panic(todo(""))
 }
 
-var atomicStoreNUint16 sync.Mutex
+var atomicLoadStore16 sync.Mutex
 
 func AtomicStoreNUint16(ptr uintptr, val uint16, memorder int32) {
-	atomicStoreNUint16.Lock()
+	atomicLoadStore16.Lock()
 	*(*uint16)(unsafe.Pointer(ptr)) = val
-	atomicStoreNUint16.Unlock()
+	atomicLoadStore16.Unlock()
 }
 
 func DebugPrintStack() {

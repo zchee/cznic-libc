@@ -123,7 +123,6 @@ func Environ() uintptr {
 }
 
 func Xexit(t *TLS, status int32) {
-	panic(todo(""))
 	if len(Covered) != 0 {
 		buf := bufio.NewWriter(os.Stdout)
 		CoverReport(buf)
@@ -220,7 +219,6 @@ func goWideString(p uintptr) string {
 
 // void _exit(int status);
 func X_exit(t *TLS, status int32) {
-	panic(todo(""))
 	os.Exit(int(status))
 }
 
@@ -381,7 +379,6 @@ func X__ms_vswscanf(t *TLS, stream uintptr, format, ap uintptr) int32 {
 
 // struct tm *localtime( const time_t *sourceTime );
 func Xlocaltime(t *TLS, sourceTime uintptr) uintptr {
-	panic(todo(""))
 	return uintptr(unsafe.Pointer(C.localtime((*C.longlong)(unsafe.Pointer(sourceTime)))))
 }
 
@@ -724,7 +721,6 @@ func XGetTempPathA(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
 //   LPWSTR lpBuffer
 // );
 func XGetTempPathW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
-	panic(todo(""))
 	return uint32(C.GetTempPathW(C.ulong(nBufferLength), (*C.ushort)(unsafe.Pointer(lpBuffer))))
 }
 
@@ -870,7 +866,6 @@ func XLockFileEx(t *TLS, hFile uintptr, dwFlags, dwReserved, nNumberOfBytesToLoc
 //   SIZE_T dwNumberOfBytesToMap
 // );
 func XMapViewOfFile(t *TLS, hFileMappingObject uintptr, dwDesiredAccess, dwFileOffsetHigh, dwFileOffsetLow uint32, dwNumberOfBytesToMap types.Size_t) uintptr {
-	panic(todo(""))
 	return uintptr(C.MapViewOfFile(C.HANDLE(hFileMappingObject), C.ulong(dwDesiredAccess), C.ulong(dwFileOffsetHigh), C.ulong(dwFileOffsetLow), C.ulonglong(dwNumberOfBytesToMap)))
 }
 
@@ -908,7 +903,6 @@ func XReadFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToRead uint32, lpN
 //   HANDLE hFile
 // );
 func XSetEndOfFile(t *TLS, hFile uintptr) int32 {
-	panic(todo(""))
 	return int32(C.SetEndOfFile(C.HANDLE(hFile)))
 }
 
@@ -960,7 +954,6 @@ func XUnlockFileEx(t *TLS, hFile uintptr, dwReserved, nNumberOfBytesToUnlockLow,
 //   LPCVOID lpBaseAddress
 // );
 func XUnmapViewOfFile(t *TLS, lpBaseAddress uintptr) int32 {
-	panic(todo(""))
 	return int32(C.UnmapViewOfFile(C.LPCVOID(lpBaseAddress)))
 }
 
@@ -1032,7 +1025,6 @@ func X_errno(t *TLS) uintptr {
 
 // int atoi(const char *nptr);
 func Xatoi(t *TLS, nptr uintptr) int32 {
-	panic(todo(""))
 	return int32(C.atoi((*C.char)(unsafe.Pointer(nptr))))
 }
 
@@ -1267,13 +1259,11 @@ func XGetStdHandle(t *TLS, nStdHandle uint32) uintptr {
 //   DWORD    dwOptions
 // );
 func XDuplicateHandle(t *TLS, hSourceProcessHandle, hSourceHandle, hTargetProcessHandle, lpTargetHandle uintptr, dwDesiredAccess uint32, bInheritHandle int32, dwOptions uint32) int32 {
-	panic(todo(""))
 	return int32(C.DuplicateHandle(C.HANDLE(hSourceProcessHandle), C.HANDLE(hSourceHandle), C.HANDLE(hTargetProcessHandle), (*C.HANDLE)(unsafe.Pointer(lpTargetHandle)), C.ulong(dwDesiredAccess), C.int(bInheritHandle), C.ulong(dwOptions)))
 }
 
 // HANDLE GetCurrentProcess();
 func XGetCurrentProcess(t *TLS) uintptr {
-	panic(todo(""))
 	return uintptr(C.GetCurrentProcess())
 }
 
@@ -1337,7 +1327,6 @@ func XWriteConsoleW(t *TLS, hConsoleOutput, lpBuffer uintptr, nNumberOfCharsToWr
 //   HANDLE hEvent
 // );
 func XResetEvent(t *TLS, hEvent uintptr) int32 {
-	panic(todo(""))
 	return int32(C.ResetEvent(C.HANDLE(hEvent)))
 }
 
