@@ -37,8 +37,10 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"syscall"
+	"time"
 	"unicode/utf16"
 	"unsafe"
 
@@ -46,13 +48,14 @@ import (
 	"modernc.org/libc/sys/types"
 )
 
-type createThreadObj struct {
+type createThreadObj struct { //TODO-
 	threadProc func(tls *TLS, arg uintptr) uint32
 	param      uintptr
 }
 
 //export __ccgo_thread_proc_cb
-func __ccgo_thread_proc_cb(p C.ulonglong) C.ulong {
+func __ccgo_thread_proc_cb(p C.ulonglong) C.ulong { //TODO-
+	panic(todo(""))
 	runtime.LockOSThread()
 	t := NewTLS()
 	t.locked = true
@@ -94,6 +97,9 @@ var (
 	// netapi32.lib
 	netGetDCName   procAddr
 	netUserGetInfo procAddr
+
+	threads   = map[uintptr]*TLS{}
+	threadsMu sync.Mutex
 )
 
 func init() {
@@ -140,9 +146,13 @@ func mustLinkDll(lib string, a []linkFunc) {
 }
 
 type TLS struct {
-	ID int32
 	//TODO errnop    uintptr
+	ID        int32
+	done      chan struct{}
+	exitCode  uint32
+	hThread   uintptr
 	lastError syscall.Errno
+	obj       uintptr
 	stack     stackHeader
 
 	locked bool
@@ -150,13 +160,25 @@ type TLS struct {
 
 func NewTLS() *TLS {
 	id := atomic.AddInt32(&tid, 1)
-	t := &TLS{ID: id}
+	t := &TLS{ID: id, done: make(chan struct{})}
 	//TODO t.errnop = mustCalloc(t, types.Size_t(unsafe.Sizeof(int32(0))))
+	t.obj = addObject(t)
+	t.hThread = mustMalloc(t, types.Size_t(unsafe.Sizeof(uintptr(0))))
+	*(*uintptr)(unsafe.Pointer(t.hThread)) = t.obj
+	threadsMu.Lock()
+	threads[t.hThread] = t
+	trc("len(threads): %v", len(threads)) //TODO-
+	threadsMu.Unlock()
 	return t
 }
 
 func (t *TLS) Close() {
 	//TODO Xfree(t, t.errnop)
+	threadsMu.Lock()
+	delete(threads, t.hThread)
+	threadsMu.Unlock()
+	Xfree(t, t.hThread)
+	removeObject(t.obj)
 }
 
 // void free(void *ptr);
@@ -452,41 +474,9 @@ func X__acrt_iob_func(t *TLS, fd uint32) uintptr {
 	return uintptr(unsafe.Pointer(C.__acrt_iob_func(C.uint(fd))))
 }
 
-func X_endthreadex(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
-}
-
-func X_beginthread(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
-}
-
-// uintptr_t _beginthreadex( // NATIVE CODE
-//    void *security,
-//    unsigned stack_size,
-//    unsigned ( __stdcall *start_address )( void * ),
-//    void *arglist,
-//    unsigned initflag,
-//    unsigned *thrdaddr
-// );
-func X_beginthreadex(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
-}
-
-// DWORD GetCurrentThreadId();
-func XGetCurrentThreadId(t *TLS) uint32 {
-	return uint32(C.GetCurrentThreadId())
-}
-
 // int fflush(FILE *stream);
 func Xfflush(t *TLS, stream uintptr) int32 {
 	return int32(C.fflush((*C.FILE)(unsafe.Pointer(stream))))
-}
-
-// BOOL CloseHandle(
-//   HANDLE hObject
-// );
-func XCloseHandle(t *TLS, hObject uintptr) int32 {
-	return int32(C.CloseHandle(C.HANDLE(hObject)))
 }
 
 // void *memmove(void *dest, const void *src, size_t n);
@@ -746,14 +736,6 @@ func XGetProcAddress(t *TLS, hModule, lpProcName uintptr) uintptr {
 func XRtlGetVersion(t *TLS, lpVersionInformation uintptr) uintptr {
 	r := sys(t, rtlGetVersion, lpVersionInformation)
 	return r
-}
-
-// BOOL WINAPI CancelSynchronousIo(
-//   _In_ HANDLE hThread
-// );
-func XCancelSynchronousIo(t *TLS, hThread uintptr) int32 {
-	panic(todo(""))
-	// return int32(sys(t, cancelSynchronousIo, hThread))
 }
 
 // void GetSystemInfo(
@@ -1044,23 +1026,6 @@ func XWideCharToMultiByte(t *TLS, CodePage uint32, dwFlags uint32, lpWideCharStr
 // );
 func XWriteFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToWrite uint32, lpNumberOfBytesWritten, lpOverlapped uintptr) int32 {
 	return int32(C.WriteFile(C.HANDLE(hFile), C.LPCVOID(lpBuffer), C.ulong(nNumberOfBytesToWrite), (*C.ulong)(unsafe.Pointer(lpNumberOfBytesWritten)), (*C.struct__OVERLAPPED)(unsafe.Pointer(lpOverlapped))))
-}
-
-// DWORD WaitForSingleObject(
-//   HANDLE hHandle,
-//   DWORD  dwMilliseconds
-// );
-func XWaitForSingleObject(t *TLS, hHandle uintptr, dwMilliseconds uint32) uint32 {
-	return uint32(C.WaitForSingleObject(C.HANDLE(hHandle), C.ulong(dwMilliseconds)))
-}
-
-// DWORD WaitForSingleObjectEx(
-//   HANDLE hHandle,
-//   DWORD  dwMilliseconds,
-//   BOOL   bAlertable
-// );
-func XWaitForSingleObjectEx(t *TLS, hHandle uintptr, dwMilliseconds uint32, bAlertable int32) uint32 {
-	return uint32(C.WaitForSingleObjectEx(C.HANDLE(hHandle), C.ulong(dwMilliseconds), C.int(bAlertable)))
 }
 
 // void OutputDebugStringA(
@@ -1523,6 +1488,39 @@ func XCreateEventW(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialStat
 	return uintptr(C.CreateEventW((*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpEventAttributes)), C.int(bManualReset), C.int(bInitialState), (*C.ushort)(unsafe.Pointer(lpName))))
 }
 
+// BOOL WINAPI CancelSynchronousIo(
+//   _In_ HANDLE hThread
+// );
+func XCancelSynchronousIo(t *TLS, hThread uintptr) int32 {
+	panic(todo(""))
+	// return int32(sys(t, cancelSynchronousIo, hThread))
+}
+
+func X_endthreadex(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func X_beginthread(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// uintptr_t _beginthreadex( // NATIVE CODE
+//    void *security,
+//    unsigned stack_size,
+//    unsigned ( __stdcall *start_address )( void * ),
+//    void *arglist,
+//    unsigned initflag,
+//    unsigned *thrdaddr
+// );
+func X_beginthreadex(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+// DWORD GetCurrentThreadId();
+func XGetCurrentThreadId(t *TLS) uint32 {
+	return uint32(t.ID)
+}
+
 // HANDLE CreateThread(
 //   LPSECURITY_ATTRIBUTES   lpThreadAttributes,
 //   SIZE_T                  dwStackSize,
@@ -1531,12 +1529,93 @@ func XCreateEventW(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialStat
 //   DWORD                   dwCreationFlags,
 //   LPDWORD                 lpThreadId
 // );
-func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t, lpStartAddress, lpParameter uintptr, dwCreationFlags uint32, lpThreadId uintptr) (r uintptr) {
-	o := addObject(&createThreadObj{
-		*(*func(*TLS, uintptr) uint32)(unsafe.Pointer(&lpStartAddress)),
-		lpParameter,
-	})
-	return uintptr(C.__ccgo_CreateThread((*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpThreadAttributes)), C.ulonglong(dwStackSize), C.ulonglong(o), C.ulong(dwCreationFlags), (*C.ulong)(unsafe.Pointer(lpThreadId))))
+func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t, lpStartAddress, lpParameter uintptr, dwCreationFlags uint32, lpThreadId uintptr) uintptr {
+	//TODO- o := addObject(&createThreadObj{
+	//TODO- 	*(*func(*TLS, uintptr) uint32)(unsafe.Pointer(&lpStartAddress)),
+	//TODO- 	lpParameter,
+	//TODO- })
+	//TODO- return uintptr(C.__ccgo_CreateThread((*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpThreadAttributes)), C.ulonglong(dwStackSize), C.ulonglong(o), C.ulong(dwCreationFlags), (*C.ulong)(unsafe.Pointer(lpThreadId))))
+	const CREATE_SUSPENDED = 0x00000004
+	if dwCreationFlags&CREATE_SUSPENDED != 0 {
+		panic(todo(""))
+	}
+
+	nt := NewTLS()
+	go func() {
+		nt.lockOSThread()
+		nt.exitCode = (*(*func(*TLS, uintptr) uint32)(unsafe.Pointer(&lpStartAddress)))(nt, lpParameter)
+	}()
+	return nt.hThread
+}
+
+// BOOL GetExitCodeThread(
+//   HANDLE  hThread,
+//   LPDWORD lpExitCode
+// );
+func XGetExitCodeThread(t *TLS, hThread, lpExitCode uintptr) int32 {
+	panic(todo(""))
+	return int32(C.GetExitCodeThread(C.HANDLE(hThread), (*C.ulong)(unsafe.Pointer(lpExitCode))))
+}
+
+// DWORD WaitForSingleObject(
+//   HANDLE hHandle,
+//   DWORD  dwMilliseconds
+// );
+func XWaitForSingleObject(t *TLS, hHandle uintptr, dwMilliseconds uint32) uint32 {
+	threadsMu.Lock()
+	if t2, ok := threads[hHandle]; ok {
+		threadsMu.Unlock()
+		select {
+		case <-time.After(time.Duration(dwMilliseconds) * time.Millisecond):
+			panic(todo(""))
+		case <-t2.done:
+			panic(todo(""))
+		}
+		panic(todo(""))
+	}
+
+	threadsMu.Unlock()
+	return uint32(C.WaitForSingleObject(C.HANDLE(hHandle), C.ulong(dwMilliseconds)))
+}
+
+// BOOL CloseHandle(
+//   HANDLE hObject
+// );
+func XCloseHandle(t *TLS, hObject uintptr) int32 {
+	threadsMu.Lock()
+	if _, ok := threads[hObject]; ok {
+		panic(todo(""))
+	}
+
+	threadsMu.Unlock()
+	return int32(C.CloseHandle(C.HANDLE(hObject)))
+}
+
+// DWORD WaitForSingleObjectEx(
+//   HANDLE hHandle,
+//   DWORD  dwMilliseconds,
+//   BOOL   bAlertable
+// );
+func XWaitForSingleObjectEx(t *TLS, hHandle uintptr, dwMilliseconds uint32, bAlertable int32) uint32 {
+	threadsMu.Lock()
+	if _, ok := threads[hHandle]; ok {
+		panic(todo(""))
+	}
+
+	threadsMu.Unlock()
+	return uint32(C.WaitForSingleObjectEx(C.HANDLE(hHandle), C.ulong(dwMilliseconds), C.int(bAlertable)))
+}
+
+// DWORD MsgWaitForMultipleObjectsEx(
+//   DWORD        nCount,
+//   const HANDLE *pHandles,
+//   DWORD        dwMilliseconds,
+//   DWORD        dwWakeMask,
+//   DWORD        dwFlags
+// );
+func XMsgWaitForMultipleObjectsEx(t *TLS, nCount uint32, pHandles uintptr, dwMilliseconds, dwWakeMask, dwFlags uint32) uint32 {
+	panic(todo(""))
+	return uint32(C.MsgWaitForMultipleObjectsEx(C.ulong(nCount), (*C.HANDLE)(unsafe.Pointer(pHandles)), C.ulong(dwMilliseconds), C.ulong(dwWakeMask), C.ulong(dwFlags)))
 }
 
 // BOOL SetThreadPriority(
@@ -1544,7 +1623,18 @@ func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t,
 //   int    nPriority
 // );
 func XSetThreadPriority(t *TLS, hThread uintptr, nPriority int32) int32 {
-	return int32(C.SetThreadPriority(C.HANDLE(hThread), C.int(nPriority)))
+	//TODO- return int32(C.SetThreadPriority(C.HANDLE(hThread), C.int(nPriority)))
+	o := *(*uintptr)(unsafe.Pointer(hThread))
+	if _, ok := getObject(o).(*TLS); !ok {
+		panic(todo(""))
+	}
+
+	clearLastError()
+	return 1
+}
+
+func clearLastError() {
+	C.SetLastError(0)
 }
 
 func XPurgeComm(t *TLS, _ ...interface{}) int32 {
@@ -1861,12 +1951,14 @@ func XImpersonateSelf(t *TLS, ImpersonationLevel int32) int32 {
 //   PHANDLE TokenHandle
 // );
 func XOpenThreadToken(t *TLS, ThreadHandle uintptr, DesiredAccess uint32, OpenAsSelf int32, TokenHandle uintptr) int32 {
+	panic(todo(""))
 	return int32(C.OpenThreadToken(C.HANDLE(ThreadHandle), C.ulong(DesiredAccess), C.int(OpenAsSelf), (*C.HANDLE)(unsafe.Pointer(TokenHandle))))
 }
 
 // HANDLE GetCurrentThread();
 func XGetCurrentThread(t *TLS) uintptr {
-	return uintptr(C.GetCurrentThread())
+	//TODO- return uintptr(C.GetCurrentThread())
+	return t.hThread
 }
 
 // BOOL RevertToSelf();
@@ -2133,17 +2225,6 @@ func XPeekMessageW(t *TLS, lpMsg, hWnd uintptr, wMsgFilterMin, wMsgFilterMax, wR
 	return int32(C.PeekMessageW((*C.struct_tagMSG)(unsafe.Pointer(lpMsg)), (*C.struct_HWND__)(unsafe.Pointer(hWnd)), C.uint(wMsgFilterMin), C.uint(wMsgFilterMax), C.uint(wRemoveMsg)))
 }
 
-// DWORD MsgWaitForMultipleObjectsEx(
-//   DWORD        nCount,
-//   const HANDLE *pHandles,
-//   DWORD        dwMilliseconds,
-//   DWORD        dwWakeMask,
-//   DWORD        dwFlags
-// );
-func XMsgWaitForMultipleObjectsEx(t *TLS, nCount uint32, pHandles uintptr, dwMilliseconds, dwWakeMask, dwFlags uint32) uint32 {
-	return uint32(C.MsgWaitForMultipleObjectsEx(C.ulong(nCount), (*C.HANDLE)(unsafe.Pointer(pHandles)), C.ulong(dwMilliseconds), C.ulong(dwWakeMask), C.ulong(dwFlags)))
-}
-
 func XGetMessageW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
@@ -2249,14 +2330,6 @@ func XPeekNamedPipe(t *TLS, hNamedPipe, lpBuffer uintptr, nBufferSize uint32, lp
 // );
 func X_InterlockedExchange(t *TLS, Target uintptr, Value long) long {
 	return long(C._InterlockedExchange((*C.long)(unsafe.Pointer(Target)), C.long(Value)))
-}
-
-// BOOL GetExitCodeThread(
-//   HANDLE  hThread,
-//   LPDWORD lpExitCode
-// );
-func XGetExitCodeThread(t *TLS, hThread, lpExitCode uintptr) int32 {
-	return int32(C.GetExitCodeThread(C.HANDLE(hThread), (*C.ulong)(unsafe.Pointer(lpExitCode))))
 }
 
 func XTerminateThread(t *TLS, _ ...interface{}) int32 {
