@@ -21,6 +21,14 @@ extern unsigned __ccgo_getLastError();
 extern void *__ccgo_environ();
 extern void *__ccgo_errno_location();
 
+extern HANDLE __ccgo_CreateThread(
+  LPSECURITY_ATTRIBUTES   lpThreadAttributes,
+  SIZE_T                  dwStackSize,
+  unsigned long long      obj,
+  DWORD                   dwCreationFlags,
+  LPDWORD                 lpThreadId
+);
+
 */
 import "C"
 
@@ -28,6 +36,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"sync/atomic"
 	"syscall"
 	"unicode/utf16"
@@ -36,6 +45,23 @@ import (
 	"golang.org/x/sys/windows"
 	"modernc.org/libc/sys/types"
 )
+
+type createThreadObj struct {
+	threadProc func(tls *TLS, arg uintptr) uint32
+	param      uintptr
+}
+
+//export __ccgo_thread_proc_cb
+func __ccgo_thread_proc_cb(p C.ulonglong) C.ulong {
+	runtime.LockOSThread()
+	t := NewTLS()
+	t.locked = true
+
+	defer t.Close()
+
+	o := getObject(uintptr(p)).(*createThreadObj)
+	return C.ulong(o.threadProc(t, o.param))
+}
 
 // Keep these outside of the var block otherwise go generate will miss them.
 // var X__imp__environ = uintptr(C.__ccgo_environ_location())
@@ -1506,12 +1532,11 @@ func XCreateEventW(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialStat
 //   LPDWORD                 lpThreadId
 // );
 func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t, lpStartAddress, lpParameter uintptr, dwCreationFlags uint32, lpThreadId uintptr) (r uintptr) {
-	panic(todo(""))
-	// o := addObject(&createThreadObj{
-	// 	*(*func(*TLS, uintptr) uint32)(unsafe.Pointer(&lpStartAddress)),
-	// 	lpParameter,
-	// })
-	// return uintptr(C.__ccgo_CreateThread((*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpThreadAttributes)), C.ulonglong(dwStackSize), C.ulonglong(o), C.ulong(dwCreationFlags), (*C.ulong)(unsafe.Pointer(lpThreadId))))
+	o := addObject(&createThreadObj{
+		*(*func(*TLS, uintptr) uint32)(unsafe.Pointer(&lpStartAddress)),
+		lpParameter,
+	})
+	return uintptr(C.__ccgo_CreateThread((*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpThreadAttributes)), C.ulonglong(dwStackSize), C.ulonglong(o), C.ulong(dwCreationFlags), (*C.ulong)(unsafe.Pointer(lpThreadId))))
 }
 
 // BOOL SetThreadPriority(

@@ -22,20 +22,11 @@ extern void *__ccgo_environ();
 extern void *__ccgo_errno_location();
 extern int __ccgo_errno();
 
-extern HANDLE __ccgo_CreateThread(
-  LPSECURITY_ATTRIBUTES   lpThreadAttributes,
-  SIZE_T                  dwStackSize,
-  unsigned long long      obj,
-  DWORD                   dwCreationFlags,
-  LPDWORD                 lpThreadId
-);
-
 */
 import "C"
 
 import (
 	"os"
-	"runtime"
 	"unicode/utf16"
 	"unsafe"
 
@@ -404,23 +395,6 @@ func X__builtin_sub_overflow(t *TLS) {
 // char *setlocale(int category, const char *locale);
 func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
 	return uintptr(unsafe.Pointer(C.setlocale(C.int(category), (*C.char)(unsafe.Pointer(locale)))))
-}
-
-type createThreadObj struct {
-	threadProc func(tls *TLS, arg uintptr) uint32
-	param      uintptr
-}
-
-//export __ccgo_thread_proc_cb
-func __ccgo_thread_proc_cb(p C.ulonglong) C.ulong {
-	runtime.LockOSThread()
-	t := NewTLS()
-	t.locked = true
-
-	defer t.Close()
-
-	o := getObject(uintptr(p)).(*createThreadObj)
-	return C.ulong(o.threadProc(t, o.param))
 }
 
 func goWideBytes(p uintptr, n int) []uint16 {

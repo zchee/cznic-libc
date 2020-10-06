@@ -1,6 +1,9 @@
 // +build libc.cgo
 
 #include "_cgo_export.h"
+#include <windows.h>
+
+extern char **environ;
 
 int __ccgo_errno() {
 	return errno;
