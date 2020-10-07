@@ -7,6 +7,7 @@ package libc // import "modernc.org/libc"
 import (
 	"bytes"
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -24,6 +25,10 @@ const (
 	modZ
 	modCapitalZ
 	modT
+)
+
+var (
+	mswin = runtime.GOOS == "windows"
 )
 
 // Format of the format string
@@ -123,12 +128,19 @@ flags:
 	// A character that specifies the type of conversion to be applied.  The
 	// conversion specifiers and their meanings are:
 	switch c := *(*byte)(unsafe.Pointer(format)); c {
-	case 'd', 'i', 'I': //TODO 'I' should use locale
+	case 'd', 'i', 'I':
+		//TODO 'I' should use locale
 		// The  int argument is converted to signed decimal notation.  The precision,
 		// if any, gives the minimum number of digits that must appear; if the
 		// converted value requires fewer digits, it is padded on the left with zeros.
 		// The default precision is 1.  When 0 is printed with an explicit precision 0,
 		// the output is empty.
+		if c == 'I' && mswin && strings.HasPrefix(GoString(format), "I64d") {
+			format += 4
+			str = fmt.Sprintf(spec+"d", VaInt64(args))
+			break
+		}
+
 		format++
 		var arg int64
 		switch mod {
