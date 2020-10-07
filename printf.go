@@ -123,6 +123,7 @@ flags:
 
 	var str string
 
+out:
 	// Conversion specifiers
 	//
 	// A character that specifies the type of conversion to be applied.  The
@@ -135,10 +136,29 @@ flags:
 		// converted value requires fewer digits, it is padded on the left with zeros.
 		// The default precision is 1.  When 0 is printed with an explicit precision 0,
 		// the output is empty.
-		if c == 'I' && mswin && strings.HasPrefix(GoString(format), "I64d") {
-			format += 4
-			str = fmt.Sprintf(spec+"d", VaInt64(args))
-			break
+		if c == 'I' && mswin {
+			switch s := GoString(format); {
+			case strings.HasPrefix(s, "I64x"):
+				fallthrough
+			case strings.HasPrefix(s, "I64X"):
+				format += 4
+				str = fmt.Sprintf(spec+"x", uint64(VaInt64(args)))
+				break out
+			case strings.HasPrefix(s, "I64i"):
+				fallthrough
+			case strings.HasPrefix(s, "I64d"):
+				format += 4
+				str = fmt.Sprintf(spec+"d", VaInt64(args))
+				break out
+			case strings.HasPrefix(s, "I64o"):
+				format += 4
+				str = fmt.Sprintf(spec+"o", VaInt64(args))
+				break out
+			case strings.HasPrefix(s, "I64u"):
+				format += 4
+				str = fmt.Sprintf(spec+"d", uint64(VaInt64(args)))
+				break out
+			}
 		}
 
 		format++
