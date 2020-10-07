@@ -21,14 +21,6 @@ extern unsigned __ccgo_getLastError();
 extern void *__ccgo_environ();
 extern void *__ccgo_errno_location();
 
-extern HANDLE __ccgo_CreateThread(
-  LPSECURITY_ATTRIBUTES   lpThreadAttributes,
-  SIZE_T                  dwStackSize,
-  unsigned long long      obj,
-  DWORD                   dwCreationFlags,
-  LPDWORD                 lpThreadId
-);
-
 */
 import "C"
 
@@ -36,7 +28,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"runtime"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -48,26 +39,7 @@ import (
 	"modernc.org/libc/sys/types"
 )
 
-type createThreadObj struct { //TODO-
-	threadProc func(tls *TLS, arg uintptr) uint32
-	param      uintptr
-}
-
-//export __ccgo_thread_proc_cb
-func __ccgo_thread_proc_cb(p C.ulonglong) C.ulong { //TODO-
-	panic(todo(""))
-	runtime.LockOSThread()
-	t := NewTLS()
-	t.locked = true
-
-	defer t.Close()
-
-	o := getObject(uintptr(p)).(*createThreadObj)
-	return C.ulong(o.threadProc(t, o.param))
-}
-
 // Keep these outside of the var block otherwise go generate will miss them.
-// var X__imp__environ = uintptr(C.__ccgo_environ_location())
 var X__imp__environ = uintptr(unsafe.Pointer(C.__imp__environ))
 
 type (
@@ -82,11 +54,21 @@ var (
 	// msvcrt.dll
 	_open     procAddr
 	_snprintf procAddr
+	calloc    procAddr
+	fflush    procAddr
 	fprintf   procAddr
-	sprintf   procAddr
+	free      procAddr
+	localtime procAddr
+	malloc    procAddr
+	realloc   procAddr
+	rename    procAddr
 
 	// kernel32.dll
-	formatMessageW procAddr
+	areFileApisANSI procAddr
+	createFileA     procAddr
+	createFileW     procAddr
+	formatMessageW  procAddr
+	lockFileEx      procAddr
 
 	// ntdll.dll
 	rtlGetVersion procAddr
@@ -104,13 +86,23 @@ var (
 
 func init() {
 	mustLinkDll("msvcrt.dll", []linkFunc{
-		{"_snprintf", &_snprintf},
-		{"sprintf", &sprintf},
-		{"fprintf", &fprintf},
 		{"_open", &_open},
+		{"_snprintf", &_snprintf},
+		{"calloc", &calloc},
+		{"fflush", &fflush},
+		{"fprintf", &fprintf},
+		{"free", &free},
+		{"localtime", &localtime},
+		{"malloc", &malloc},
+		{"realloc", &realloc},
+		{"rename", &rename},
 	})
 	mustLinkDll("kernel32.dll", []linkFunc{
+		{"AreFileApisANSI", &areFileApisANSI},
+		{"CreateFileA", &createFileA},
+		{"CreateFileW", &createFileW},
 		{"FormatMessageW", &formatMessageW},
+		{"LockFileEx", &lockFileEx},
 	})
 	mustLinkDll("ntdll.dll", []linkFunc{
 		{"RtlGetVersion", &rtlGetVersion},
@@ -167,38 +159,65 @@ func NewTLS() *TLS {
 	*(*uintptr)(unsafe.Pointer(t.hThread)) = t.obj
 	threadsMu.Lock()
 	threads[t.hThread] = t
-	trc("len(threads): %v", len(threads)) //TODO-
+	trc("len(threads): %v, hThread %#x", len(threads), t.hThread) //TODO-
 	threadsMu.Unlock()
 	return t
 }
 
 func (t *TLS) Close() {
 	//TODO Xfree(t, t.errnop)
-	threadsMu.Lock()
-	delete(threads, t.hThread)
-	threadsMu.Unlock()
 	Xfree(t, t.hThread)
 	removeObject(t.obj)
 }
 
+func Start(main func(*TLS, int32, uintptr) int32) {
+	t := NewTLS()
+	t.lockOSThread()
+	argv := mustCalloc(t, types.Size_t((len(os.Args)+1)*int(uintptrSize)))
+	p := argv
+	for _, v := range os.Args {
+		s := mustCalloc(t, types.Size_t(len(v)+1))
+		copy((*RawMem)(unsafe.Pointer(s))[:len(v):len(v)], v)
+		*(*uintptr)(unsafe.Pointer(p)) = s
+		p += uintptrSize
+	}
+	SetEnviron(t, os.Environ())
+	Xexit(t, main(t, int32(len(os.Args)), argv))
+}
+
+func SetEnviron(t *TLS, env []string) {
+	p := mustCalloc(t, types.Size_t((len(env)+1)*(int(uintptrSize))))
+	*(*uintptr)(unsafe.Pointer(EnvironP())) = p
+	for _, v := range env {
+		s := mustCalloc(t, types.Size_t(len(v)+1))
+		copy((*(*RawMem)(unsafe.Pointer(s)))[:len(v):len(v)], v)
+		*(*uintptr)(unsafe.Pointer(p)) = s
+		p += uintptrSize
+	}
+}
+
+func EnvironP() uintptr {
+	return uintptr(unsafe.Pointer(C.__imp__environ))
+}
+
 // void free(void *ptr);
 func Xfree(t *TLS, p uintptr) {
-	C.free(unsafe.Pointer(p))
+	sys(t, free, p)
 }
 
 // void *malloc(size_t size);
 func Xmalloc(t *TLS, n types.Size_t) uintptr {
-	return uintptr(C.malloc(C.ulonglong(n)))
+	return sys(t, malloc, n)
 }
 
 // void *calloc(size_t nmemb, size_t size);
 func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
-	return uintptr(C.calloc(C.ulonglong(n), C.ulonglong(size)))
+	return sys(t, calloc, n, size)
 }
 
 // void *realloc(void *ptr, size_t size);
 func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
-	return uintptr(C.realloc(unsafe.Pointer(ptr), C.size_t(size)))
+	return sys(t, realloc, ptr, size)
 }
 
 func Environ() uintptr {
@@ -222,35 +241,10 @@ func Xexit(t *TLS, status int32) {
 	X_exit(t, status)
 }
 
-// int memcmp(const void *s1, const void *s2, size_t n);
-func Xmemcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 {
-	return int32(C.memcmp(unsafe.Pointer(s1), unsafe.Pointer(s2), C.size_t(n)))
-}
-
 // int printf(const char *format, ...);
 func Xprintf(t *TLS, format, args uintptr) int32 {
 	panic(todo(""))
 	// return int32(sysv(t, printfAddr, format, args))
-}
-
-// char *strchr(const char *s, int c)
-func Xstrchr(t *TLS, s uintptr, c int32) uintptr {
-	return uintptr(unsafe.Pointer(C.strchr((*C.char)(unsafe.Pointer(s)), C.int(c))))
-}
-
-// int strcmp(const char *s1, const char *s2)
-func Xstrcmp(t *TLS, s1, s2 uintptr) int32 {
-	return int32(C.strcmp((*C.char)(unsafe.Pointer(s1)), (*C.char)(unsafe.Pointer(s2))))
-}
-
-// char *strcpy(char *dest, const char *src)
-func Xstrcpy(t *TLS, dest, src uintptr) (r uintptr) {
-	return uintptr(unsafe.Pointer(C.strcpy((*C.char)(unsafe.Pointer(dest)), (*C.char)(unsafe.Pointer(src)))))
-}
-
-// size_t strlen(const char *s)
-func Xstrlen(t *TLS, s uintptr) (r types.Size_t) {
-	return types.Size_t(C.strlen((*C.char)(unsafe.Pointer(s))))
 }
 
 // void abort(void);
@@ -261,25 +255,6 @@ func Xabort(t *TLS) {
 // int snprintf(char *str, size_t size, const char *format, ...);
 func Xsnprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) (r int32) {
 	panic(todo(""))
-}
-
-// int sprintf(char *str, const char *format, ...);
-func Xsprintf(t *TLS, str, format, args uintptr) (r int32) {
-	r = int32(sysv(t, sprintf, str, format, args))
-	// if dmesgs {
-	// 	dmesg("%v: %q %v: %q %v", origin(1), GoString(format), varargs(args), GoString(str), r)
-	// }
-	return r
-}
-
-// void *memset(void *s, int c, size_t n)
-func Xmemset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
-	return uintptr(unsafe.Pointer(C.memset(unsafe.Pointer(s), C.int(c), C.size_t(n))))
-}
-
-// void *memcpy(void *dest, const void *src, size_t n);
-func Xmemcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
-	return uintptr(unsafe.Pointer(C.memcpy(unsafe.Pointer(dest), unsafe.Pointer(src), C.size_t(n))))
 }
 
 func goWideString(p uintptr) string {
@@ -297,11 +272,6 @@ func goWideString(p uintptr) string {
 		a = append(a, c)
 		p += unsafe.Sizeof(uint16(0))
 	}
-}
-
-// void _exit(int status);
-func X_exit(t *TLS, status int32) {
-	os.Exit(int(status))
 }
 
 func sysv(t *TLS, proc procAddr, args ...interface{}) uintptr {
@@ -371,6 +341,9 @@ func sys2(t *TLS, proc procAddr, args ...interface{}) (r uintptr, err error) {
 		r, _, t.lastError = syscall.Syscall18(uintptr(proc), na0, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15], a[16], a[17])
 	default:
 		panic(todo("", na))
+	}
+	if t.lastError != 0 {
+		C.SetLastError(C.ulong(t.lastError)) //TODO-
 	}
 	return r, t.lastError
 }
@@ -461,7 +434,7 @@ func X__ms_vswscanf(t *TLS, stream uintptr, format, ap uintptr) int32 {
 
 // struct tm *localtime( const time_t *sourceTime );
 func Xlocaltime(t *TLS, sourceTime uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.localtime((*C.longlong)(unsafe.Pointer(sourceTime)))))
+	return sys(t, localtime, (sourceTime))
 }
 
 // int fprintf(FILE *stream, const char *format, ...);
@@ -476,17 +449,7 @@ func X__acrt_iob_func(t *TLS, fd uint32) uintptr {
 
 // int fflush(FILE *stream);
 func Xfflush(t *TLS, stream uintptr) int32 {
-	return int32(C.fflush((*C.FILE)(unsafe.Pointer(stream))))
-}
-
-// void *memmove(void *dest, const void *src, size_t n);
-func Xmemmove(t *TLS, dest, src uintptr, n types.Size_t) uintptr {
-	return uintptr(C.memmove(unsafe.Pointer(dest), unsafe.Pointer(src), C.size_t(n)))
-}
-
-// int strncmp(const char *s1, const char *s2, size_t n)
-func Xstrncmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 {
-	return int32(C.strncmp((*C.char)(unsafe.Pointer(s1)), (*C.char)(unsafe.Pointer(s2)), C.size_t(n)))
+	return int32(sys(t, fflush, stream))
 }
 
 // long _InterlockedCompareExchange(
@@ -495,27 +458,19 @@ func Xstrncmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 {
 //    long Comparand
 // );
 func X_InterlockedCompareExchange(t *TLS, Destination uintptr, Exchange, Comparand long) long {
-	return long(C._InterlockedCompareExchange((*C.long)(unsafe.Pointer(Destination)), C.long(Exchange), C.long(Comparand)))
-}
-
-// char *strrchr(const char *s, int c)
-func Xstrrchr(t *TLS, s uintptr, c int32) (r uintptr) {
-	return uintptr(unsafe.Pointer(C.strrchr((*C.char)(unsafe.Pointer(s)), C.int(c))))
-}
-
-// size_t strcspn(const char *s, const char *reject);
-func Xstrcspn(t *TLS, s, reject uintptr) (r types.Size_t) {
-	return types.Size_t(C.strcspn((*C.char)(unsafe.Pointer(s)), (*C.char)(unsafe.Pointer(reject))))
+	r := atomic.LoadInt32((*int32)(unsafe.Pointer(Destination)))
+	atomic.CompareAndSwapInt32((*int32)(unsafe.Pointer(Destination)), Comparand, Exchange)
+	return r
 }
 
 // int rename(const char *oldpath, const char *newpath);
 func Xrename(t *TLS, oldpath, newpath uintptr) int32 {
-	return int32(C.rename((*C.char)(unsafe.Pointer(oldpath)), (*C.char)(unsafe.Pointer(newpath))))
+	return int32(sys(t, rename, oldpath, newpath))
 }
 
 // BOOL AreFileApisANSI();
 func XAreFileApisANSI(t *TLS) int32 {
-	return int32(C.AreFileApisANSI())
+	return int32(sys(t, areFileApisANSI))
 }
 
 // HANDLE CreateFileA(
@@ -528,7 +483,7 @@ func XAreFileApisANSI(t *TLS) int32 {
 //   HANDLE                hTemplateFile
 // );
 func XCreateFileA(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
-	return uintptr(C.CreateFileA((*C.char)(unsafe.Pointer(lpFileName)), C.ulong(dwDesiredAccess), C.ulong(dwShareMode), (*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpSecurityAttributes)), C.ulong(dwCreationDisposition), C.ulong(dwFlagsAndAttributes), C.HANDLE(hTemplateFile)))
+	return sys(t, createFileA, lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile)
 }
 
 // HANDLE CreateFileW(
@@ -541,7 +496,7 @@ func XCreateFileA(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint3
 //   HANDLE                hTemplateFile
 // );
 func XCreateFileW(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
-	return uintptr(C.CreateFileW((*C.ushort)(unsafe.Pointer(lpFileName)), C.ulong(dwDesiredAccess), C.ulong(dwShareMode), (*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpSecurityAttributes)), C.ulong(dwCreationDisposition), C.ulong(dwFlagsAndAttributes), C.HANDLE(hTemplateFile)))
+	return sys(t, createFileW, lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile)
 }
 
 // HANDLE CreateFileMappingA(
@@ -901,7 +856,8 @@ func XLockFile(t *TLS, hFile uintptr, dwFileOffsetLow, dwFileOffsetHigh, nNumber
 //   LPOVERLAPPED lpOverlapped
 // );
 func XLockFileEx(t *TLS, hFile uintptr, dwFlags, dwReserved, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh uint32, lpOverlapped uintptr) int32 {
-	return int32(C.LockFileEx(C.HANDLE(hFile), C.ulong(dwFlags), C.ulong(dwReserved), C.ulong(nNumberOfBytesToLockLow), C.ulong(nNumberOfBytesToLockHigh), (*C.struct__OVERLAPPED)(unsafe.Pointer(lpOverlapped))))
+	//TODO- return int32(C.LockFileEx(C.HANDLE(hFile), C.ulong(dwFlags), C.ulong(dwReserved), C.ulong(nNumberOfBytesToLockLow), C.ulong(nNumberOfBytesToLockHigh), (*C.struct__OVERLAPPED)(unsafe.Pointer(lpOverlapped))))
+	return int32(sys(t, lockFileEx, hFile, dwFlags, dwReserved, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, lpOverlapped))
 }
 
 // LPVOID MapViewOfFile(
@@ -1530,11 +1486,6 @@ func XGetCurrentThreadId(t *TLS) uint32 {
 //   LPDWORD                 lpThreadId
 // );
 func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t, lpStartAddress, lpParameter uintptr, dwCreationFlags uint32, lpThreadId uintptr) uintptr {
-	//TODO- o := addObject(&createThreadObj{
-	//TODO- 	*(*func(*TLS, uintptr) uint32)(unsafe.Pointer(&lpStartAddress)),
-	//TODO- 	lpParameter,
-	//TODO- })
-	//TODO- return uintptr(C.__ccgo_CreateThread((*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpThreadAttributes)), C.ulonglong(dwStackSize), C.ulonglong(o), C.ulong(dwCreationFlags), (*C.ulong)(unsafe.Pointer(lpThreadId))))
 	const CREATE_SUSPENDED = 0x00000004
 	if dwCreationFlags&CREATE_SUSPENDED != 0 {
 		panic(todo(""))
@@ -1544,6 +1495,7 @@ func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t,
 	go func() {
 		nt.lockOSThread()
 		nt.exitCode = (*(*func(*TLS, uintptr) uint32)(unsafe.Pointer(&lpStartAddress)))(nt, lpParameter)
+		close(nt.done)
 	}()
 	return nt.hThread
 }
@@ -1562,16 +1514,19 @@ func XGetExitCodeThread(t *TLS, hThread, lpExitCode uintptr) int32 {
 //   DWORD  dwMilliseconds
 // );
 func XWaitForSingleObject(t *TLS, hHandle uintptr, dwMilliseconds uint32) uint32 {
+	const (
+		WAIT_OBJECT_0 = 0x00000000 // The state of the specified object is signaled.
+		WAIT_TIMEOUT  = 0x00000102 // The time-out interval elapsed, and the object's state is nonsignaled.
+	)
 	threadsMu.Lock()
 	if t2, ok := threads[hHandle]; ok {
 		threadsMu.Unlock()
 		select {
 		case <-time.After(time.Duration(dwMilliseconds) * time.Millisecond):
-			panic(todo(""))
+			panic(todo("%#x", hHandle))
 		case <-t2.done:
-			panic(todo(""))
+			return WAIT_OBJECT_0
 		}
-		panic(todo(""))
 	}
 
 	threadsMu.Unlock()
@@ -1583,8 +1538,11 @@ func XWaitForSingleObject(t *TLS, hHandle uintptr, dwMilliseconds uint32) uint32
 // );
 func XCloseHandle(t *TLS, hObject uintptr) int32 {
 	threadsMu.Lock()
-	if _, ok := threads[hObject]; ok {
-		panic(todo(""))
+	if t2, ok := threads[hObject]; ok {
+		delete(threads, hObject)
+		threadsMu.Unlock()
+		t2.Close()
+		return 1
 	}
 
 	threadsMu.Unlock()
@@ -1599,7 +1557,7 @@ func XCloseHandle(t *TLS, hObject uintptr) int32 {
 func XWaitForSingleObjectEx(t *TLS, hHandle uintptr, dwMilliseconds uint32, bAlertable int32) uint32 {
 	threadsMu.Lock()
 	if _, ok := threads[hHandle]; ok {
-		panic(todo(""))
+		panic(todo("%#x", hHandle))
 	}
 
 	threadsMu.Unlock()

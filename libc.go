@@ -274,3 +274,171 @@ func X__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr) 
 		dmesg("%v: iErrCode: %v, msg: %s\n%s", origin(1), iErrCode, printf(zFormat, args), debug.Stack())
 	}
 }
+
+// int memcmp(const void *s1, const void *s2, size_t n);
+func Xmemcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 {
+	for ; n != 0; n-- {
+		c1 := *(*byte)(unsafe.Pointer(s1))
+		s1++
+		c2 := *(*byte)(unsafe.Pointer(s2))
+		s2++
+		if c1 < c2 {
+			return -1
+		}
+
+		if c1 > c2 {
+			return 1
+		}
+	}
+	return 0
+}
+
+// char *strchr(const char *s, int c)
+func Xstrchr(t *TLS, s uintptr, c int32) uintptr {
+	for {
+		ch2 := *(*byte)(unsafe.Pointer(s))
+		if ch2 == byte(c) {
+			return s
+		}
+
+		if ch2 == 0 {
+			return 0
+		}
+
+		s++
+	}
+}
+
+// int strcmp(const char *s1, const char *s2)
+func Xstrcmp(t *TLS, s1, s2 uintptr) int32 {
+	for {
+		ch1 := *(*byte)(unsafe.Pointer(s1))
+		s1++
+		ch2 := *(*byte)(unsafe.Pointer(s2))
+		s2++
+		if ch1 != ch2 || ch1 == 0 || ch2 == 0 {
+			return int32(ch1) - int32(ch2)
+		}
+	}
+}
+
+// char *strcpy(char *dest, const char *src)
+func Xstrcpy(t *TLS, dest, src uintptr) (r uintptr) {
+	r = dest
+	// src0 := src
+	for ; ; dest++ {
+		c := *(*int8)(unsafe.Pointer(src))
+		src++
+		*(*int8)(unsafe.Pointer(dest)) = c
+		if c == 0 {
+			return r
+		}
+	}
+}
+
+// size_t strlen(const char *s)
+func Xstrlen(t *TLS, s uintptr) (r types.Size_t) {
+	for ; *(*int8)(unsafe.Pointer(s)) != 0; s++ {
+		r++
+	}
+	return r
+}
+
+// void *memset(void *s, int c, size_t n)
+func Xmemset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
+	if n != 0 {
+		b := (*RawMem)(unsafe.Pointer(s))[:n:n]
+		for i := range b {
+			b[i] = byte(c)
+		}
+	}
+	return s
+}
+
+// void *memcpy(void *dest, const void *src, size_t n);
+func Xmemcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
+	r = dest
+	for ; n != 0; n-- {
+		*(*byte)(unsafe.Pointer(dest)) = *(*byte)(unsafe.Pointer(src))
+		src++
+		dest++
+	}
+	return r
+}
+
+// void _exit(int status);
+func X_exit(t *TLS, status int32) {
+	os.Exit(int(status))
+}
+
+// int sprintf(char *str, const char *format, ...);
+func Xsprintf(t *TLS, str, format, args uintptr) (r int32) {
+	b := printf(format, args)
+	r = int32(len(b))
+	copy((*RawMem)(unsafe.Pointer(str))[:r:r], b)
+	*(*byte)(unsafe.Pointer(str + uintptr(r))) = 0
+	return int32(len(b))
+}
+
+// void *memmove(void *dest, const void *src, size_t n);
+func Xmemmove(t *TLS, dest, src uintptr, n types.Size_t) uintptr {
+	copy((*RawMem)(unsafe.Pointer(uintptr(dest)))[:n:n], (*RawMem)(unsafe.Pointer(uintptr(src)))[:n:n])
+	return dest
+}
+
+// int strncmp(const char *s1, const char *s2, size_t n)
+func Xstrncmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 {
+	var ch1, ch2 byte
+	for ; n != 0; n-- {
+		ch1 = *(*byte)(unsafe.Pointer(s1))
+		s1++
+		ch2 = *(*byte)(unsafe.Pointer(s2))
+		s2++
+		if ch1 != ch2 {
+			return int32(ch1) - int32(ch2)
+		}
+
+		if ch1 == 0 {
+			return 0
+		}
+	}
+	return 0
+}
+
+// char *strrchr(const char *s, int c)
+func Xstrrchr(t *TLS, s uintptr, c int32) (r uintptr) {
+	for {
+		ch2 := *(*byte)(unsafe.Pointer(s))
+		if ch2 == 0 {
+			return r
+		}
+
+		if ch2 == byte(c) {
+			r = s
+		}
+		s++
+	}
+}
+
+// size_t strcspn(const char *s, const char *reject);
+func Xstrcspn(t *TLS, s, reject uintptr) (r types.Size_t) {
+	bitset := newBitset(256)
+	for {
+		c := *(*byte)(unsafe.Pointer(reject))
+		if c == 0 {
+			break
+		}
+
+		reject++
+		bitset.set(int(c))
+	}
+	for {
+		c := *(*byte)(unsafe.Pointer(s))
+		if c == 0 || bitset.has(int(c)) {
+			return r
+		}
+
+		s++
+		r++
+	}
+}

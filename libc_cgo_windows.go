@@ -26,7 +26,6 @@ extern int __ccgo_errno();
 import "C"
 
 import (
-	"os"
 	"unicode/utf16"
 	"unsafe"
 
@@ -58,36 +57,6 @@ func X___errno_location(t *TLS) uintptr {
 
 func X__builtin_abort(t *TLS) {
 	C.abort()
-}
-
-func Start(main func(*TLS, int32, uintptr) int32) {
-	t := NewTLS()
-	t.lockOSThread()
-	argv := mustCalloc(t, types.Size_t((len(os.Args)+1)*int(uintptrSize)))
-	p := argv
-	for _, v := range os.Args {
-		s := mustCalloc(t, types.Size_t(len(v)+1))
-		copy((*RawMem)(unsafe.Pointer(s))[:len(v):len(v)], v)
-		*(*uintptr)(unsafe.Pointer(p)) = s
-		p += uintptrSize
-	}
-	SetEnviron(t, os.Environ())
-	Xexit(t, main(t, int32(len(os.Args)), argv))
-}
-
-func SetEnviron(t *TLS, env []string) {
-	p := mustCalloc(t, types.Size_t((len(env)+1)*(int(uintptrSize))))
-	*(*uintptr)(unsafe.Pointer(EnvironP())) = p
-	for _, v := range env {
-		s := mustCalloc(t, types.Size_t(len(v)+1))
-		copy((*(*RawMem)(unsafe.Pointer(s)))[:len(v):len(v)], v)
-		*(*uintptr)(unsafe.Pointer(p)) = s
-		p += uintptrSize
-	}
-}
-
-func EnvironP() uintptr {
-	return uintptr(unsafe.Pointer(C.__imp__environ))
 }
 
 func varargs(va uintptr) (r []uint64) {
