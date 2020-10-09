@@ -42,6 +42,10 @@ import (
 // Keep these outside of the var block otherwise go generate will miss them.
 var X__imp__environ = uintptr(unsafe.Pointer(C.__imp__environ))
 
+const (
+	INVALID_HANDLE_VALUE = ^(uintptr(0))
+)
+
 type (
 	long     = int32
 	longlong = int64
@@ -51,6 +55,9 @@ type (
 type procAddr uintptr
 
 var (
+	threads   = map[uintptr]*TLS{}
+	threadsMu sync.Mutex
+
 	// msvcrt.dll
 	_open     procAddr
 	_snprintf procAddr
@@ -63,13 +70,6 @@ var (
 	realloc   procAddr
 	rename    procAddr
 
-	// kernel32.dll
-	areFileApisANSI procAddr
-	createFileA     procAddr
-	createFileW     procAddr
-	formatMessageW  procAddr
-	lockFileEx      procAddr
-
 	// ntdll.dll
 	rtlGetVersion procAddr
 
@@ -80,11 +80,40 @@ var (
 	netGetDCName   procAddr
 	netUserGetInfo procAddr
 
-	threads   = map[uintptr]*TLS{}
-	threadsMu sync.Mutex
+	// kernel32.dll
+	areFileApisANSI      procAddr
+	createFileA          procAddr
+	createFileW          procAddr
+	formatMessageW       procAddr
+	lockFileEx           procAddr
+	createFileMappingW   procAddr
+	deleteFileW          procAddr
+	flushFileBuffers     procAddr
+	getCurrentProcessId  procAddr
+	getFileAttributesA   procAddr
+	getFileAttributesW   procAddr
+	getFileAttributesExW procAddr
+	getFileSize          procAddr
+	getFullPathNameW     procAddr
 )
 
 func init() {
+	mustLinkDll("kernel32.dll", []linkFunc{
+		{"AreFileApisANSI", &areFileApisANSI},
+		{"CreateFileA", &createFileA},
+		{"CreateFileW", &createFileW},
+		{"FormatMessageW", &formatMessageW},
+		{"LockFileEx", &lockFileEx},
+		{"CreateFileMappingW", &createFileMappingW},
+		{"DeleteFileW", &deleteFileW},
+		{"FlushFileBuffers", &flushFileBuffers},
+		{"GetCurrentProcessId", &getCurrentProcessId},
+		{"GetFileAttributesA", &getFileAttributesA},
+		{"GetFileAttributesW", &getFileAttributesW},
+		{"GetFileAttributesExW", &getFileAttributesExW},
+		{"GetFileSize", &getFileSize},
+		{"GetFullPathNameW", &getFullPathNameW},
+	})
 	mustLinkDll("msvcrt.dll", []linkFunc{
 		{"_open", &_open},
 		{"_snprintf", &_snprintf},
@@ -96,13 +125,6 @@ func init() {
 		{"malloc", &malloc},
 		{"realloc", &realloc},
 		{"rename", &rename},
-	})
-	mustLinkDll("kernel32.dll", []linkFunc{
-		{"AreFileApisANSI", &areFileApisANSI},
-		{"CreateFileA", &createFileA},
-		{"CreateFileW", &createFileW},
-		{"FormatMessageW", &formatMessageW},
-		{"LockFileEx", &lockFileEx},
 	})
 	mustLinkDll("ntdll.dll", []linkFunc{
 		{"RtlGetVersion", &rtlGetVersion},
@@ -343,6 +365,9 @@ func sys2(t *TLS, proc procAddr, args ...interface{}) (r uintptr, err error) {
 		panic(todo("", na))
 	}
 	if t.lastError != 0 {
+		if dmesgs {
+			dmesg("%v: FAIL %v\n\t%v:\n\t%v:", origin(3), t.lastError, origin(4), origin(5))
+		}
 		C.SetLastError(C.ulong(t.lastError)) //TODO-
 	}
 	return r, t.lastError
@@ -496,7 +521,11 @@ func XCreateFileA(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint3
 //   HANDLE                hTemplateFile
 // );
 func XCreateFileW(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
-	return sys(t, createFileW, lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile)
+	r := sys(t, createFileW, lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile)
+	if dmesgs {
+		dmesg("%v: %q: %v", origin(1), goWideString(lpFileName), int(r))
+	}
+	return r
 }
 
 // HANDLE CreateFileMappingA(
@@ -520,7 +549,7 @@ func XCreateFileMappingA(t *TLS, hFile, lpFileMappingAttributes uintptr, flProte
 //   LPCWSTR               lpName
 // );
 func XCreateFileMappingW(t *TLS, hFile, lpFileMappingAttributes uintptr, flProtect, dwMaximumSizeHigh, dwMaximumSizeLow uint32, lpName uintptr) uintptr {
-	return uintptr(C.CreateFileMappingW(C.HANDLE(hFile), (*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpFileMappingAttributes)), C.ulong(flProtect), C.ulong(dwMaximumSizeHigh), C.ulong(dwMaximumSizeLow), (*C.ushort)(unsafe.Pointer(lpName))))
+	return sys(t, createFileMappingW, hFile, lpFileMappingAttributes, flProtect, dwMaximumSizeHigh, dwMaximumSizeLow, lpName)
 }
 
 // HANDLE CreateMutexW(
@@ -543,14 +572,18 @@ func XDeleteFileA(t *TLS, lpFileName uintptr) int32 {
 //   LPCWSTR lpFileName
 // );
 func XDeleteFileW(t *TLS, lpFileName uintptr) int32 {
-	return int32(C.DeleteFileW((*C.ushort)(unsafe.Pointer(lpFileName))))
+	r := int32(sys(t, deleteFileW, lpFileName))
+	if dmesgs && r == 0 {
+		dmesg("%v: %q: %v", origin(1), goWideString(lpFileName), r)
+	}
+	return r
 }
 
 // BOOL FlushFileBuffers(
 //   HANDLE hFile
 // );
 func XFlushFileBuffers(t *TLS, hFile uintptr) int32 {
-	return int32(C.FlushFileBuffers(C.HANDLE(hFile)))
+	return int32(sys(t, flushFileBuffers, hFile))
 }
 
 // DWORD FormatMessageA(
@@ -586,7 +619,7 @@ func XFreeLibrary(t *TLS, hLibModule uintptr) int32 {
 
 // DWORD GetCurrentProcessId();
 func XGetCurrentProcessId(t *TLS) uint32 {
-	return uint32(C.GetCurrentProcessId())
+	return uint32(sys(t, getCurrentProcessId))
 }
 
 // BOOL GetDiskFreeSpaceA(
@@ -615,14 +648,14 @@ func XGetDiskFreeSpaceW(t *TLS, lpRootPathName, lpSectorsPerCluster, lpBytesPerS
 //   LPCSTR lpFileName
 // );
 func XGetFileAttributesA(t *TLS, lpFileName uintptr) uint32 {
-	return uint32(C.GetFileAttributesA((*C.char)(unsafe.Pointer(lpFileName))))
+	return uint32(sys(t, getFileAttributesA, lpFileName))
 }
 
 // DWORD GetFileAttributesW(
 //   LPCWSTR lpFileName
 // );
 func XGetFileAttributesW(t *TLS, lpFileName uintptr) uint32 {
-	return uint32(C.GetFileAttributesW((*C.ushort)(unsafe.Pointer(lpFileName))))
+	return uint32(sys(t, getFileAttributesW, lpFileName))
 }
 
 // BOOL GetFileAttributesExW(
@@ -631,7 +664,10 @@ func XGetFileAttributesW(t *TLS, lpFileName uintptr) uint32 {
 //   LPVOID                 lpFileInformation
 // );
 func XGetFileAttributesExW(t *TLS, lpFileName uintptr, fInfoLevelId uint32, lpFileInformation uintptr) int32 {
-	return int32(C.GetFileAttributesExW((*C.ushort)(unsafe.Pointer(lpFileName)), C.GET_FILEEX_INFO_LEVELS(fInfoLevelId), C.LPVOID(unsafe.Pointer(lpFileInformation))))
+	if dmesgs {
+		dmesg("%v: %q", origin(1), goWideString(lpFileName))
+	}
+	return int32(sys(t, getFileAttributesExW, lpFileName, fInfoLevelId, lpFileInformation))
 }
 
 // DWORD GetFileSize(
@@ -639,7 +675,7 @@ func XGetFileAttributesExW(t *TLS, lpFileName uintptr, fInfoLevelId uint32, lpFi
 //   LPDWORD lpFileSizeHigh
 // );
 func XGetFileSize(t *TLS, hFile, lpFileSizeHigh uintptr) uint32 {
-	return uint32(C.GetFileSize(C.HANDLE(hFile), (*C.ulong)(unsafe.Pointer(lpFileSizeHigh))))
+	return uint32(sys(t, getFileSize, hFile, lpFileSizeHigh))
 }
 
 // DWORD GetFullPathNameA(
@@ -659,7 +695,7 @@ func XGetFullPathNameA(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffe
 //   LPWSTR  *lpFilePart
 // );
 func XGetFullPathNameW(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffer, lpFilePart uintptr) uint32 {
-	return uint32(C.GetFullPathNameW((*C.ushort)(unsafe.Pointer(lpFileName)), C.ulong(nBufferLength), (*C.ushort)(unsafe.Pointer(lpBuffer)), (*C.LPWSTR)(unsafe.Pointer(lpFilePart))))
+	return uint32(sys(t, getFullPathNameW, lpFileName, nBufferLength, lpBuffer, lpFilePart))
 }
 
 // DWORD GetLastError();

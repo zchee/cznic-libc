@@ -39,16 +39,16 @@ var (
 // the output stream; and conversion specifications, each of which results in
 // fetching zero or more subsequent arguments.
 func printf(format, args uintptr) []byte {
-	f0 := format
+	// f0 := format
 	buf := bytes.NewBuffer(nil)
 	for {
 		switch c := *(*byte)(unsafe.Pointer(format)); c {
 		case '%':
 			format = printfConversion(buf, format, &args)
 		case 0:
-			if dmesgs {
-				dmesg("%v: %q: %q", origin(1), GoString(f0), buf.Bytes())
-			}
+			// if dmesgs {
+			// 	dmesg("%v: %q: %q", origin(1), GoString(f0), buf.Bytes())
+			// }
 			return buf.Bytes()
 		default:
 			format++
@@ -142,7 +142,7 @@ out:
 				fallthrough
 			case strings.HasPrefix(s, "I64X"):
 				format += 4
-				str = fmt.Sprintf(spec+"x", uint64(VaInt64(args)))
+				str = fmt.Sprintf(spec+"x", VaUint64(args))
 				break out
 			case strings.HasPrefix(s, "I64i"):
 				fallthrough
@@ -152,11 +152,31 @@ out:
 				break out
 			case strings.HasPrefix(s, "I64o"):
 				format += 4
-				str = fmt.Sprintf(spec+"o", VaInt64(args))
+				str = fmt.Sprintf(spec+"o", VaUint64(args))
 				break out
 			case strings.HasPrefix(s, "I64u"):
 				format += 4
-				str = fmt.Sprintf(spec+"d", uint64(VaInt64(args)))
+				str = fmt.Sprintf(spec+"d", VaUint64(args))
+				break out
+			case strings.HasPrefix(s, "I32x"):
+				fallthrough
+			case strings.HasPrefix(s, "I32X"):
+				format += 4
+				str = fmt.Sprintf(spec+"x", VaUint32(args))
+				break out
+			case strings.HasPrefix(s, "I32i"):
+				fallthrough
+			case strings.HasPrefix(s, "I32d"):
+				format += 4
+				str = fmt.Sprintf(spec+"d", VaInt32(args))
+				break out
+			case strings.HasPrefix(s, "I32o"):
+				format += 4
+				str = fmt.Sprintf(spec+"o", VaUint32(args))
+				break out
+			case strings.HasPrefix(s, "I32u"):
+				format += 4
+				str = fmt.Sprintf(spec+"d", VaUint32(args))
 				break out
 			}
 		}
