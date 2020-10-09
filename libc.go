@@ -17,6 +17,7 @@ import (
 	"os"
 	"runtime/debug"
 	"sort"
+	"strings"
 	"sync"
 	"unsafe"
 
@@ -441,4 +442,112 @@ func Xstrcspn(t *TLS, s, reject uintptr) (r types.Size_t) {
 		s++
 		r++
 	}
+}
+
+// int atoi(const char *nptr);
+func Xatoi(t *TLS, nptr uintptr) int32 {
+	_, neg, _, n, _ := strToUint64(t, nptr, 10)
+	switch {
+	case neg:
+		return int32(-n)
+	default:
+		return int32(n)
+	}
+}
+
+// char *strncpy(char *dest, const char *src, size_t n)
+func Xstrncpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
+	r = dest
+	for c := *(*int8)(unsafe.Pointer(src)); c != 0 && n > 0; n-- {
+		*(*int8)(unsafe.Pointer(dest)) = c
+		dest++
+		src++
+		c = *(*int8)(unsafe.Pointer(src))
+	}
+	for ; uintptr(n) > 0; n-- {
+		*(*int8)(unsafe.Pointer(dest)) = 0
+		dest++
+	}
+	return r
+}
+
+// char *strstr(const char *haystack, const char *needle);
+func Xstrstr(t *TLS, haystack, needle uintptr) uintptr {
+	hs := GoString(haystack)
+	nd := GoString(needle)
+	if i := strings.Index(hs, nd); i >= 0 {
+		r := haystack + uintptr(i)
+		return r
+	}
+
+	return 0
+}
+
+// char *strpbrk(const char *s, const char *accept);
+func Xstrpbrk(t *TLS, s, accept uintptr) uintptr {
+	bitset := newBitset(256)
+	for {
+		b := *(*byte)(unsafe.Pointer(accept))
+		if b == 0 {
+			break
+		}
+
+		bitset.set(int(b))
+		accept++
+	}
+	for {
+		b := *(*byte)(unsafe.Pointer(s))
+		if b == 0 {
+			return 0
+		}
+
+		if bitset.has(int(b)) {
+			return s
+		}
+
+		s++
+	}
+}
+
+// char *strcat(char *dest, const char *src)
+func Xstrcat(t *TLS, dest, src uintptr) (r uintptr) {
+	r = dest
+	for *(*int8)(unsafe.Pointer(dest)) != 0 {
+		dest++
+	}
+	for {
+		c := *(*int8)(unsafe.Pointer(src))
+		src++
+		*(*int8)(unsafe.Pointer(dest)) = c
+		dest++
+		if c == 0 {
+			return r
+		}
+	}
+}
+
+// void *memchr(const void *s, int c, size_t n);
+func Xmemchr(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
+	for ; n != 0; n-- {
+		if *(*byte)(unsafe.Pointer(s)) == byte(c) {
+			return s
+		}
+
+		s++
+	}
+	return 0
+}
+
+// int tolower(int c);
+func Xtolower(t *TLS, c int32) int32 {
+	if c >= 'A' && c <= 'Z' {
+		return c + ('a' - 'A')
+	}
+
+	return c
+}
+
+// void tzset (void);
+func Xtzset(t *TLS) {
+	//TODO
 }

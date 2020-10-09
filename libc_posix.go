@@ -309,51 +309,6 @@ func Xsnprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) (r 
 	return r
 }
 
-// char *strncpy(char *dest, const char *src, size_t n)
-func Xstrncpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
-	r = dest
-	for c := *(*int8)(unsafe.Pointer(src)); c != 0 && n > 0; n-- {
-		*(*int8)(unsafe.Pointer(dest)) = c
-		dest++
-		src++
-		c = *(*int8)(unsafe.Pointer(src))
-	}
-	for ; uintptr(n) > 0; n-- {
-		*(*int8)(unsafe.Pointer(dest)) = 0
-		dest++
-	}
-	return r
-}
-
-// char *strcat(char *dest, const char *src)
-func Xstrcat(t *TLS, dest, src uintptr) (r uintptr) {
-	r = dest
-	for *(*int8)(unsafe.Pointer(dest)) != 0 {
-		dest++
-	}
-	for {
-		c := *(*int8)(unsafe.Pointer(src))
-		src++
-		*(*int8)(unsafe.Pointer(dest)) = c
-		dest++
-		if c == 0 {
-			return r
-		}
-	}
-}
-
-// void *memchr(const void *s, int c, size_t n);
-func Xmemchr(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
-	for ; n != 0; n-- {
-		if *(*byte)(unsafe.Pointer(s)) == byte(c) {
-			return s
-		}
-
-		s++
-	}
-	return 0
-}
-
 // void rewind(FILE *stream);
 func Xrewind(t *TLS, stream uintptr) {
 	Xfseek(t, stream, 0, stdio.SEEK_SET)
@@ -393,47 +348,15 @@ func getenv(p uintptr, nm string) uintptr {
 	}
 }
 
-// char *strstr(const char *haystack, const char *needle);
-func Xstrstr(t *TLS, haystack, needle uintptr) uintptr {
-	hs := GoString(haystack)
-	nd := GoString(needle)
-	if i := strings.Index(hs, nd); i >= 0 {
-		r := haystack + uintptr(i)
-		return r
-	}
-
-	return 0
-}
-
 // int putc(int c, FILE *stream);
 func Xputc(t *TLS, c int32, fp uintptr) int32 {
 	return Xfputc(t, c, fp)
-}
-
-// int atoi(const char *nptr);
-func Xatoi(t *TLS, nptr uintptr) int32 {
-	_, neg, _, n, _ := strToUint64(t, nptr, 10)
-	switch {
-	case neg:
-		return int32(-n)
-	default:
-		return int32(n)
-	}
 }
 
 // double atof(const char *nptr);
 func Xatof(t *TLS, nptr uintptr) float64 {
 	n, _ := strToFloatt64(t, nptr, 64)
 	return n
-}
-
-// int tolower(int c);
-func Xtolower(t *TLS, c int32) int32 {
-	if c >= 'A' && c <= 'Z' {
-		return c + ('a' - 'A')
-	}
-
-	return c
 }
 
 // int toupper(int c);
@@ -495,32 +418,6 @@ func Xmktime(t *TLS, ptm uintptr) types.Time_t {
 	(*time.Tm)(unsafe.Pointer(ptm)).Ftm_wday = int32(tt.Weekday())
 	(*time.Tm)(unsafe.Pointer(ptm)).Ftm_yday = int32(tt.YearDay() - 1)
 	return types.Time_t(tt.Unix())
-}
-
-// char *strpbrk(const char *s, const char *accept);
-func Xstrpbrk(t *TLS, s, accept uintptr) uintptr {
-	bitset := newBitset(256)
-	for {
-		b := *(*byte)(unsafe.Pointer(accept))
-		if b == 0 {
-			break
-		}
-
-		bitset.set(int(b))
-		accept++
-	}
-	for {
-		b := *(*byte)(unsafe.Pointer(s))
-		if b == 0 {
-			return 0
-		}
-
-		if bitset.has(int(b)) {
-			return s
-		}
-
-		s++
-	}
 }
 
 // int strcasecmp(const char *s1, const char *s2);
@@ -653,9 +550,4 @@ func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
 func Xprintf(t *TLS, format, args uintptr) int32 {
 	n, _ := write(os.Stdout, printf(format, args))
 	return int32(n)
-}
-
-// void tzset (void);
-func Xtzset(t *TLS) {
-	//TODO
 }
