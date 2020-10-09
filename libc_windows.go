@@ -144,7 +144,7 @@ var (
 
 func init() {
 	mustLinkDll("kernel32.dll", []linkFunc{
-		{"PeekConsoleInput", &peekConsoleInputW},
+		{"PeekConsoleInputW", &peekConsoleInputW},
 		{"ResetEvent", &resetEvent},
 		{"WriteConsoleW", &writeConsoleW},
 		{"ReadConsoleW", &readConsoleW},
