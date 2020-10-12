@@ -509,6 +509,18 @@ func Xstrpbrk(t *TLS, s, accept uintptr) uintptr {
 	}
 }
 
+// void *memchr(const void *s, int c, size_t n);
+func Xmemchr(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
+	for ; n != 0; n-- {
+		if *(*byte)(unsafe.Pointer(s)) == byte(c) {
+			return s
+		}
+
+		s++
+	}
+	return 0
+}
+
 // char *strcat(char *dest, const char *src)
 func Xstrcat(t *TLS, dest, src uintptr) (r uintptr) {
 	r = dest
@@ -526,18 +538,6 @@ func Xstrcat(t *TLS, dest, src uintptr) (r uintptr) {
 	}
 }
 
-// void *memchr(const void *s, int c, size_t n);
-func Xmemchr(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
-	for ; n != 0; n-- {
-		if *(*byte)(unsafe.Pointer(s)) == byte(c) {
-			return s
-		}
-
-		s++
-	}
-	return 0
-}
-
 // int tolower(int c);
 func Xtolower(t *TLS, c int32) int32 {
 	if c >= 'A' && c <= 'Z' {
@@ -545,9 +545,4 @@ func Xtolower(t *TLS, c int32) int32 {
 	}
 
 	return c
-}
-
-// void tzset (void);
-func Xtzset(t *TLS) {
-	//TODO
 }

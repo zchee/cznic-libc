@@ -551,3 +551,8 @@ func Xprintf(t *TLS, format, args uintptr) int32 {
 	n, _ := write(os.Stdout, printf(format, args))
 	return int32(n)
 }
+
+// void tzset (void);
+func Xtzset(t *TLS) {
+	//TODO
+}
