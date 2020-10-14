@@ -59,8 +59,19 @@ var (
 	threadsMu sync.Mutex
 
 	// msvcrt.dll
+	_chsize   procAddr
+	_close    procAddr
+	_commit   procAddr
+	_fstat64  procAddr
+	_ftime    procAddr
+	_getpid   procAddr
+	_isatty   procAddr
 	_open     procAddr
 	_snprintf procAddr
+	_stat64   procAddr
+	_stricmp  procAddr
+	_wcsicmp  procAddr
+	_wcsnicmp procAddr
 	calloc    procAddr
 	fflush    procAddr
 	fprintf   procAddr
@@ -69,192 +80,255 @@ var (
 	malloc    procAddr
 	realloc   procAddr
 	rename    procAddr
-	_stricmp  procAddr
+	wcschr    procAddr
 	wcscmp    procAddr
 	wcslen    procAddr
-	_wcsnicmp procAddr
-	_commit   procAddr
-	_stat64   procAddr
-	_chsize   procAddr
-	_close    procAddr
-	_fstat64  procAddr
+	wcsncmp   procAddr
+
+	// advapi32.dll
+	accessCheck                procAddr
+	equalSid                   procAddr
+	getFileSecurityW           procAddr
+	getNamedSecurityInfoW      procAddr
+	getSecurityDescriptorOwner procAddr
+	getSidIdentifierAuthority  procAddr
+	getTokenInformation        procAddr
+	getUserNameW               procAddr
+	impersonateSelf            procAddr
+	openProcessToken           procAddr
+	revertToSelf               procAddr
 
 	// ucrtbase.dll
-	_findfirst64i32 procAddr
 	_findclose      procAddr
+	_findfirst64i32 procAddr
 	_findnext64i32  procAddr
 
 	// ntdll.dll
 	rtlGetVersion procAddr
 
 	// user32.dll
-	wsprintfA  procAddr
-	charLowerW procAddr
+	charLowerW       procAddr
+	createWindowExW  procAddr
+	peekMessageW     procAddr
+	registerClassW   procAddr
+	unregisterClassW procAddr
+	waitForInputIdle procAddr
+	wsprintfA        procAddr
 
 	// netapi32.lib
 	netGetDCName   procAddr
 	netUserGetInfo procAddr
 
 	// kernel32.dll
-	areFileApisANSI           procAddr
-	createFileA               procAddr
-	createFileW               procAddr
-	formatMessageW            procAddr
-	lockFileEx                procAddr
-	createFileMappingW        procAddr
-	deleteFileW               procAddr
-	flushFileBuffers          procAddr
-	getCurrentProcessId       procAddr
-	getFileAttributesA        procAddr
-	getFileAttributesW        procAddr
-	getFileAttributesExW      procAddr
-	getFileSize               procAddr
-	getFullPathNameW          procAddr
-	getSystemInfo             procAddr
-	getSystemTime             procAddr
-	getSystemTimeAsFileTime   procAddr
-	getTempPathW              procAddr
-	getTickCount              procAddr
-	getVersionExA             procAddr
-	getVersionExW             procAddr
-	heapAlloc                 procAddr
-	heapFree                  procAddr
-	localFree                 procAddr
-	mapViewOfFile             procAddr
-	multiByteToWideChar       procAddr
-	queryPerformanceCounter   procAddr
-	readFile                  procAddr
-	setEndOfFile              procAddr
-	setFilePointer            procAddr
-	sleep                     procAddr
-	unlockFileEx              procAddr
-	unmapViewOfFile           procAddr
-	wideCharToMultiByte       procAddr
-	writeFile                 procAddr
-	getProcessHeap            procAddr
-	flushViewOfFile           procAddr
-	setEvent                  procAddr
-	isDebuggerPresent         procAddr
-	getStdHandle              procAddr
-	duplicateHandle           procAddr
-	getCurrentProcess         procAddr
-	getFileType               procAddr
-	getConsoleMode            procAddr
-	getCommState              procAddr
-	readConsoleW              procAddr
-	writeConsoleW             procAddr
-	resetEvent                procAddr
-	peekConsoleInputW         procAddr
-	getEnvironmentVariableA   procAddr
-	createEventA              procAddr
-	getConsoleCP              procAddr
-	setConsoleMode            procAddr
-	createEventW              procAddr
-	waitForSingleObject       procAddr
-	closeHandle               procAddr
-	waitForSingleObjectEx     procAddr
-	deleteCriticalSection     procAddr
-	enterCriticalSection      procAddr
-	leaveCriticalSection      procAddr
-	initializeCriticalSection procAddr
-	createDirectoryW          procAddr
-	setFileAttributesW        procAddr
-	getTempFileNameW          procAddr
-	copyFileW                 procAddr
-	removeDirectoryW          procAddr
-	findFirstFileW            procAddr
-	findClose                 procAddr
-	findNextFileW             procAddr
-	getLogicalDriveStringsA   procAddr
-	moveFileW                 procAddr
+	areFileApisANSI            procAddr
+	closeHandle                procAddr
+	copyFileW                  procAddr
+	createDirectoryW           procAddr
+	createEventA               procAddr
+	createEventW               procAddr
+	createFileA                procAddr
+	createFileMappingW         procAddr
+	createFileW                procAddr
+	createHardLinkW            procAddr
+	createPipe                 procAddr
+	createProcessW             procAddr
+	deleteCriticalSection      procAddr
+	deleteFileW                procAddr
+	deviceIoControl            procAddr
+	duplicateHandle            procAddr
+	enterCriticalSection       procAddr
+	findClose                  procAddr
+	findFirstFileExW           procAddr
+	findFirstFileW             procAddr
+	findNextFileW              procAddr
+	flushFileBuffers           procAddr
+	flushViewOfFile            procAddr
+	formatMessageW             procAddr
+	getACP                     procAddr
+	getCommState               procAddr
+	getComputerNameW           procAddr
+	getConsoleCP               procAddr
+	getConsoleMode             procAddr
+	getCurrentDirectoryW       procAddr
+	getCurrentProcess          procAddr
+	getCurrentProcessId        procAddr
+	getEnvironmentVariableA    procAddr
+	getEnvironmentVariableW    procAddr
+	getExitCodeProcess         procAddr
+	getFileAttributesA         procAddr
+	getFileAttributesExW       procAddr
+	getFileAttributesW         procAddr
+	getFileInformationByHandle procAddr
+	getFileSize                procAddr
+	getFileType                procAddr
+	getFullPathNameW           procAddr
+	getLogicalDriveStringsA    procAddr
+	getModuleFileNameW         procAddr
+	getModuleHandleW           procAddr
+	getPrivateProfileStringA   procAddr
+	getProcessHeap             procAddr
+	getStdHandle               procAddr
+	getSystemInfo              procAddr
+	getSystemTime              procAddr
+	getSystemTimeAsFileTime    procAddr
+	getTempFileNameW           procAddr
+	getTempPathW               procAddr
+	getTickCount               procAddr
+	getVersionExA              procAddr
+	getVersionExW              procAddr
+	getVolumeInformationA      procAddr
+	getVolumeInformationW      procAddr
+	heapAlloc                  procAddr
+	heapFree                   procAddr
+	initializeCriticalSection  procAddr
+	isDebuggerPresent          procAddr
+	leaveCriticalSection       procAddr
+	loadLibraryExW             procAddr
+	localFree                  procAddr
+	lockFileEx                 procAddr
+	lstrcmpiA                  procAddr
+	mapViewOfFile              procAddr
+	moveFileW                  procAddr
+	multiByteToWideChar        procAddr
+	peekConsoleInputW          procAddr
+	peekNamedPipe              procAddr
+	queryPerformanceCounter    procAddr
+	queryPerformanceFrequency  procAddr
+	readConsoleW               procAddr
+	readFile                   procAddr
+	removeDirectoryW           procAddr
+	resetEvent                 procAddr
+	searchPathW                procAddr
+	setConsoleMode             procAddr
+	setCurrentDirectoryW       procAddr
+	setEndOfFile               procAddr
+	setEvent                   procAddr
+	setFileAttributesW         procAddr
+	setFilePointer             procAddr
+	setFileTime                procAddr
+	sleep                      procAddr
+	sleepEx                    procAddr
+	unlockFileEx               procAddr
+	unmapViewOfFile            procAddr
+	waitForSingleObject        procAddr
+	waitForSingleObjectEx      procAddr
+	wideCharToMultiByte        procAddr
+	writeConsoleW              procAddr
+	writeFile                  procAddr
 )
 
 func init() {
 	mustLinkDll("kernel32.dll", []linkFunc{
-		{"MoveFileW", &moveFileW},
-		{"GetLogicalDriveStringsA", &getLogicalDriveStringsA},
-		{"FindNextFileW", &findNextFileW},
-		{"FindClose", &findClose},
-		{"FindFirstFileW", &findFirstFileW},
-		{"RemoveDirectoryW", &removeDirectoryW},
-		{"CopyFileW", &copyFileW},
-		{"GetTempFileNameW", &getTempFileNameW},
-		{"SetFileAttributesW", &setFileAttributesW},
-		{"CreateDirectoryW", &createDirectoryW},
-		{"InitializeCriticalSection", &initializeCriticalSection},
-		{"LeaveCriticalSection", &leaveCriticalSection},
-		{"EnterCriticalSection", &enterCriticalSection},
-		{"DeleteCriticalSection", &deleteCriticalSection},
-		{"WaitForSingleObjectEx", &waitForSingleObjectEx},
-		{"CloseHandle", &closeHandle},
-		{"WaitForSingleObject", &waitForSingleObject},
-		{"CreateEventW", &createEventW},
-		{"SetConsoleMode", &setConsoleMode},
-		{"GetConsoleCP", &getConsoleCP},
-		{"CreateEventA", &createEventA},
-		{"GetEnvironmentVariableA", &getEnvironmentVariableA},
-		{"PeekConsoleInputW", &peekConsoleInputW},
-		{"ResetEvent", &resetEvent},
-		{"WriteConsoleW", &writeConsoleW},
-		{"ReadConsoleW", &readConsoleW},
-		{"GetCommState", &getCommState},
-		{"GetConsoleMode", &getConsoleMode},
-		{"GetFileType", &getFileType},
-		{"GetCurrentProcess", &getCurrentProcess},
-		{"DuplicateHandle", &duplicateHandle},
-		{"GetStdHandle", &getStdHandle},
-		{"IsDebuggerPresent", &isDebuggerPresent},
-		{"SetEvent", &setEvent},
-		{"FlushViewOfFile", &flushViewOfFile},
-		{"GetProcessHeap", &getProcessHeap},
-		{"WriteFile", &writeFile},
-		{"WideCharToMultiByte", &wideCharToMultiByte},
-		{"UnmapViewOfFile", &unmapViewOfFile},
-		{"UnlockFileEx", &unlockFileEx},
-		{"Sleep", &sleep},
-		{"SetFilePointer", &setFilePointer},
-		{"SetEndOfFile", &setEndOfFile},
-		{"ReadFile", &readFile},
-		{"QueryPerformanceCounter", &queryPerformanceCounter},
-		{"MultiByteToWideChar", &multiByteToWideChar},
-		{"MapViewOfFile", &mapViewOfFile},
-		{"LocalFree", &localFree},
-		{"HeapFree", &heapFree},
-		{"HeapAlloc", &heapAlloc},
-		{"GetVersionExW", &getVersionExW},
-		{"GetVersionExA", &getVersionExA},
-		{"GetTickCount", &getTickCount},
-		{"GetTempPathW", &getTempPathW},
-		{"GetSystemTimeAsFileTime", &getSystemTimeAsFileTime},
-		{"GetSystemTime", &getSystemTime},
-		{"GetSystemInfo", &getSystemInfo},
 		{"AreFileApisANSI", &areFileApisANSI},
+		{"CloseHandle", &closeHandle},
+		{"CopyFileW", &copyFileW},
+		{"CreateDirectoryW", &createDirectoryW},
+		{"CreateEventA", &createEventA},
+		{"CreateEventW", &createEventW},
 		{"CreateFileA", &createFileA},
-		{"CreateFileW", &createFileW},
-		{"FormatMessageW", &formatMessageW},
-		{"LockFileEx", &lockFileEx},
 		{"CreateFileMappingW", &createFileMappingW},
+		{"CreateFileW", &createFileW},
+		{"CreateHardLinkW", &createHardLinkW},
+		{"CreatePipe", &createPipe},
+		{"CreateProcessW", &createProcessW},
+		{"DeleteCriticalSection", &deleteCriticalSection},
 		{"DeleteFileW", &deleteFileW},
+		{"DeviceIoControl", &deviceIoControl},
+		{"DuplicateHandle", &duplicateHandle},
+		{"EnterCriticalSection", &enterCriticalSection},
+		{"FindClose", &findClose},
+		{"FindFirstFileExW", &findFirstFileExW},
+		{"FindFirstFileW", &findFirstFileW},
+		{"FindNextFileW", &findNextFileW},
 		{"FlushFileBuffers", &flushFileBuffers},
+		{"FlushViewOfFile", &flushViewOfFile},
+		{"FormatMessageW", &formatMessageW},
+		{"GetACP", &getACP},
+		{"GetCommState", &getCommState},
+		{"GetComputerNameW", &getComputerNameW},
+		{"GetConsoleCP", &getConsoleCP},
+		{"GetConsoleMode", &getConsoleMode},
+		{"GetCurrentDirectoryW", &getCurrentDirectoryW},
+		{"GetCurrentProcess", &getCurrentProcess},
 		{"GetCurrentProcessId", &getCurrentProcessId},
+		{"GetEnvironmentVariableA", &getEnvironmentVariableA},
+		{"GetEnvironmentVariableW", &getEnvironmentVariableW},
+		{"GetExitCodeProcess", &getExitCodeProcess},
 		{"GetFileAttributesA", &getFileAttributesA},
-		{"GetFileAttributesW", &getFileAttributesW},
 		{"GetFileAttributesExW", &getFileAttributesExW},
+		{"GetFileAttributesW", &getFileAttributesW},
+		{"GetFileInformationByHandle", &getFileInformationByHandle},
 		{"GetFileSize", &getFileSize},
+		{"GetFileType", &getFileType},
 		{"GetFullPathNameW", &getFullPathNameW},
+		{"GetLogicalDriveStringsA", &getLogicalDriveStringsA},
+		{"GetModuleFileNameW", &getModuleFileNameW},
+		{"GetModuleHandleW", &getModuleHandleW},
+		{"GetPrivateProfileStringA", &getPrivateProfileStringA},
+		{"GetProcessHeap", &getProcessHeap},
+		{"GetStdHandle", &getStdHandle},
+		{"GetSystemInfo", &getSystemInfo},
+		{"GetSystemTime", &getSystemTime},
+		{"GetSystemTimeAsFileTime", &getSystemTimeAsFileTime},
+		{"GetTempFileNameW", &getTempFileNameW},
+		{"GetTempPathW", &getTempPathW},
+		{"GetTickCount", &getTickCount},
+		{"GetVersionExA", &getVersionExA},
+		{"GetVersionExW", &getVersionExW},
+		{"GetVolumeInformationA", &getVolumeInformationA},
+		{"GetVolumeInformationW", &getVolumeInformationW},
+		{"HeapAlloc", &heapAlloc},
+		{"HeapFree", &heapFree},
+		{"InitializeCriticalSection", &initializeCriticalSection},
+		{"IsDebuggerPresent", &isDebuggerPresent},
+		{"LeaveCriticalSection", &leaveCriticalSection},
+		{"LoadLibraryExW", &loadLibraryExW},
+		{"LocalFree", &localFree},
+		{"LockFileEx", &lockFileEx},
+		{"MapViewOfFile", &mapViewOfFile},
+		{"MoveFileW", &moveFileW},
+		{"MultiByteToWideChar", &multiByteToWideChar},
+		{"PeekConsoleInputW", &peekConsoleInputW},
+		{"PeekNamedPipe", &peekNamedPipe},
+		{"QueryPerformanceCounter", &queryPerformanceCounter},
+		{"QueryPerformanceFrequency", &queryPerformanceFrequency},
+		{"ReadConsoleW", &readConsoleW},
+		{"ReadFile", &readFile},
+		{"RemoveDirectoryW", &removeDirectoryW},
+		{"ResetEvent", &resetEvent},
+		{"SearchPathW", &searchPathW},
+		{"SetConsoleMode", &setConsoleMode},
+		{"SetCurrentDirectoryW", &setCurrentDirectoryW},
+		{"SetEndOfFile", &setEndOfFile},
+		{"SetEvent", &setEvent},
+		{"SetFileAttributesW", &setFileAttributesW},
+		{"SetFilePointer", &setFilePointer},
+		{"SetFileTime", &setFileTime},
+		{"Sleep", &sleep},
+		{"SleepEx", &sleepEx},
+		{"UnlockFileEx", &unlockFileEx},
+		{"UnmapViewOfFile", &unmapViewOfFile},
+		{"WaitForSingleObject", &waitForSingleObject},
+		{"WaitForSingleObjectEx", &waitForSingleObjectEx},
+		{"WideCharToMultiByte", &wideCharToMultiByte},
+		{"WriteConsoleW", &writeConsoleW},
+		{"WriteFile", &writeFile},
+		{"lstrcmpiA", &lstrcmpiA},
 	})
 	mustLinkDll("msvcrt.dll", []linkFunc{
-		{"_fstat64", &_fstat64},
-		{"_close", &_close},
 		{"_chsize", &_chsize},
-		{"_stat64", &_stat64},
+		{"_close", &_close},
 		{"_commit", &_commit},
-		{"_wcsnicmp", &_wcsnicmp},
-		{"wcslen", &wcslen},
-		{"wcscmp", &wcscmp},
-		{"_stricmp", &_stricmp},
+		{"_fstat64", &_fstat64},
+		{"_ftime", &_ftime},
+		{"_getpid", &_getpid},
+		{"_isatty", &_isatty},
 		{"_open", &_open},
 		{"_snprintf", &_snprintf},
+		{"_stat64", &_stat64},
+		{"_stricmp", &_stricmp},
+		{"_wcsicmp", &_wcsicmp},
+		{"_wcsnicmp", &_wcsnicmp},
 		{"calloc", &calloc},
 		{"fflush", &fflush},
 		{"fprintf", &fprintf},
@@ -263,22 +337,44 @@ func init() {
 		{"malloc", &malloc},
 		{"realloc", &realloc},
 		{"rename", &rename},
+		{"wcschr", &wcschr},
+		{"wcscmp", &wcscmp},
+		{"wcslen", &wcslen},
+		{"wcsncmp", &wcsncmp},
 	})
 	mustLinkDll("ucrtbase.dll", []linkFunc{
-		{"_findnext64i32", &_findnext64i32},
 		{"_findclose", &_findclose},
 		{"_findfirst64i32", &_findfirst64i32},
+		{"_findnext64i32", &_findnext64i32},
 	})
 	mustLinkDll("ntdll.dll", []linkFunc{
 		{"RtlGetVersion", &rtlGetVersion},
 	})
 	mustLinkDll("user32.dll", []linkFunc{
-		{"wsprintfA", &wsprintfA},
 		{"CharLowerW", &charLowerW},
+		{"CreateWindowExW", &createWindowExW},
+		{"PeekMessageW", &peekMessageW},
+		{"RegisterClassW", &registerClassW},
+		{"UnregisterClassW", &unregisterClassW},
+		{"WaitForInputIdle", &waitForInputIdle},
+		{"wsprintfA", &wsprintfA},
 	})
 	mustLinkDll("netapi32.dll", []linkFunc{
-		{"NetUserGetInfo", &netUserGetInfo},
 		{"NetGetDCName", &netGetDCName},
+		{"NetUserGetInfo", &netUserGetInfo},
+	})
+	mustLinkDll("advapi32.dll", []linkFunc{
+		{"AccessCheck", &accessCheck},
+		{"EqualSid", &equalSid},
+		{"GetFileSecurityW", &getFileSecurityW},
+		{"GetNamedSecurityInfoW", &getNamedSecurityInfoW},
+		{"GetSecurityDescriptorOwner", &getSecurityDescriptorOwner},
+		{"GetSidIdentifierAuthority", &getSidIdentifierAuthority},
+		{"GetTokenInformation", &getTokenInformation},
+		{"GetUserNameW", &getUserNameW},
+		{"ImpersonateSelf", &impersonateSelf},
+		{"OpenProcessToken", &openProcessToken},
+		{"RevertToSelf", &revertToSelf},
 	})
 }
 
@@ -1325,9 +1421,9 @@ func Xwcscmp(t *TLS, string1, string2 uintptr) int32 {
 	return int32(sys(t, wcscmp, string1, string2))
 }
 
-// int isatty(int fd);
+// int _isatty(int fd);
 func Xisatty(t *TLS, fd int32) int32 {
-	return int32(C.isatty(C.int(fd)))
+	return int32(sys(t, _isatty, fd))
 }
 
 // BOOL IsDebuggerPresent();
@@ -1900,7 +1996,7 @@ func XGetLogicalDriveStringsA(t *TLS, nBufferLength uint32, lpBuffer uintptr) ui
 //   DWORD   nFileSystemNameSize
 // );
 func XGetVolumeInformationA(t *TLS, lpRootPathName, lpVolumeNameBuffer uintptr, nVolumeNameSize uint32, lpVolumeSerialNumber, lpMaximumComponentLength, lpFileSystemFlags, lpFileSystemNameBuffer uintptr, nFileSystemNameSize uint32) int32 {
-	return int32(C.GetVolumeInformationA((*C.char)(unsafe.Pointer(lpRootPathName)), (*C.char)(unsafe.Pointer(lpVolumeNameBuffer)), C.ulong(nVolumeNameSize), (*C.ulong)(unsafe.Pointer(lpVolumeSerialNumber)), (*C.ulong)(unsafe.Pointer(lpMaximumComponentLength)), (*C.ulong)(unsafe.Pointer(lpFileSystemFlags)), (*C.char)(unsafe.Pointer(lpFileSystemNameBuffer)), C.ulong(nFileSystemNameSize)))
+	return int32(sys(t, getVolumeInformationA, lpRootPathName, lpVolumeNameBuffer, nVolumeNameSize, lpVolumeSerialNumber, lpMaximumComponentLength, lpFileSystemFlags, lpFileSystemNameBuffer, nFileSystemNameSize))
 }
 
 // BOOL CreateHardLinkW(
@@ -1909,7 +2005,7 @@ func XGetVolumeInformationA(t *TLS, lpRootPathName, lpVolumeNameBuffer uintptr, 
 //   LPSECURITY_ATTRIBUTES lpSecurityAttributes
 // );
 func XCreateHardLinkW(t *TLS, lpFileName, lpExistingFileName, lpSecurityAttributes uintptr) int32 {
-	return int32(C.CreateHardLinkW((*C.ushort)(unsafe.Pointer(lpFileName)), (*C.ushort)(unsafe.Pointer(lpExistingFileName)), (*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpSecurityAttributes))))
+	return int32(sys(t, createHardLinkW, lpFileName, lpExistingFileName, lpSecurityAttributes))
 }
 
 // BOOL DeviceIoControl(
@@ -1923,7 +2019,7 @@ func XCreateHardLinkW(t *TLS, lpFileName, lpExistingFileName, lpSecurityAttribut
 //   LPOVERLAPPED lpOverlapped
 // );
 func XDeviceIoControl(t *TLS, hDevice uintptr, dwIoControlCode uint32, lpInBuffer uintptr, nInBufferSize uint32, lpOutBuffer uintptr, nOutBufferSize uint32, lpBytesReturned, lpOverlapped uintptr) int32 {
-	return int32(C.DeviceIoControl(C.HANDLE(hDevice), C.ulong(dwIoControlCode), C.LPVOID(lpInBuffer), C.ulong(nInBufferSize), C.LPVOID(lpOutBuffer), C.ulong(nOutBufferSize), (*C.ulong)(unsafe.Pointer(lpBytesReturned)), (*C.struct__OVERLAPPED)(unsafe.Pointer(lpOverlapped))))
+	return int32(sys(t, deviceIoControl, hDevice, dwIoControlCode, lpInBuffer, nInBufferSize, lpOutBuffer, nOutBufferSize, lpBytesReturned, lpOverlapped))
 }
 
 // int wcsncmp(
@@ -1932,7 +2028,7 @@ func XDeviceIoControl(t *TLS, hDevice uintptr, dwIoControlCode uint32, lpInBuffe
 //    size_t count
 // );
 func Xwcsncmp(t *TLS, string1, string2 uintptr, count types.Size_t) int32 {
-	return int32(C.wcsncmp((*C.ushort)(unsafe.Pointer(string1)), (*C.ushort)(unsafe.Pointer(string2)), C.size_t(count)))
+	return int32(sys(t, wcsncmp, string1, string2, count))
 }
 
 func XMessageBeep(t *TLS, _ ...interface{}) int32 {
@@ -1949,7 +2045,7 @@ func XMessageBoxW(t *TLS, _ ...interface{}) int32 {
 //   DWORD   nSize
 // );
 func XGetModuleFileNameW(t *TLS, hModule, lpFileName uintptr, nSize uint32) uint32 {
-	return uint32(C.GetModuleFileNameW((*C.struct_HINSTANCE__)(unsafe.Pointer(hModule)), (*C.ushort)(unsafe.Pointer(lpFileName)), C.ulong(nSize)))
+	return uint32(sys(t, getModuleFileNameW, hModule, lpFileName, nSize))
 }
 
 // HANDLE FindFirstFileExW(
@@ -1961,7 +2057,7 @@ func XGetModuleFileNameW(t *TLS, hModule, lpFileName uintptr, nSize uint32) uint
 //   DWORD              dwAdditionalFlags
 // );
 func XFindFirstFileExW(t *TLS, lpFileName uintptr, fInfoLevelId int32, lpFindFileData uintptr, fSearchOp int32, lpSearchFilter uintptr, dwAdditionalFlags uint32) uintptr {
-	return uintptr(C.FindFirstFileExW((*C.ushort)(unsafe.Pointer(lpFileName)), C.FINDEX_INFO_LEVELS(fInfoLevelId), C.LPVOID(lpFindFileData), C.FINDEX_SEARCH_OPS(fSearchOp), C.LPVOID(lpSearchFilter), C.ulong(dwAdditionalFlags)))
+	return sys(t, findFirstFileExW, lpFileName, fInfoLevelId, lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags)
 }
 
 // NET_API_STATUS NET_API_FUNCTION NetGetDCName(
@@ -2004,7 +2100,7 @@ func XNetApiBufferFree(t *TLS, _ ...interface{}) int32 {
 //   LPCSTR lpFileName
 // );
 func XGetPrivateProfileStringA(t *TLS, lpAppName, lpKeyName, lpDefault, lpReturnedString uintptr, nSize uint32, lpFileName uintptr) uint32 {
-	return uint32(C.GetPrivateProfileStringA((*C.char)(unsafe.Pointer(lpAppName)), (*C.char)(unsafe.Pointer(lpKeyName)), (*C.char)(unsafe.Pointer(lpDefault)), (*C.char)(unsafe.Pointer(lpReturnedString)), C.ulong(nSize), (*C.char)(unsafe.Pointer(lpFileName))))
+	return uint32(sys(t, getPrivateProfileStringA, lpAppName, lpKeyName, lpDefault, lpReturnedString, nSize, lpFileName))
 }
 
 func XGetWindowsDirectoryA(t *TLS, _ ...interface{}) int32 {
@@ -2019,7 +2115,7 @@ func XGetWindowsDirectoryA(t *TLS, _ ...interface{}) int32 {
 //   LPDWORD              lpnLengthNeeded
 // );
 func XGetFileSecurityW(t *TLS, lpFileName uintptr, RequestedInformation uint32, pSecurityDescriptor uintptr, nLength uint32, lpnLengthNeeded uintptr) int32 {
-	return int32(C.GetFileSecurityW((*C.ushort)(unsafe.Pointer(lpFileName)), C.ulong(RequestedInformation), C.PVOID(pSecurityDescriptor), C.ulong(nLength), (*C.ulong)(unsafe.Pointer(lpnLengthNeeded))))
+	return int32(sys(t, getFileSecurityW, lpFileName, RequestedInformation, pSecurityDescriptor, nLength, lpnLengthNeeded))
 }
 
 // BOOL GetSecurityDescriptorOwner(
@@ -2028,21 +2124,21 @@ func XGetFileSecurityW(t *TLS, lpFileName uintptr, RequestedInformation uint32, 
 //   LPBOOL               lpbOwnerDefaulted
 // );
 func XGetSecurityDescriptorOwner(t *TLS, pSecurityDescriptor, pOwner, lpbOwnerDefaulted uintptr) int32 {
-	return int32(C.GetSecurityDescriptorOwner(C.PVOID(pSecurityDescriptor), (*C.PVOID)(unsafe.Pointer(pOwner)), (*C.int)(unsafe.Pointer(lpbOwnerDefaulted))))
+	return int32(sys(t, getSecurityDescriptorOwner, pSecurityDescriptor, pOwner, lpbOwnerDefaulted))
 }
 
 // PSID_IDENTIFIER_AUTHORITY GetSidIdentifierAuthority(
 //   PSID pSid
 // );
 func XGetSidIdentifierAuthority(t *TLS, pSid uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.GetSidIdentifierAuthority(C.PVOID(pSid))))
+	return sys(t, getSidIdentifierAuthority, pSid)
 }
 
 // BOOL ImpersonateSelf(
 //   SECURITY_IMPERSONATION_LEVEL ImpersonationLevel
 // );
 func XImpersonateSelf(t *TLS, ImpersonationLevel int32) int32 {
-	return int32(C.ImpersonateSelf(C.SECURITY_IMPERSONATION_LEVEL(ImpersonationLevel)))
+	return int32(sys(t, impersonateSelf, ImpersonationLevel))
 }
 
 // BOOL OpenThreadToken(
@@ -2058,13 +2154,12 @@ func XOpenThreadToken(t *TLS, ThreadHandle uintptr, DesiredAccess uint32, OpenAs
 
 // HANDLE GetCurrentThread();
 func XGetCurrentThread(t *TLS) uintptr {
-	//TODO- return uintptr(C.GetCurrentThread())
 	return t.hThread
 }
 
 // BOOL RevertToSelf();
 func XRevertToSelf(t *TLS) int32 {
-	return int32(C.RevertToSelf())
+	return int32(sys(t, revertToSelf))
 }
 
 // BOOL AccessCheck(
@@ -2078,7 +2173,7 @@ func XRevertToSelf(t *TLS) int32 {
 //   LPBOOL               AccessStatus
 // );
 func XAccessCheck(t *TLS, pSecurityDescriptor, ClientToken uintptr, DesiredAccess uint32, GenericMapping, PrivilegeSet, PrivilegeSetLength, GrantedAccess, AccessStatus uintptr) int32 {
-	return int32(C.AccessCheck(C.PVOID(pSecurityDescriptor), C.HANDLE(ClientToken), C.ulong(DesiredAccess), (*C.struct__GENERIC_MAPPING)(unsafe.Pointer(GenericMapping)), (*C.struct__PRIVILEGE_SET)(unsafe.Pointer(PrivilegeSet)), (*C.ulong)(unsafe.Pointer(PrivilegeSetLength)), (*C.ulong)(unsafe.Pointer(GrantedAccess)), (*C.int)(unsafe.Pointer(AccessStatus))))
+	return int32(sys(t, accessCheck, pSecurityDescriptor, ClientToken, DesiredAccess, GenericMapping, PrivilegeSet, PrivilegeSetLength, GrantedAccess, AccessStatus))
 }
 
 // int _wcsicmp(
@@ -2086,14 +2181,14 @@ func XAccessCheck(t *TLS, pSecurityDescriptor, ClientToken uintptr, DesiredAcces
 //    const wchar_t *string2
 // );
 func Xwcsicmp(t *TLS, string1, string2 uintptr) int32 {
-	return int32(C._wcsicmp((*C.ushort)(unsafe.Pointer(string1)), (*C.ushort)(unsafe.Pointer(string2))))
+	return int32(sys(t, _wcsicmp, string1, string2))
 }
 
 // BOOL SetCurrentDirectoryW(
 //   LPCTSTR lpPathName
 // );
 func XSetCurrentDirectoryW(t *TLS, lpPathName uintptr) int32 {
-	return int32(C.SetCurrentDirectoryW((*C.ushort)(unsafe.Pointer(lpPathName))))
+	return int32(sys(t, setCurrentDirectoryW, lpPathName))
 }
 
 // DWORD GetCurrentDirectory(
@@ -2101,7 +2196,7 @@ func XSetCurrentDirectoryW(t *TLS, lpPathName uintptr) int32 {
 //   LPWTSTR lpBuffer
 // );
 func XGetCurrentDirectoryW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
-	return uint32(C.GetCurrentDirectoryW(C.ulong(nBufferLength), (*C.ushort)(unsafe.Pointer(lpBuffer))))
+	return uint32(sys(t, getCurrentDirectoryW, nBufferLength, lpBuffer))
 }
 
 // BOOL GetFileInformationByHandle(
@@ -2109,7 +2204,7 @@ func XGetCurrentDirectoryW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint3
 //   LPBY_HANDLE_FILE_INFORMATION lpFileInformation
 // );
 func XGetFileInformationByHandle(t *TLS, hFile, lpFileInformation uintptr) int32 {
-	return int32(C.GetFileInformationByHandle(C.HANDLE(hFile), (*C.struct__BY_HANDLE_FILE_INFORMATION)(unsafe.Pointer(lpFileInformation))))
+	return int32(sys(t, getFileInformationByHandle, hFile, lpFileInformation))
 }
 
 // BOOL GetVolumeInformationW(
@@ -2123,7 +2218,7 @@ func XGetFileInformationByHandle(t *TLS, hFile, lpFileInformation uintptr) int32
 //   DWORD   nFileSystemNameSize
 // );
 func XGetVolumeInformationW(t *TLS, lpRootPathName, lpVolumeNameBuffer uintptr, nVolumeNameSize uint32, lpVolumeSerialNumber, lpMaximumComponentLength, lpFileSystemFlags, lpFileSystemNameBuffer uintptr, nFileSystemNameSize uint32) int32 {
-	return int32(C.GetVolumeInformationW((*C.ushort)(unsafe.Pointer(lpRootPathName)), (*C.ushort)(unsafe.Pointer(lpVolumeNameBuffer)), C.ulong(nVolumeNameSize), (*C.ulong)(unsafe.Pointer(lpVolumeSerialNumber)), (*C.ulong)(unsafe.Pointer(lpMaximumComponentLength)), (*C.ulong)(unsafe.Pointer(lpFileSystemFlags)), (*C.ushort)(unsafe.Pointer(lpFileSystemNameBuffer)), C.ulong(nFileSystemNameSize)))
+	return int32(sys(t, getVolumeInformationW, lpRootPathName, lpVolumeNameBuffer, nVolumeNameSize, lpVolumeSerialNumber, lpMaximumComponentLength, lpFileSystemFlags, lpFileSystemNameBuffer, nFileSystemNameSize))
 }
 
 // wchar_t *wcschr(
@@ -2131,7 +2226,7 @@ func XGetVolumeInformationW(t *TLS, lpRootPathName, lpVolumeNameBuffer uintptr, 
 //    wchar_t c
 // );
 func Xwcschr(t *TLS, str uintptr, c wchar_t) uintptr {
-	return uintptr(unsafe.Pointer(C.wcschr((*C.ushort)(unsafe.Pointer(str)), C.ushort(c))))
+	return sys(t, wcschr, str, c)
 }
 
 // BOOL SetFileTime(
@@ -2141,7 +2236,7 @@ func Xwcschr(t *TLS, str uintptr, c wchar_t) uintptr {
 //   const FILETIME *lpLastWriteTime
 // );
 func XSetFileTime(t *TLS, hFile uintptr, lpCreationTime, lpLastAccessTime, lpLastWriteTime uintptr) int32 {
-	return int32(C.SetFileTime(C.HANDLE(hFile), (*C.struct__FILETIME)(unsafe.Pointer(lpCreationTime)), (*C.struct__FILETIME)(unsafe.Pointer(lpLastAccessTime)), (*C.struct__FILETIME)(unsafe.Pointer(lpLastWriteTime))))
+	return int32(sys(t, setFileTime, hFile, lpCreationTime, lpLastAccessTime, lpLastWriteTime))
 }
 
 // DWORD GetNamedSecurityInfoW(
@@ -2155,7 +2250,7 @@ func XSetFileTime(t *TLS, hFile uintptr, lpCreationTime, lpLastAccessTime, lpLas
 //   PSECURITY_DESCRIPTOR *ppSecurityDescriptor
 // );
 func XGetNamedSecurityInfoW(t *TLS, pObjectName uintptr, ObjectType, SecurityInfo uint32, ppsidOwner, ppsidGroup, ppDacl, ppSacl, ppSecurityDescriptor uintptr) uint32 {
-	return uint32(C.GetNamedSecurityInfoW((*C.ushort)(unsafe.Pointer(pObjectName)), C.SE_OBJECT_TYPE(ObjectType), C.ulong(SecurityInfo), (*C.PVOID)(unsafe.Pointer(ppsidOwner)), (*C.PVOID)(unsafe.Pointer(ppsidGroup)), (*C.PACL)(unsafe.Pointer(ppDacl)), (*C.PACL)(unsafe.Pointer(ppSacl)), (*C.PVOID)(unsafe.Pointer(ppSecurityDescriptor))))
+	return uint32(sys(t, getNamedSecurityInfoW, pObjectName, ObjectType, SecurityInfo, ppsidOwner, ppsidGroup, ppDacl, ppSacl, ppSecurityDescriptor))
 }
 
 // BOOL OpenProcessToken(
@@ -2164,7 +2259,7 @@ func XGetNamedSecurityInfoW(t *TLS, pObjectName uintptr, ObjectType, SecurityInf
 //   PHANDLE TokenHandle
 // );
 func XOpenProcessToken(t *TLS, ProcessHandle uintptr, DesiredAccess uint32, TokenHandle uintptr) int32 {
-	return int32(C.OpenProcessToken(C.HANDLE(ProcessHandle), C.ulong(DesiredAccess), (*C.HANDLE)(unsafe.Pointer(TokenHandle))))
+	return int32(sys(t, openProcessToken, ProcessHandle, DesiredAccess, TokenHandle))
 }
 
 // BOOL GetTokenInformation(
@@ -2175,7 +2270,7 @@ func XOpenProcessToken(t *TLS, ProcessHandle uintptr, DesiredAccess uint32, Toke
 //   PDWORD                  ReturnLength
 // );
 func XGetTokenInformation(t *TLS, TokenHandle uintptr, TokenInformationClass uint32, TokenInformation uintptr, TokenInformationLength uint32, ReturnLength uintptr) int32 {
-	return int32(C.GetTokenInformation(C.HANDLE(TokenHandle), C.TOKEN_INFORMATION_CLASS(TokenInformationClass), C.LPVOID(TokenInformation), C.ulong(TokenInformationLength), (*C.ulong)(unsafe.Pointer(ReturnLength))))
+	return int32(sys(t, getTokenInformation, TokenHandle, TokenInformationClass, TokenInformation, TokenInformationLength, ReturnLength))
 }
 
 // BOOL EqualSid(
@@ -2183,7 +2278,7 @@ func XGetTokenInformation(t *TLS, TokenHandle uintptr, TokenInformationClass uin
 //   PSID pSid2
 // );
 func XEqualSid(t *TLS, pSid1, pSid2 uintptr) int32 {
-	return int32(C.EqualSid(C.PVOID(pSid1), C.PVOID(pSid2)))
+	return int32(sys(t, equalSid, pSid1, pSid2))
 }
 
 // int WSAStartup(
@@ -2202,7 +2297,7 @@ func XWSAStartup(t *TLS, wVersionRequired uint16, lpWSAData uintptr) int32 {
 //   LPCWSTR lpModuleName
 // );
 func XGetModuleHandleW(t *TLS, lpModuleName uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.GetModuleHandleW((*C.ushort)(unsafe.Pointer(lpModuleName)))))
+	return sys(t, getModuleHandleW, lpModuleName)
 }
 
 // DWORD GetEnvironmentVariableW(
@@ -2211,7 +2306,7 @@ func XGetModuleHandleW(t *TLS, lpModuleName uintptr) uintptr {
 //   DWORD   nSize
 // );
 func XGetEnvironmentVariableW(t *TLS, lpName, lpBuffer uintptr, nSize uint32) uint32 {
-	return uint32(C.GetEnvironmentVariableW((*C.ushort)(unsafe.Pointer(lpName)), (*C.ushort)(unsafe.Pointer(lpBuffer)), C.ulong(nSize)))
+	return uint32(sys(t, getEnvironmentVariableW, lpName, lpBuffer, nSize))
 }
 
 // int lstrcmpiA(
@@ -2219,7 +2314,7 @@ func XGetEnvironmentVariableW(t *TLS, lpName, lpBuffer uintptr, nSize uint32) ui
 //   LPCSTR lpString2
 // );
 func XlstrcmpiA(t *TLS, lpString1, lpString2 uintptr) int32 {
-	return int32(C.lstrcmpiA((*C.char)(unsafe.Pointer(lpString1)), (*C.char)(unsafe.Pointer(lpString2))))
+	return int32(sys(t, lstrcmpiA, lpString1, lpString2))
 }
 
 func XGetModuleFileNameA(t *TLS, _ ...interface{}) int32 {
@@ -2228,7 +2323,7 @@ func XGetModuleFileNameA(t *TLS, _ ...interface{}) int32 {
 
 // UINT GetACP();
 func XGetACP(t *TLS) uint32 {
-	return uint32(C.GetACP())
+	return uint32(sys(t, getACP))
 }
 
 // BOOL GetUserNameW(
@@ -2236,7 +2331,7 @@ func XGetACP(t *TLS) uint32 {
 //   LPDWORD pcbBuffer
 // );
 func XGetUserNameW(t *TLS, lpBuffer, pcbBuffer uintptr) int32 {
-	return int32(C.GetUserNameW((*C.ushort)(unsafe.Pointer(lpBuffer)), (*C.ulong)(unsafe.Pointer(pcbBuffer))))
+	return int32(sys(t, getUserNameW, lpBuffer, pcbBuffer))
 }
 
 // HMODULE LoadLibraryExW(
@@ -2245,7 +2340,7 @@ func XGetUserNameW(t *TLS, lpBuffer, pcbBuffer uintptr) int32 {
 //   DWORD   dwFlags
 // );
 func XLoadLibraryExW(t *TLS, lpLibFileName, hFile uintptr, dwFlags uint32) uintptr {
-	return uintptr(unsafe.Pointer(C.LoadLibraryExW((*C.ushort)(unsafe.Pointer(lpLibFileName)), C.HANDLE(hFile), C.ulong(dwFlags))))
+	return sys(t, loadLibraryExW, lpLibFileName, hFile, dwFlags)
 }
 
 func Xwcscpy(t *TLS, _ ...interface{}) int32 {
@@ -2260,7 +2355,7 @@ func XwsprintfW(t *TLS, _ ...interface{}) int32 {
 //   const WNDCLASSW *lpWndClass
 // );
 func XRegisterClassW(t *TLS, lpWndClass uintptr) int32 {
-	return int32(C.RegisterClassW((*C.struct_tagWNDCLASSW)(unsafe.Pointer(lpWndClass))))
+	return int32(sys(t, registerClassW, lpWndClass))
 }
 
 func XKillTimer(t *TLS, _ ...interface{}) int32 {
@@ -2276,7 +2371,7 @@ func XDestroyWindow(t *TLS, _ ...interface{}) int32 {
 //   HINSTANCE hInstance
 // );
 func XUnregisterClassW(t *TLS, lpClassName, hInstance uintptr) int32 {
-	return int32(C.UnregisterClassW((*C.ushort)(unsafe.Pointer(lpClassName)), (*C.struct_HINSTANCE__)(unsafe.Pointer(hInstance))))
+	return int32(sys(t, unregisterClassW, lpClassName, hInstance))
 }
 
 func XPostMessageW(t *TLS, _ ...interface{}) int32 {
@@ -2302,7 +2397,7 @@ func XSetTimer(t *TLS, _ ...interface{}) int32 {
 //   LPVOID    lpParam
 // );
 func XCreateWindowExW(t *TLS, dwExStyle uint32, lpClassName, lpWindowName uintptr, dwStyle uint32, x, y, nWidth, nHeight int32, hWndParent, hMenu, hInstance, lpParam uintptr) uintptr {
-	return uintptr(unsafe.Pointer(C.CreateWindowExW(C.ulong(dwExStyle), (*C.ushort)(unsafe.Pointer(lpClassName)), (*C.ushort)(unsafe.Pointer(lpWindowName)), C.ulong(dwStyle), C.int(x), C.int(y), C.int(nWidth), C.int(nHeight), (*C.struct_HWND__)(unsafe.Pointer(hWndParent)), (*C.struct_HMENU__)(unsafe.Pointer(hMenu)), (*C.struct_HINSTANCE__)(unsafe.Pointer(hInstance)), C.LPVOID(lpParam))))
+	return sys(t, createWindowExW, dwExStyle, lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam)
 }
 
 // LRESULT LRESULT DefWindowProcW(
@@ -2323,7 +2418,7 @@ func XDefWindowProcW(t *TLS, _ ...interface{}) int64 {
 //   UINT  wRemoveMsg
 // );
 func XPeekMessageW(t *TLS, lpMsg, hWnd uintptr, wMsgFilterMin, wMsgFilterMax, wRemoveMsg uint32) int32 {
-	return int32(C.PeekMessageW((*C.struct_tagMSG)(unsafe.Pointer(lpMsg)), (*C.struct_HWND__)(unsafe.Pointer(hWnd)), C.uint(wMsgFilterMin), C.uint(wMsgFilterMax), C.uint(wRemoveMsg)))
+	return int32(sys(t, peekMessageW, lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg))
 }
 
 func XGetMessageW(t *TLS, _ ...interface{}) int32 {
@@ -2347,7 +2442,7 @@ func XDispatchMessageW(t *TLS, _ ...interface{}) int32 {
 //   BOOL  bAlertable
 // );
 func XSleepEx(t *TLS, dwMilliseconds uint32, bAlertable int32) uint32 {
-	return uint32(C.SleepEx(C.ulong(dwMilliseconds), C.int(bAlertable)))
+	return uint32(sys(t, sleepEx, dwMilliseconds, bAlertable))
 }
 
 // BOOL CreatePipe(
@@ -2357,7 +2452,7 @@ func XSleepEx(t *TLS, dwMilliseconds uint32, bAlertable int32) uint32 {
 //   DWORD                 nSize
 // );
 func XCreatePipe(t *TLS, hReadPipe, hWritePipe, lpPipeAttributes uintptr, nSize uint32) int32 {
-	return int32(C.CreatePipe((*C.HANDLE)(unsafe.Pointer(hReadPipe)), (*C.HANDLE)(unsafe.Pointer(hWritePipe)), (*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpPipeAttributes)), C.ulong(nSize)))
+	return int32(sys(t, createPipe, hReadPipe, hWritePipe, lpPipeAttributes, nSize))
 }
 
 // BOOL CreateProcessW(
@@ -2373,7 +2468,7 @@ func XCreatePipe(t *TLS, hReadPipe, hWritePipe, lpPipeAttributes uintptr, nSize 
 //   LPPROCESS_INFORMATION lpProcessInformation
 // );
 func XCreateProcessW(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes uintptr, bInheritHandles int32, dwCreationFlags uint32, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation uintptr) int32 {
-	return int32(C.CreateProcessW((*C.ushort)(unsafe.Pointer(lpApplicationName)), (*C.ushort)(unsafe.Pointer(lpCommandLine)), (*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpProcessAttributes)), (*C.struct__SECURITY_ATTRIBUTES)(unsafe.Pointer(lpThreadAttributes)), C.int(bInheritHandles), C.ulong(dwCreationFlags), C.LPVOID(lpEnvironment), (*C.ushort)(unsafe.Pointer(lpCurrentDirectory)), (*C.struct__STARTUPINFOW)(unsafe.Pointer(lpStartupInfo)), (*C.struct__PROCESS_INFORMATION)(unsafe.Pointer(lpProcessInformation))))
+	return int32(sys(t, createProcessW, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation))
 }
 
 // DWORD WaitForInputIdle(
@@ -2381,7 +2476,7 @@ func XCreateProcessW(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttribut
 //   DWORD  dwMilliseconds
 // );
 func XWaitForInputIdle(t *TLS, hProcess uintptr, dwMilliseconds uint32) int32 {
-	return int32(C.WaitForInputIdle(C.HANDLE(hProcess), C.ulong(dwMilliseconds)))
+	return int32(sys(t, waitForInputIdle, hProcess, dwMilliseconds))
 }
 
 // DWORD SearchPathW(
@@ -2393,7 +2488,7 @@ func XWaitForInputIdle(t *TLS, hProcess uintptr, dwMilliseconds uint32) int32 {
 //   LPWSTR  *lpFilePart
 // );
 func XSearchPathW(t *TLS, lpPath, lpFileName, lpExtension uintptr, nBufferLength uint32, lpBuffer, lpFilePart uintptr) int32 {
-	return int32(C.SearchPathW((*C.ushort)(unsafe.Pointer(lpPath)), (*C.ushort)(unsafe.Pointer(lpFileName)), (*C.ushort)(unsafe.Pointer(lpExtension)), C.ulong(nBufferLength), (*C.ushort)(unsafe.Pointer(lpBuffer)), (*C.LPWSTR)(unsafe.Pointer(lpFilePart))))
+	return int32(sys(t, searchPathW, lpPath, lpFileName, lpExtension, nBufferLength, lpBuffer, lpFilePart))
 }
 
 func XGetShortPathNameW(t *TLS, _ ...interface{}) int32 {
@@ -2405,12 +2500,12 @@ func XGetShortPathNameW(t *TLS, _ ...interface{}) int32 {
 //   LPDWORD lpExitCode
 // );
 func XGetExitCodeProcess(t *TLS, hProcess, lpExitCode uintptr) int32 {
-	return int32(C.GetExitCodeProcess(C.HANDLE(hProcess), (*C.ulong)(unsafe.Pointer(lpExitCode))))
+	return int32(sys(t, getExitCodeProcess, hProcess, lpExitCode))
 }
 
 // int _getpid( void );
 func Xgetpid(t *TLS) int32 {
-	return int32(C._getpid())
+	return int32(sys(t, _getpid))
 }
 
 // BOOL PeekNamedPipe(
@@ -2422,7 +2517,7 @@ func Xgetpid(t *TLS) int32 {
 //   LPDWORD lpBytesLeftThisMessage
 // );
 func XPeekNamedPipe(t *TLS, hNamedPipe, lpBuffer uintptr, nBufferSize uint32, lpBytesRead, lpTotalBytesAvail, lpBytesLeftThisMessage uintptr) int32 {
-	return int32(C.PeekNamedPipe(C.HANDLE(hNamedPipe), C.LPVOID(lpBuffer), C.ulong(nBufferSize), (*C.ulong)(unsafe.Pointer(lpBytesRead)), (*C.ulong)(unsafe.Pointer(lpTotalBytesAvail)), (*C.ulong)(unsafe.Pointer(lpBytesLeftThisMessage))))
+	return int32(sys(t, peekNamedPipe, hNamedPipe, lpBuffer, nBufferSize, lpBytesRead, lpTotalBytesAvail, lpBytesLeftThisMessage))
 }
 
 // long _InterlockedExchange(
@@ -2430,7 +2525,7 @@ func XPeekNamedPipe(t *TLS, hNamedPipe, lpBuffer uintptr, nBufferSize uint32, lp
 //    long Value
 // );
 func X_InterlockedExchange(t *TLS, Target uintptr, Value long) long {
-	return long(C._InterlockedExchange((*C.long)(unsafe.Pointer(Target)), C.long(Value)))
+	return long(atomic.SwapInt32((*int32)(unsafe.Pointer(Target)), Value))
 }
 
 func XTerminateThread(t *TLS, _ ...interface{}) int32 {
@@ -2442,7 +2537,7 @@ func XTerminateThread(t *TLS, _ ...interface{}) int32 {
 //   LPDWORD nSize
 // );
 func XGetComputerNameW(t *TLS, lpBuffer, nSize uintptr) int32 {
-	return int32(C.GetComputerNameW((*C.ushort)(unsafe.Pointer(lpBuffer)), (*C.ulong)(unsafe.Pointer(nSize))))
+	return int32(sys(t, getComputerNameW, lpBuffer, nSize))
 }
 
 func Xgethostname(t *TLS, _ ...interface{}) int32 {
@@ -2572,12 +2667,12 @@ func X_controlfp(t *TLS, _ ...interface{}) uint32 {
 //   LARGE_INTEGER *lpFrequency
 // );
 func XQueryPerformanceFrequency(t *TLS, lpFrequency uintptr) int32 {
-	return int32(C.QueryPerformanceFrequency((*C.LARGE_INTEGER)(unsafe.Pointer(lpFrequency))))
+	return int32(sys(t, queryPerformanceFrequency, lpFrequency))
 }
 
 // void _ftime( struct _timeb *timeptr );
 func X_ftime(t *TLS, timeptr uintptr) {
-	C._ftime((*C.struct___timeb64)(unsafe.Pointer(timeptr)))
+	sys(t, _ftime, timeptr)
 }
 
 func Xgmtime(t *TLS, _ ...interface{}) uintptr {
