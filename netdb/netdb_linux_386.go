@@ -509,6 +509,14 @@ const ( /* socket_type.h:24:1: */
 	SOCK_NONBLOCK = 2048
 )
 
+// The following constants should be used for the second parameter of
+//   `shutdown'.
+const ( /* socket.h:41:1: */
+	SHUT_RD   = 0 // No more receptions.
+	SHUT_WR   = 1 // No more transmissions.
+	SHUT_RDWR = 2
+)
+
 // Standard well-known ports.
 const ( /* in.h:122:1: */
 	IPPORT_ECHO       = 7  // Echo service.
@@ -610,22 +618,14 @@ const ( /* in.h:99:1: */
 	IPPROTO_MH       = 135
 )
 
-// The following constants should be used for the second parameter of
-//   `shutdown'.
-const ( /* socket.h:41:1: */
-	SHUT_RD   = 0 // No more receptions.
-	SHUT_WR   = 1 // No more transmissions.
-	SHUT_RDWR = 2
-)
-
 type Ptrdiff_t = int32 /* <builtin>:3:26 */
 
 type Size_t = uint32 /* <builtin>:9:23 */
 
 type Wchar_t = int32 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:30:14 */
-type X__float128 = float64        /* <builtin>:31:21 */
+type X__builtin_va_list = uintptr /* <builtin>:35:14 */
+type X__float128 = float64        /* <builtin>:36:21 */
 
 // Copyright (C) 1996-2018 Free Software Foundation, Inc.
 //   This file is part of the GNU C Library.
