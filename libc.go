@@ -232,6 +232,13 @@ func X__builtin_add_overflowUint32(t *TLS, a, b uint32, res uintptr) int32 {
 	return Bool32(r < a)
 }
 
+// bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_add_overflowUint64(t *TLS, a, b uint64, res uintptr) int32 {
+	r := a + b
+	*(*uint64)(unsafe.Pointer(res)) = r
+	return Bool32(r < a)
+}
+
 // bool __builtin_sub_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_sub_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
 	r := a - b
