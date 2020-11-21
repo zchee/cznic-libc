@@ -257,7 +257,6 @@ const (
 	SCM_TIMESTAMPING_OPT_STATS       = 54
 	SCM_TIMESTAMPING_PKTINFO         = 58
 	SCM_TIMESTAMPNS                  = 35
-	SCM_TXTIME                       = 61
 	SCM_WIFI_STATUS                  = 41
 	SIOCATMARK                       = 0x8905
 	SIOCGPGRP                        = 0x8904
@@ -349,7 +348,6 @@ const (
 	SO_TIMESTAMP                     = 29
 	SO_TIMESTAMPING                  = 37
 	SO_TIMESTAMPNS                   = 35
-	SO_TXTIME                        = 61
 	SO_TYPE                          = 3
 	SO_WIFI_STATUS                   = 41
 	SO_ZEROCOPY                      = 60
@@ -468,6 +466,14 @@ const ( /* socket_type.h:24:1: */
 	SOCK_NONBLOCK = 2048
 )
 
+// The following constants should be used for the second parameter of
+//   `shutdown'.
+const ( /* socket.h:41:1: */
+	SHUT_RD   = 0 // No more receptions.
+	SHUT_WR   = 1 // No more transmissions.
+	SHUT_RDWR = 2
+)
+
 // Standard well-known ports.
 const ( /* in.h:122:1: */
 	IPPORT_ECHO       = 7  // Echo service.
@@ -567,14 +573,6 @@ const ( /* in.h:99:1: */
 	IPPROTO_NONE     = 59 // IPv6 no next header.
 	IPPROTO_DSTOPTS  = 60 // IPv6 destination options.
 	IPPROTO_MH       = 135
-)
-
-// The following constants should be used for the second parameter of
-//   `shutdown'.
-const ( /* socket.h:41:1: */
-	SHUT_RD   = 0 // No more receptions.
-	SHUT_WR   = 1 // No more transmissions.
-	SHUT_RDWR = 2
 )
 
 type Ptrdiff_t = int32 /* <builtin>:3:26 */

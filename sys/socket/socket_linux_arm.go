@@ -121,7 +121,6 @@ const (
 	SCM_TIMESTAMPING_OPT_STATS       = 54
 	SCM_TIMESTAMPING_PKTINFO         = 58
 	SCM_TIMESTAMPNS                  = 35
-	SCM_TXTIME                       = 61
 	SCM_WIFI_STATUS                  = 41
 	SIOCATMARK                       = 0x8905
 	SIOCGPGRP                        = 0x8904
@@ -210,7 +209,6 @@ const (
 	SO_TIMESTAMP                     = 29
 	SO_TIMESTAMPING                  = 37
 	SO_TIMESTAMPNS                   = 35
-	SO_TXTIME                        = 61
 	SO_TYPE                          = 3
 	SO_WIFI_STATUS                   = 41
 	SO_ZEROCOPY                      = 60
