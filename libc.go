@@ -192,6 +192,65 @@ func X__isnanf(t *TLS, arg float32) int32                            { return Xi
 func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
 func Xvfprintf(t *TLS, stream, format, ap uintptr) int32             { return Xfprintf(t, stream, format, ap) }
 
+// uint16_t __builtin_bswap16 (uint32_t x)
+func X__builtin_bswap16(t *TLS, x uint16) uint16 {
+	return x<<8 |
+		x>>8
+}
+
+// uint32_t __builtin_bswap32 (uint32_t x)
+func X__builtin_bswap32(t *TLS, x uint32) uint32 {
+	return x<<24 |
+		x&0xff00<<8 |
+		x&0xff0000>>8 |
+		x>>24
+}
+
+// uint64_t __builtin_bswap64 (uint64_t x)
+func X__builtin_bswap64(t *TLS, x uint64) uint64 {
+	return x<<56 |
+		x&0xff000000000000>>40 |
+		x&0xff0000000000>>24 |
+		x&0xff00000000>>8 |
+		x&0xff000000<<8 |
+		x&0xff0000<<24 |
+		x&0xff00<<40 |
+		x>>56
+}
+
+// bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_add_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
+	r := a + b
+	*(*int64)(unsafe.Pointer(res)) = r
+	return Bool32(a > 0 && b > 0 && r < 0 || a < 0 && b < 0 && r >= 0)
+}
+
+// bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_add_overflowUint32(t *TLS, a, b uint32, res uintptr) int32 {
+	r := a + b
+	*(*uint32)(unsafe.Pointer(res)) = r
+	return Bool32(r < a)
+}
+
+// bool __builtin_sub_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_sub_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
+	r := a - b
+	*(*int64)(unsafe.Pointer(res)) = r
+	return Bool32(a > 0 && b > 0 && r > a || a < 0 && b < 0 && r < a)
+}
+
+// bool __builtin_mul_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_mul_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
+	if a == 0 || b == 0 {
+		*(*int64)(unsafe.Pointer(res)) = 0
+		return 0
+	}
+
+	r := a * b
+	*(*int64)(unsafe.Pointer(res)) = r
+	return Bool32(r/a != b)
+}
+
 func X__builtin_unreachable(t *TLS) {
 	fmt.Fprintf(os.Stderr, "unrechable\n")
 	os.Stderr.Sync()

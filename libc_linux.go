@@ -18,11 +18,11 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/unix"
-	gonetdb "modernc.org/libc/honnef.co/go/netdb"
 	"modernc.org/libc/errno"
 	"modernc.org/libc/fcntl"
 	"modernc.org/libc/fts"
 	"modernc.org/libc/grp"
+	gonetdb "modernc.org/libc/honnef.co/go/netdb"
 	"modernc.org/libc/langinfo"
 	"modernc.org/libc/limits"
 	"modernc.org/libc/netdb"

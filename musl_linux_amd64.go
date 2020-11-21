@@ -355,6 +355,10 @@ type size_t = uint64 /* <builtin>:9:23 */
 
 type wchar_t = int32 /* <builtin>:15:24 */
 
+func __isspace(tls *TLS, _c int32) int32 { /* ctype.h:26:21: */
+	return (Bool32((_c == ' ') || ((uint32(_c) - uint32('\t')) < uint32(5))))
+}
+
 type locale_t = uintptr /* alltypes.h:343:32 */
 
 func Xisalnum(tls *TLS, c int32) int32 { /* isalnum.c:3:5: */
@@ -518,10 +522,6 @@ func Xreaddir(tls *TLS, dir uintptr) uintptr { /* readdir.c:10:15: */
 	return de
 }
 
-func __isspace3(tls *TLS, _c int32) int32 { /* ctype.h:26:21: */
-	return (Bool32((_c == ' ') || ((uint32(_c) - uint32('\t')) < uint32(5))))
-}
-
 type _IO_FILE = struct {
 	flags        uint32
 	_            [4]byte
@@ -606,7 +606,7 @@ func X__intscan(tls *TLS, f uintptr, base uint32, pok int32, lim uint64) uint64 
 __1:
 	;
 __2:
-	if !(__isspace3(tls, AssignInt32(&c, func() int32 {
+	if !(__isspace(tls, AssignInt32(&c, func() int32 {
 		if (*FILE)(unsafe.Pointer((f))).rpos != (*FILE)(unsafe.Pointer((f))).shend {
 			return int32(*(*uint8)(unsafe.Pointer(PostIncUintptr(&(*FILE)(unsafe.Pointer(f)).rpos, 1))))
 		}
@@ -1850,10 +1850,6 @@ type ifconf = struct {
 	ifc_ifcu struct{ ifcu_buf uintptr }
 } /* if.h:116:1 */
 
-func __isspace4(tls *TLS, _c int32) int32 { /* ctype.h:26:21: */
-	return (Bool32((_c == ' ') || ((uint32(_c) - uint32('\t')) < uint32(5))))
-}
-
 type ns_sect = uint32 /* nameser.h:37:3 */
 
 type __ns_msg = struct {
@@ -2043,7 +2039,7 @@ func reverse_hosts(tls *TLS, buf uintptr, a uintptr, scopeid uint32, family int3
 			*(*int8)(unsafe.Pointer(p)) = int8(0)
 		}
 
-		for p = bp + 16; /* &line[0] */ (*(*int8)(unsafe.Pointer(p)) != 0) && !(__isspace4(tls, int32(*(*int8)(unsafe.Pointer(p)))) != 0); p++ {
+		for p = bp + 16; /* &line[0] */ (*(*int8)(unsafe.Pointer(p)) != 0) && !(__isspace(tls, int32(*(*int8)(unsafe.Pointer(p)))) != 0); p++ {
 		}
 		*(*int8)(unsafe.Pointer(PostIncUintptr(&p, 1))) = int8(0)
 		if X__lookup_ipliteral(tls, bp+528 /* &iplit */, bp+16 /* &line[0] */, 0) <= 0 {
@@ -2060,9 +2056,9 @@ func reverse_hosts(tls *TLS, buf uintptr, a uintptr, scopeid uint32, family int3
 			continue
 		}
 
-		for ; (*(*int8)(unsafe.Pointer(p)) != 0) && (__isspace4(tls, int32(*(*int8)(unsafe.Pointer(p)))) != 0); p++ {
+		for ; (*(*int8)(unsafe.Pointer(p)) != 0) && (__isspace(tls, int32(*(*int8)(unsafe.Pointer(p)))) != 0); p++ {
 		}
-		for z = p; (*(*int8)(unsafe.Pointer(z)) != 0) && !(__isspace4(tls, int32(*(*int8)(unsafe.Pointer(z)))) != 0); z++ {
+		for z = p; (*(*int8)(unsafe.Pointer(z)) != 0) && !(__isspace(tls, int32(*(*int8)(unsafe.Pointer(z)))) != 0); z++ {
 		}
 		*(*int8)(unsafe.Pointer(z)) = int8(0)
 		if ((int64(z) - int64(p)) / 1) < int64(256) {
@@ -2480,10 +2476,6 @@ func X__lookup_ipliteral(tls *TLS, buf uintptr, name uintptr, family int32) int3
 	return 1
 }
 
-func __isspace8(tls *TLS, _c int32) int32 { /* ctype.h:26:21: */
-	return (Bool32((_c == ' ') || ((uint32(_c) - uint32('\t')) < uint32(5))))
-}
-
 func is_valid_hostname(tls *TLS, host uintptr) int32 { /* lookup_name.c:18:12: */
 	var s uintptr
 	//TODO if (strnlen(host, 255)-1 >= 254 || mbstowcs(0, host, 0) == -1) return 0;
@@ -2563,14 +2555,14 @@ func name_from_hosts(tls *TLS, buf uintptr, canon uintptr, name uintptr, family 
 			*(*int8)(unsafe.Pointer(PostIncUintptr(&p, 1))) = int8('\n')
 			*(*int8)(unsafe.Pointer(p)) = int8(0)
 		}
-		for p = (bp /* &line[0] */ + uintptr(1)); (AssignUintptr(&p, Xstrstr(tls, p, name)) != 0) && (!(__isspace8(tls, int32(*(*int8)(unsafe.Pointer(p + UintptrFromInt32(-1))))) != 0) || !(__isspace8(tls, int32(*(*int8)(unsafe.Pointer(p + uintptr(l))))) != 0)); p++ {
+		for p = (bp /* &line[0] */ + uintptr(1)); (AssignUintptr(&p, Xstrstr(tls, p, name)) != 0) && (!(__isspace(tls, int32(*(*int8)(unsafe.Pointer(p + UintptrFromInt32(-1))))) != 0) || !(__isspace(tls, int32(*(*int8)(unsafe.Pointer(p + uintptr(l))))) != 0)); p++ {
 		}
 		if !(p != 0) {
 			continue
 		}
 
 		// Isolate IP address to parse
-		for p = bp; /* &line[0] */ (*(*int8)(unsafe.Pointer(p)) != 0) && !(__isspace8(tls, int32(*(*int8)(unsafe.Pointer(p)))) != 0); p++ {
+		for p = bp; /* &line[0] */ (*(*int8)(unsafe.Pointer(p)) != 0) && !(__isspace(tls, int32(*(*int8)(unsafe.Pointer(p)))) != 0); p++ {
 		}
 		*(*int8)(unsafe.Pointer(PostIncUintptr(&p, 1))) = int8(0)
 		switch name_from_numeric(tls, (buf + uintptr(cnt)*28), bp /* &line[0] */, family) {
@@ -2585,9 +2577,9 @@ func name_from_hosts(tls *TLS, buf uintptr, canon uintptr, name uintptr, family 
 		}
 
 		// Extract first name as canonical name
-		for ; (*(*int8)(unsafe.Pointer(p)) != 0) && (__isspace8(tls, int32(*(*int8)(unsafe.Pointer(p)))) != 0); p++ {
+		for ; (*(*int8)(unsafe.Pointer(p)) != 0) && (__isspace(tls, int32(*(*int8)(unsafe.Pointer(p)))) != 0); p++ {
 		}
-		for z = p; (*(*int8)(unsafe.Pointer(z)) != 0) && !(__isspace8(tls, int32(*(*int8)(unsafe.Pointer(z)))) != 0); z++ {
+		for z = p; (*(*int8)(unsafe.Pointer(z)) != 0) && !(__isspace(tls, int32(*(*int8)(unsafe.Pointer(z)))) != 0); z++ {
 		}
 		*(*int8)(unsafe.Pointer(z)) = int8(0)
 		if is_valid_hostname(tls, p) != 0 {
@@ -2733,13 +2725,43 @@ type policy = struct {
 } /* lookup_name.c:237:14 */
 
 var defpolicy = [6]policy{
-	{addr: *(*[16]uint8)(unsafe.Pointer(ts + 156 /* "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01" */)), len: uint8(15), mask: uint8(0xff), prec: uint8(50), label: uint8(0)},
-	{addr: *(*[16]uint8)(unsafe.Pointer(ts + 173 /* "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x00" */)), len: uint8(11), mask: uint8(0xff), prec: uint8(35), label: uint8(4)},
-	{addr: *(*[16]uint8)(unsafe.Pointer(ts + 189 /* " \x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" */)), len: uint8(1), mask: uint8(0xff), prec: uint8(30), label: uint8(2)},
-	{addr: *(*[16]uint8)(unsafe.Pointer(ts + 205 /* " \x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" */)), len: uint8(3), mask: uint8(0xff), prec: uint8(5), label: uint8(5)},
-	{addr: *(*[16]uint8)(unsafe.Pointer(ts + 221 /* "\xfc\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" */)), len: uint8(0), mask: uint8(0xfe), prec: uint8(3), label: uint8(13)},
+	{
+		addr:  *(*[16]uint8)(unsafe.Pointer(ts + 156 /* "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01" */)),
+		len:   uint8(15),
+		mask:  uint8(0xff),
+		prec:  uint8(50),
+		label: uint8(0)},
+	{
+		addr:  *(*[16]uint8)(unsafe.Pointer(ts + 173 /* "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x00" */)),
+		len:   uint8(11),
+		mask:  uint8(0xff),
+		prec:  uint8(35),
+		label: uint8(4)},
+	{
+		addr:  *(*[16]uint8)(unsafe.Pointer(ts + 189 /* " \x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" */)),
+		len:   uint8(1),
+		mask:  uint8(0xff),
+		prec:  uint8(30),
+		label: uint8(2)},
+	{
+		addr:  *(*[16]uint8)(unsafe.Pointer(ts + 205 /* " \x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" */)),
+		len:   uint8(3),
+		mask:  uint8(0xff),
+		prec:  uint8(5),
+		label: uint8(5)},
+	{
+		addr:  *(*[16]uint8)(unsafe.Pointer(ts + 221 /* "\xfc\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" */)),
+		len:   uint8(0),
+		mask:  uint8(0xfe),
+		prec:  uint8(3),
+		label: uint8(13)},
 	// Last rule must match all addresses to stop loop.
-	{addr: *(*[16]uint8)(unsafe.Pointer(ts + 237 /* "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" */)), len: uint8(0), mask: uint8(0), prec: uint8(40), label: uint8(1)},
+	{
+		addr:  *(*[16]uint8)(unsafe.Pointer(ts + 237 /* "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" */)),
+		len:   uint8(0),
+		mask:  uint8(0),
+		prec:  uint8(40),
+		label: uint8(1)},
 } /* lookup_name.c:241:3 */
 
 func policyof(tls *TLS, a uintptr) uintptr { /* lookup_name.c:259:28: */
@@ -2872,10 +2894,17 @@ func X__lookup_name(tls *TLS, buf uintptr, canon uintptr, name uintptr, family i
 	for i = 0; i < cnt; i++ {
 		var family int32 = (*address)(unsafe.Pointer(buf + uintptr(i)*28)).family
 		var key int32 = 0
-		*(*sockaddr_in6)(unsafe.Pointer(bp + 28 /* sa6 */)) = sockaddr_in6{sin6_family: sa_family_t(0)}
-		*(*sockaddr_in6)(unsafe.Pointer(bp /* da6 */)) = sockaddr_in6{sin6_family: sa_family_t(10), sin6_scope_id: (*address)(unsafe.Pointer(buf + uintptr(i)*28)).scopeid, sin6_port: in_port_t(65535)}
-		*(*sockaddr_in)(unsafe.Pointer(bp + 72 /* sa4 */)) = sockaddr_in{sin_family: sa_family_t(0)}
-		*(*sockaddr_in)(unsafe.Pointer(bp + 56 /* da4 */)) = sockaddr_in{sin_family: sa_family_t(2), sin_port: in_port_t(65535)}
+		*(*sockaddr_in6)(unsafe.Pointer(bp + 28 /* sa6 */)) = sockaddr_in6{}
+		*(*sockaddr_in6)(unsafe.Pointer(bp /* da6 */)) = sockaddr_in6{
+			sin6_family:   sa_family_t(10),
+			sin6_scope_id: (*address)(unsafe.Pointer(buf + uintptr(i)*28)).scopeid,
+			sin6_port:     in_port_t(65535),
+		}
+		*(*sockaddr_in)(unsafe.Pointer(bp + 72 /* sa4 */)) = sockaddr_in{}
+		*(*sockaddr_in)(unsafe.Pointer(bp + 56 /* da4 */)) = sockaddr_in{
+			sin_family: sa_family_t(2),
+			sin_port:   in_port_t(65535),
+		}
 		var sa1 uintptr
 		var da uintptr
 		// var salen socklen_t at bp+88, 4
