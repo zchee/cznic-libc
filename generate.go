@@ -232,6 +232,13 @@ func libcHeaders(paths []string) error {
 			return nil
 		}
 
+		if goos == "darwin" { //TODO-
+			switch filepath.Base(path) {
+			case "netdb", "in", "stdio", "socket", "types", "unistd", "signal":
+				return nil
+			}
+		}
+
 		src := fmt.Sprintf(`#include <%s.h>
 static char _;
 `, dir)
@@ -244,8 +251,8 @@ static char _;
 
 		dest := filepath.Join(path, fmt.Sprintf("%s_%s_%s.go", filepath.Base(path), goos, goarch))
 		base := filepath.Base(dir)
-		cmd := exec.Command(
-			"ccgo", fn,
+		argv := []string{
+			fn,
 			"-D__signed__=signed", // <asm/signal.h>
 			"-ccgo-crt-import-path", "",
 			"-ccgo-export-defines", "",
@@ -257,7 +264,11 @@ static char _;
 			"-ccgo-long-double-is-double",
 			"-ccgo-pkgname", base,
 			"-o", dest,
-		)
+		}
+		if goos == "darwin" {
+			argv = append(argv, "-ccgo-hide-asm")
+		}
+		cmd := exec.Command("ccgo", argv...)
 		out, err := cmd.CombinedOutput()
 		sout := strings.TrimSpace(string(out) + "\n")
 		if err != nil {

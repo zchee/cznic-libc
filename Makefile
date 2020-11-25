@@ -3,8 +3,11 @@
 # license that can be found in the LICENSE file.
 
 .PHONY:	all bench clean cover cpu editor internalError later mem nuke todo edit devbench \
+	darwin_amd64 \
 	linux_386 \
 	linux_amd64 \
+	linux_arm \
+	linux_arm64 \
 
 
 grep=--include=*.go --include=*.l --include=*.y --include=*.yy --include=*.qbe --include=*.ssa
@@ -21,7 +24,8 @@ all:
 	go test 2>&1 -timeout 1h | tee -a $(log)
 	GOOS=linux GOARCH=386 go build
 	GOOS=linux GOARCH=amd64 go build
-	# GOOS=linux GOARCH=arm go build
+	GOOS=linux GOARCH=arm go build
+	GOOS=linux GOARCH=arm64 go build
 	# GOOS=windows GOARCH=386 go build
 	# GOOS=windows GOARCH=amd64 go build
 	go vet 2>&1 | grep -v $(ngrep) || true
@@ -33,6 +37,10 @@ all:
 	grep -n 'FAIL\|PASS' $(log)
 	go version
 	date 2>&1 | tee -a $(log)
+
+darwin_amd64:
+	TARGET_GOOS=darwin TARGET_GOARCH=amd64 go generate
+	GOOS=darwin GOARCH=amd64 go build -v ./...
 
 linux_amd64:
 	TARGET_GOOS=linux TARGET_GOARCH=amd64 go generate
