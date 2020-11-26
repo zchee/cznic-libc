@@ -193,6 +193,10 @@ func X__isnanf(t *TLS, arg float32) int32                            { return Xi
 func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
 func Xvfprintf(t *TLS, stream, format, ap uintptr) int32             { return Xfprintf(t, stream, format, ap) }
 
+func X__builtin_mmap(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
+	return Xmmap64(t, addr, length, prot, flags, fd, offset)
+}
+
 // uint16_t __builtin_bswap16 (uint32_t x)
 func X__builtin_bswap16(t *TLS, x uint16) uint16 {
 	return x<<8 |
