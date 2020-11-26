@@ -178,6 +178,7 @@ func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, 
 func X__builtin_expect(t *TLS, exp, c long) long                     { return exp }
 func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
 func X__builtin_free(t *TLS, ptr uintptr)                            { Xfree(t, ptr) }
+func X__builtin_huge_val(t *TLS) float64                             { return math.Inf(1) }
 func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
 func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
 func X__builtin_prefetch(t *TLS, addr, args uintptr)                 {}
