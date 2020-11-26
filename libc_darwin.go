@@ -1540,21 +1540,21 @@ func fcntlCmdStr(cmd int32) string {
 // extern struct __float2 __sincospif_stret(float);
 // extern struct __double2 __sincospi_stret(double);
 
-type __float2 struct{ sin, cos float32 }
-type __double2 struct{ sin, cos float32 }
+type X__float2 struct{ F__sinval, F__cosval float32 }
+type X__double2 struct{ F__sinval, F__cosval float32 }
 
-func X__sincosf_stret(float32) __float2 {
+func X__sincosf_stret(*TLS, float32) __float2 {
 	panic(todo(""))
 }
 
-func X__sincos_stret(float64) __double2 {
+func X__sincos_stret(*TLS, float64) __double2 {
 	panic(todo(""))
 }
 
-func X__sincospif_stret(float32) __float2 {
+func X__sincospif_stret(*TLS, float32) __float2 {
 	panic(todo(""))
 }
 
-func X__sincospi_stret(float64) __double2 {
+func X__sincospi_stret(*TLS, float64) __double2 {
 	panic(todo(""))
 }
