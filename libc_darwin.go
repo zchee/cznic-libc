@@ -47,6 +47,10 @@ type (
 	ulong = types.X__syscall_ulong_t
 )
 
+// Keep these outside of the var block otherwise go generate will miss them.
+var Xstdoutp = Xstdout
+var Xstderrp = Xstdout
+
 type file uintptr
 
 func (f file) fd() int32      { return (*stdio.FILE)(unsafe.Pointer(f)).F_fileno }
