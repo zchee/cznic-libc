@@ -48,8 +48,8 @@ type (
 )
 
 // Keep these outside of the var block otherwise go generate will miss them.
-var Xstdoutp = Xstdout
-var Xstderrp = Xstdout
+var X__stdoutp = Xstdout
+var X__stderrp = Xstdout
 
 type file uintptr
 
