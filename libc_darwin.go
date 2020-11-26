@@ -1543,18 +1543,18 @@ func fcntlCmdStr(cmd int32) string {
 type X__float2 struct{ F__sinval, F__cosval float32 }
 type X__double2 struct{ F__sinval, F__cosval float32 }
 
-func X__sincosf_stret(*TLS, float32) __float2 {
+func X__sincosf_stret(*TLS, float32) X__float2 {
 	panic(todo(""))
 }
 
-func X__sincos_stret(*TLS, float64) __double2 {
+func X__sincos_stret(*TLS, float64) X__double2 {
 	panic(todo(""))
 }
 
-func X__sincospif_stret(*TLS, float32) __float2 {
+func X__sincospif_stret(*TLS, float32) X__float2 {
 	panic(todo(""))
 }
 
-func X__sincospi_stret(*TLS, float64) __double2 {
+func X__sincospi_stret(*TLS, float64) X__double2 {
 	panic(todo(""))
 }
