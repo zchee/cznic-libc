@@ -1531,3 +1531,31 @@ func fcntlCmdStr(cmd int32) string {
 		return fmt.Sprintf("cmd(%d)", cmd)
 	}
 }
+
+
+// struct __float2 { float __sinval; float __cosval; };
+// struct __double2 { double __sinval; double __cosval; };
+// 
+// extern struct __float2 __sincosf_stret(float);
+// extern struct __double2 __sincos_stret(double);
+// extern struct __float2 __sincospif_stret(float);
+// extern struct __double2 __sincospi_stret(double);
+
+type __float2 struct{ sin, cos float32}
+type __double2 struct{ sin, cos float32}
+
+func X__sincosf_stret(float32) __float2 {
+	panic(todo(""))
+}
+
+func X__sincos_stret(float64) __double2 {
+	panic(todo(""))
+}
+
+func X__sincospif_stret(float32) __float2 {
+	panic(todo(""))
+}
+
+func X__sincospi_stret(float64) __double2 {
+	panic(todo(""))
+}
