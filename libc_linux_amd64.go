@@ -129,9 +129,34 @@ func Xfstat64(t *TLS, fd int32, statbuf uintptr) int32 {
 	return 0
 }
 
+func Xmmap(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
+	return Xmmap64(t, addr, length, prot, flags, fd, offset)
+}
+
 // void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 func Xmmap64(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
 	data, _, err := unix.Syscall6(unix.SYS_MMAP, addr, uintptr(length), uintptr(prot), uintptr(flags), uintptr(fd), uintptr(offset))
+	if err != 0 {
+		if dmesgs {
+			dmesg("%v: %v", origin(1), err)
+		}
+		t.setErrno(err)
+		return ^uintptr(0) // (void*)-1
+	}
+
+	if dmesgs {
+		dmesg("%v: %#x", origin(1), data)
+	}
+	return data
+}
+
+// void *mremap(void *old_address, size_t old_size, size_t new_size, int flags, ... /* void *new_address */);
+func Xmremap(t *TLS, old_address uintptr, old_size, new_size types.Size_t, flags int32, args uintptr) uintptr {
+	var arg uintptr
+	if args != 0 {
+		arg = *(*uintptr)(unsafe.Pointer(args))
+	}
+	data, _, err := unix.Syscall6(unix.SYS_MREMAP, old_address, uintptr(old_size), uintptr(new_size), uintptr(flags), arg, 0)
 	if err != 0 {
 		if dmesgs {
 			dmesg("%v: %v", origin(1), err)

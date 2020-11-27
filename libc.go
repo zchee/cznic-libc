@@ -17,6 +17,7 @@ package libc // import "modernc.org/libc"
 import (
 	"fmt"
 	"math"
+	mbits "math/bits"
 	"os"
 	gosignal "os/signal"
 	"runtime"
@@ -172,6 +173,7 @@ func write(b []byte) (int, error) {
 
 func X__builtin_abort(t *TLS)                                        { Xabort(t) }
 func X__builtin_abs(t *TLS, j int32) int32                           { return Xabs(t, j) }
+func X__builtin_clzll(t *TLS, n uint64) int32                        { return int32(mbits.LeadingZeros64(n)) }
 func X__builtin_copysign(t *TLS, x, y float64) float64               { return Xcopysign(t, x, y) }
 func X__builtin_copysignf(t *TLS, x, y float32) float32              { return Xcopysignf(t, x, y) }
 func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, status) }
@@ -179,6 +181,9 @@ func X__builtin_expect(t *TLS, exp, c long) long                     { return ex
 func X__builtin_fabs(t *TLS, x float64) float64                      { return Xfabs(t, x) }
 func X__builtin_free(t *TLS, ptr uintptr)                            { Xfree(t, ptr) }
 func X__builtin_huge_val(t *TLS) float64                             { return math.Inf(1) }
+func X__builtin_huge_valf(t *TLS) float32                            { return float32(math.Inf(1)) }
+func X__builtin_inf(t *TLS) float64                                  { return math.Inf(1) }
+func X__builtin_inff(t *TLS) float32                                 { return float32(math.Inf(1)) }
 func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
 func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
 func X__builtin_prefetch(t *TLS, addr, args uintptr)                 {}
@@ -283,6 +288,21 @@ func X__builtin_memcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
 
 func X__builtin_memset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
 	return Xmemset(t, s, c, n)
+}
+
+var atomicLoadStore16 sync.Mutex
+
+func AtomicLoadNUint16(ptr uintptr, memorder int16) uint16 {
+	atomicLoadStore16.Lock()
+	r := *(*uint16)(unsafe.Pointer(ptr))
+	atomicLoadStore16.Unlock()
+	return r
+}
+
+func AtomicStoreNUint16(ptr uintptr, val uint16, memorder int32) {
+	atomicLoadStore16.Lock()
+	*(*uint16)(unsafe.Pointer(ptr)) = val
+	atomicLoadStore16.Unlock()
 }
 
 // int sprintf(char *str, const char *format, ...);

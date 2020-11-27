@@ -306,6 +306,13 @@ func ccgoHelpers() {
 		arith  = append(ints[:len(ints):len(ints)], "float32", "float64")
 		scalar = append(arith[:len(arith):len(arith)], []string{"uintptr"}...)
 		sizes  = []string{"8", "16", "32", "64"}
+		atomic = []string{
+			"int32",
+			"int64",
+			"uint32",
+			"uint64",
+			"uintptr",
+		}
 	)
 
 	b := bytes.NewBuffer(nil)
@@ -313,9 +320,23 @@ func ccgoHelpers() {
 
 package libc // import "modernc.org/libc"
 
-import "unsafe"
+import (
+	"sync/atomic"
+	"unsafe"
+)
 
 `)
+	for _, v := range atomic {
+		fmt.Fprintln(b)
+		fmt.Fprintf(b, "func AtomicStoreN%s(ptr uintptr, val %s, memorder int32) { atomic.Store%[1]s((*%[2]s)(unsafe.Pointer(ptr)), val) }\n", capitalize(v), v)
+	}
+
+	fmt.Fprintln(b)
+	for _, v := range atomic {
+		fmt.Fprintln(b)
+		fmt.Fprintf(b, "func AtomicLoadN%s(ptr uintptr, memorder int32) %s { return atomic.Load%[1]s((*%[2]s)(unsafe.Pointer(ptr))) }\n", capitalize(v), v)
+	}
+
 	for _, v := range scalar {
 		fmt.Fprintf(b, "func Assign%s(p *%s, v %[2]s) %[2]s { *p = v; return v }\n", capitalize(v), v)
 	}
