@@ -11,7 +11,6 @@ import (
 
 	"golang.org/x/sys/unix"
 	"modernc.org/libc/errno"
-	"modernc.org/libc/fcntl"
 	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/sys/types"
@@ -125,7 +124,7 @@ func Xfstat64(t *TLS, fd int32, statbuf uintptr) int32 {
 	}
 
 	if dmesgs {
-		dmesg("%v: %d, size %#x: ok\n%+v", origin(1), fd, (*stat.Stat64)(unsafe.Pointer(statbuf)).Fst_size, (*stat.Stat64)(unsafe.Pointer(statbuf)))
+		dmesg("%v: %d, size %#x: ok\n%+v", origin(1), fd, (*stat.Stat)(unsafe.Pointer(statbuf)).Fst_size, (*stat.Stat)(unsafe.Pointer(statbuf)))
 	}
 	return 0
 }
@@ -164,7 +163,7 @@ func Xftruncate64(t *TLS, fd int32, length types.Off_t) int32 {
 }
 
 // off64_t lseek64(int fd, off64_t offset, int whence);
-func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off64_t {
+func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
 	bp := t.Alloc(int(unsafe.Sizeof(types.X__loff_t(0))))
 	defer t.Free(int(unsafe.Sizeof(types.X__loff_t(0))))
 	if _, _, err := unix.Syscall6(unix.SYS__LLSEEK, uintptr(fd), uintptr(offset>>32), uintptr(offset), bp, uintptr(whence), 0); err != 0 {
@@ -176,9 +175,9 @@ func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off64_t 
 	}
 
 	if dmesgs {
-		dmesg("%v: fd %v, off %#x, whence %v: %#x", origin(1), fd, offset, whenceStr(whence), *(*types.Off64_t)(unsafe.Pointer(bp)))
+		dmesg("%v: fd %v, off %#x, whence %v: %#x", origin(1), fd, offset, whenceStr(whence), *(*types.Off_t)(unsafe.Pointer(bp)))
 	}
-	return *(*types.Off64_t)(unsafe.Pointer(bp))
+	return *(*types.Off_t)(unsafe.Pointer(bp))
 }
 
 // int utime(const char *filename, const struct utimbuf *times);
@@ -408,7 +407,7 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	default:
 		panic(m)
 	}
-	flags |= fcntl.O_LARGEFILE
+	//TODO- flags |= fcntl.O_LARGEFILE
 	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
 	if err != 0 {
 		t.setErrno(err)
