@@ -25,6 +25,7 @@ var CAPI = map[string]struct{}{
 	"__builtin_memcmp":             {},
 	"__builtin_memcpy":             {},
 	"__builtin_memset":             {},
+	"__builtin_mmap":               {},
 	"__builtin_mul_overflowInt64":  {},
 	"__builtin_prefetch":           {},
 	"__builtin_printf":             {},
