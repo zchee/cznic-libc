@@ -11,7 +11,6 @@ import (
 
 	"golang.org/x/sys/unix"
 	"modernc.org/libc/errno"
-	"modernc.org/libc/fcntl"
 	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/sys/types"
@@ -123,7 +122,7 @@ func Xaccess(t *TLS, pathname uintptr, mode int32) int32 {
 }
 
 // off64_t lseek64(int fd, off64_t offset, int whence);
-func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off64_t {
+func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
 	n, _, err := unix.Syscall(unix.SYS_LSEEK, uintptr(fd), uintptr(offset), uintptr(whence))
 	if err != 0 {
 		if dmesgs {
@@ -136,7 +135,7 @@ func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off64_t 
 	if dmesgs {
 		dmesg("%v: fd %v, off %#x, whence %v: %#x", origin(1), fd, offset, whenceStr(whence), n)
 	}
-	return types.Off64_t(n)
+	return types.Off_t(n)
 }
 
 // int fstat(int fd, struct stat *statbuf);
@@ -150,7 +149,7 @@ func Xfstat64(t *TLS, fd int32, statbuf uintptr) int32 {
 	}
 
 	if dmesgs {
-		dmesg("%v: %d size %#x: ok\n%+v", origin(1), fd, (*stat.Stat64)(unsafe.Pointer(statbuf)).Fst_size, (*stat.Stat64)(unsafe.Pointer(statbuf)))
+		dmesg("%v: %d size %#x: ok\n%+v", origin(1), fd, (*stat.Stat)(unsafe.Pointer(statbuf)).Fst_size, (*stat.Stat)(unsafe.Pointer(statbuf)))
 	}
 	return 0
 }
@@ -291,7 +290,7 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	default:
 		panic(m)
 	}
-	flags |= fcntl.O_LARGEFILE
+	//TODO- flags |= fcntl.O_LARGEFILE
 	fd, err := unix.Openat(unix.AT_FDCWD, GoString(pathname), flags, 0666)
 	if err != nil {
 		t.setErrno(err)
@@ -318,6 +317,31 @@ func Xmkdir(t *TLS, path uintptr, mode types.Mode_t) int32 {
 		dmesg("%v: %q: ok", origin(1), GoString(path))
 	}
 	return 0
+}
+
+// void *mremap(void *old_address, size_t old_size, size_t new_size, int flags, ... /* void *new_address */);
+func Xmremap(t *TLS, old_address uintptr, old_size, new_size types.Size_t, flags int32, args uintptr) uintptr {
+	var arg uintptr
+	if args != 0 {
+		arg = *(*uintptr)(unsafe.Pointer(args))
+	}
+	data, _, err := unix.Syscall6(unix.SYS_MREMAP, old_address, uintptr(old_size), uintptr(new_size), uintptr(flags), arg, 0)
+	if err != 0 {
+		if dmesgs {
+			dmesg("%v: %v", origin(1), err)
+		}
+		t.setErrno(err)
+		return ^uintptr(0) // (void*)-1
+	}
+
+	if dmesgs {
+		dmesg("%v: %#x", origin(1), data)
+	}
+	return data
+}
+
+func Xmmap(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
+	return Xmmap64(t, addr, length, prot, flags, fd, offset)
 }
 
 // void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
