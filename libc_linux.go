@@ -207,7 +207,7 @@ func Xopen(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
 
 // int open(const char *pathname, int flags, ...);
 func Xopen64(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
-	flags |= fcntl.O_LARGEFILE
+	//TODO- flags |= fcntl.O_LARGEFILE
 	var mode types.Mode_t
 	if args != 0 {
 		mode = *(*types.Mode_t)(unsafe.Pointer(args))
