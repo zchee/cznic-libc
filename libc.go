@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math"
 	mbits "math/bits"
+	"math/rand"
 	"os"
 	gosignal "os/signal"
 	"runtime"
@@ -91,6 +92,24 @@ func SetEnviron(t *TLS, env []string) {
 		*(*uintptr)(unsafe.Pointer(p)) = s
 		p += uintptrSize
 	}
+}
+
+// size_t confstr(int name, char *buf, size_t len);
+func Xconfstr(t *TLS, name int32, buf uintptr, len types.Size_t) types.Size_t {
+	panic(todo(""))
+}
+
+var (
+	randomMu  sync.Mutex
+	randomGen = rand.New(rand.NewSource(42))
+)
+
+// long int random(void);
+func Xrandom(t *TLS) long {
+	randomMu.Lock()
+	r := randomGen.Int63n(math.MaxInt32 + 1)
+	randomMu.Unlock()
+	return long(r)
 }
 
 // void *malloc(size_t size);
@@ -198,6 +217,11 @@ func X__isnanf(t *TLS, arg float32) int32                            { return Xi
 func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
 func Xvfprintf(t *TLS, stream, format, ap uintptr) int32             { return Xfprintf(t, stream, format, ap) }
 
+// char * __builtin___strcpy_chk (char *dest, const char *src, size_t os);
+func X__builtin___strcpy_chk(t *TLS, dest, src uintptr, os types.Size_t) uintptr {
+	return Xstrcpy(t, dest, src)
+}
+
 func X__builtin_mmap(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
 	return Xmmap64(t, addr, length, prot, flags, fd, offset)
 }
@@ -286,8 +310,31 @@ func X__builtin_memcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
 	return Xmemcpy(t, dest, src, n)
 }
 
+// void * __builtin___memcpy_chk (void *dest, const void *src, size_t n, size_t os);
+func X__builtin___memcpy_chk(t *TLS, dest, src uintptr, n, os types.Size_t) (r uintptr) {
+	if os != ^types.Size_t(0) && n < os {
+		Xabort(t)
+	}
+
+	return Xmemcpy(t, dest, src, n)
+}
+
 func X__builtin_memset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
 	return Xmemset(t, s, c, n)
+}
+
+// void * __builtin___memset_chk (void *s, int c, size_t n, size_t os);
+func X__builtin___memset_chk(t *TLS, s uintptr, c int32, n, os types.Size_t) uintptr {
+	if os < n {
+		Xabort(t)
+	}
+
+	return Xmemset(t, s, c, n)
+}
+
+// size_t __builtin_object_size (const void * ptr, int type)
+func X__builtin_object_size(t *TLS, p uintptr, typ int32) types.Size_t {
+	return ^types.Size_t(0) //TODO frontend magic
 }
 
 var atomicLoadStore16 sync.Mutex
@@ -312,6 +359,11 @@ func Xsprintf(t *TLS, str, format, args uintptr) (r int32) {
 	copy((*RawMem)(unsafe.Pointer(str))[:r:r], b)
 	*(*byte)(unsafe.Pointer(str + uintptr(r))) = 0
 	return int32(len(b))
+}
+
+// int __builtin___sprintf_chk (char *s, int flag, size_t os, const char *fmt, ...);
+func X__builtin___sprintf_chk(t *TLS, s uintptr, flag int32, os types.Size_t, format, args uintptr) (r int32) {
+	return Xsprintf(t, s, format, args)
 }
 
 // void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
@@ -346,12 +398,6 @@ func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
 // unsigned int sleep(unsigned int seconds);
 func Xsleep(t *TLS, seconds uint32) uint32 {
 	gotime.Sleep(gotime.Second * gotime.Duration(seconds))
-	return 0
-}
-
-// int usleep(useconds_t usec);
-func Xusleep(t *TLS, usec types.X__useconds_t) int32 {
-	gotime.Sleep(gotime.Microsecond * gotime.Duration(usec))
 	return 0
 }
 
@@ -428,12 +474,6 @@ func Xprintf(t *TLS, format, args uintptr) int32 {
 	return int32(n)
 }
 
-// int fprintf(FILE *stream, const char *format, ...);
-func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
-	n, _ := fwrite((*stdio.FILE)(unsafe.Pointer(stream)).F_fileno, printf(format, args))
-	return int32(n)
-}
-
 // int snprintf(char *str, size_t size, const char *format, ...);
 func Xsnprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) (r int32) {
 	switch size {
@@ -452,6 +492,15 @@ func Xsnprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) (r 
 	copy((*RawMem)(unsafe.Pointer(str))[:r:r], b)
 	*(*byte)(unsafe.Pointer(str + uintptr(r))) = 0
 	return r
+}
+
+// int __builtin___snprintf_chk(char * str, size_t maxlen, int flag, size_t strlen, const char * format);
+func X__builtin___snprintf_chk(t *TLS, str uintptr, maxlen types.Size_t, flag int32, strlen types.Size_t, format, args uintptr) (r int32) {
+	if maxlen != ^types.Size_t(0) && strlen > maxlen {
+		Xabort(t)
+	}
+
+	return Xsnprintf(t, str, strlen, format, args)
 }
 
 // int abs(int j);
@@ -537,6 +586,15 @@ func Xstrncpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
 	return r
 }
 
+// char * __builtin___strncpy_chk (char *dest, const char *src, size_t n, size_t os);
+func X__builtin___strncpy_chk(t *TLS, dest, src uintptr, n, os types.Size_t) (r uintptr) {
+	if n != ^types.Size_t(0) && os < n {
+		Xabort(t)
+	}
+
+	return Xstrncpy(t, dest, src, n)
+}
+
 // int strcmp(const char *s1, const char *s2)
 func Xstrcmp(t *TLS, s1, s2 uintptr) int32 {
 	for {
@@ -573,6 +631,11 @@ func Xstrcat(t *TLS, dest, src uintptr) (r uintptr) {
 			return r
 		}
 	}
+}
+
+// char * __builtin___strcat_chk (char *dest, const char *src, size_t os);
+func X__builtin___strcat_chk(t *TLS, dest, src uintptr, os types.Size_t) (r uintptr) {
+	return Xstrcat(t, dest, src)
 }
 
 // int strncmp(const char *s1, const char *s2, size_t n)
@@ -700,6 +763,15 @@ func Xrewind(t *TLS, stream uintptr) {
 func Xmemmove(t *TLS, dest, src uintptr, n types.Size_t) uintptr {
 	copy((*RawMem)(unsafe.Pointer(uintptr(dest)))[:n:n], (*RawMem)(unsafe.Pointer(uintptr(src)))[:n:n])
 	return dest
+}
+
+// void * __builtin___memmove_chk (void *dest, const void *src, size_t n, size_t os);
+func X__builtin___memmove_chk(t *TLS, dest, src uintptr, n, os types.Size_t) uintptr {
+	if os != ^types.Size_t(0) && os < n {
+		Xabort(t)
+	}
+
+	return Xmemmove(t, dest, src, n)
 }
 
 var getenvOnce sync.Once

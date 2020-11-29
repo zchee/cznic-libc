@@ -83,6 +83,18 @@ func fwrite(fd int32, b []byte) (int, error) {
 	return unix.Write(int(fd), b) //TODO use Xwrite
 }
 
+// int fprintf(FILE *stream, const char *format, ...);
+func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
+	n, _ := fwrite((*stdio.FILE)(unsafe.Pointer(stream)).F_fileno, printf(format, args))
+	return int32(n)
+}
+
+// int usleep(useconds_t usec);
+func Xusleep(t *TLS, usec types.X__useconds_t) int32 {
+	gotime.Sleep(gotime.Microsecond * gotime.Duration(usec))
+	return 0
+}
+
 // int getrusage(int who, struct rusage *usage);
 func Xgetrusage(t *TLS, who int32, usage uintptr) int32 {
 	if _, _, err := unix.Syscall(unix.SYS_GETRUSAGE, uintptr(who), usage, 0); err != 0 {

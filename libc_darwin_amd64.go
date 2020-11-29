@@ -5,13 +5,13 @@
 package libc // import "modernc.org/libc"
 
 import (
-	//TODO "os"
-	//TODO "strings"
+	"os"
+	"strings"
+	"time"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
-	//TODO "modernc.org/libc/errno"
-	//TODO "modernc.org/libc/fcntl"
+	"modernc.org/libc/errno"
 	//TODO- "modernc.org/libc/signal"
 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/sys/types"
@@ -114,6 +114,26 @@ func Xstat64(t *TLS, pathname, statbuf uintptr) int32 {
 	return 0
 }
 
+// int fstatfs(int fd, struct statfs *buf);
+func Xfstatfs(t *TLS, fd int32, buf uintptr) int32 {
+	if _, _, err := unix.Syscall(unix.SYS_FSTAT64, uintptr(fd), buf, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
+}
+
+// int statfs(const char *path, struct statfs *buf);
+func Xstatfs(t *TLS, path uintptr, buf uintptr) int32 {
+	if err := unix.Statfs(GoString(path), (*unix.Statfs_t)(unsafe.Pointer(buf))); err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
+}
+
 // int fstat(int fd, struct stat *statbuf);
 func Xfstat64(t *TLS, fd int32, statbuf uintptr) int32 {
 	if _, _, err := unix.Syscall(unix.SYS_FSTAT, uintptr(fd), statbuf, 0); err != 0 {
@@ -128,6 +148,10 @@ func Xfstat64(t *TLS, fd int32, statbuf uintptr) int32 {
 		dmesg("%v: %d size %#x: ok\n%+v", origin(1), fd, (*stat.Stat64)(unsafe.Pointer(statbuf)).Fst_size, (*stat.Stat64)(unsafe.Pointer(statbuf)))
 	}
 	return 0
+}
+
+func Xmmap(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
+	return Xmmap64(t, addr, length, prot, flags, fd, offset)
 }
 
 // void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
@@ -164,7 +188,7 @@ func Xftruncate64(t *TLS, fd int32, length types.Off_t) int32 {
 }
 
 // off64_t lseek64(int fd, off64_t offset, int whence);
-func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off64_t {
+func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
 	n, _, err := unix.Syscall(unix.SYS_LSEEK, uintptr(fd), uintptr(offset), uintptr(whence))
 	if err != 0 {
 		if dmesgs {
@@ -177,7 +201,7 @@ func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off64_t 
 	if dmesgs {
 		dmesg("%v: fd %v, off %#x, whence %v: %#x", origin(1), fd, offset, whenceStr(whence), n)
 	}
-	return types.Off64_t(n)
+	return types.Off_t(n)
 }
 
 //TODO- // int utime(const char *filename, const struct utimbuf *times);
@@ -200,16 +224,14 @@ func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off64_t 
 //TODO- 	return uint32(n)
 //TODO- }
 
-//TODO- // time_t time(time_t *tloc);
-//TODO- func Xtime(t *TLS, tloc uintptr) types.Time_t {
-//TODO- 	n, _, err := unix.Syscall(unix.SYS_TIME, tloc, 0, 0)
-//TODO- 	if err != 0 {
-//TODO- 		t.setErrno(err)
-//TODO- 		return types.Time_t(-1)
-//TODO- 	}
-//TODO-
-//TODO- 	return types.Time_t(n)
-//TODO- }
+// time_t time(time_t *tloc);
+func Xtime(t *TLS, tloc uintptr) types.Time_t {
+	n := time.Now().UTC().Unix()
+	if tloc != 0 {
+		*(*types.Time_t)(unsafe.Pointer(tloc)) = types.Time_t(n)
+	}
+	return types.Time_t(n)
+}
 
 // int getrlimit(int resource, struct rlimit *rlim);
 func Xgetrlimit64(t *TLS, resource int32, rlim uintptr) int32 {
@@ -389,37 +411,36 @@ func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
 
 // FILE *fopen64(const char *pathname, const char *mode);
 func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
-	panic(todo(""))
-	//TODO m := strings.ReplaceAll(GoString(mode), "b", "")
-	//TODO var flags int
-	//TODO switch m {
-	//TODO case "r":
-	//TODO 	flags = os.O_RDONLY
-	//TODO case "r+":
-	//TODO 	flags = os.O_RDWR
-	//TODO case "w":
-	//TODO 	flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	//TODO case "w+":
-	//TODO 	flags = os.O_RDWR | os.O_CREATE | os.O_TRUNC
-	//TODO case "a":
-	//TODO 	flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
-	//TODO case "a+":
-	//TODO 	flags = os.O_RDWR | os.O_CREATE | os.O_APPEND
-	//TODO default:
-	//TODO 	panic(m)
-	//TODO }
-	//TODO flags |= fcntl.O_LARGEFILE
-	//TODO fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
-	//TODO if err != 0 {
-	//TODO 	t.setErrno(err)
-	//TODO 	return 0
-	//TODO }
+	m := strings.ReplaceAll(GoString(mode), "b", "")
+	var flags int
+	switch m {
+	case "r":
+		flags = os.O_RDONLY
+	case "r+":
+		flags = os.O_RDWR
+	case "w":
+		flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	case "w+":
+		flags = os.O_RDWR | os.O_CREATE | os.O_TRUNC
+	case "a":
+		flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
+	case "a+":
+		flags = os.O_RDWR | os.O_CREATE | os.O_APPEND
+	default:
+		panic(m)
+	}
+	//TODO- flags |= fcntl.O_LARGEFILE
+	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
+	if err != 0 {
+		t.setErrno(err)
+		return 0
+	}
 
-	//TODO if p := newFile(t, int32(fd)); p != 0 {
-	//TODO 	return p
-	//TODO }
+	if p := newFile(t, int32(fd)); p != 0 {
+		return p
+	}
 
-	//TODO Xclose(t, int32(fd))
-	//TODO t.setErrno(errno.ENOMEM)
-	//TODO return 0
+	Xclose(t, int32(fd))
+	t.setErrno(errno.ENOMEM)
+	return 0
 }

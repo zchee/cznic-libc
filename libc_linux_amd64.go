@@ -232,6 +232,9 @@ func Xtime(t *TLS, tloc uintptr) types.Time_t {
 		return types.Time_t(-1)
 	}
 
+	if tloc != 0 {
+		*(*types.Time_t)(unsafe.Pointer(tloc)) = types.Time_t(n)
+	}
 	return types.Time_t(n)
 }
 

@@ -24,22 +24,22 @@ import (
 // We generate random temporary file names so that there's a good
 // chance the file doesn't exist yet - keeps the number of tries in
 // TempFile to a minimum.
-var rand uint32
-var randmu sync.Mutex
+var randState uint32
+var randStateMu sync.Mutex
 
 func reseed() uint32 {
 	return uint32(time.Now().UnixNano() + int64(os.Getpid()))
 }
 
 func nextRandom(x uintptr) {
-	randmu.Lock()
-	r := rand
+	randStateMu.Lock()
+	r := randState
 	if r == 0 {
 		r = reseed()
 	}
 	r = r*1664525 + 1013904223 // constants from Numerical Recipes
-	rand = r
-	randmu.Unlock()
+	randState = r
+	randStateMu.Unlock()
 	copy((*RawMem)(unsafe.Pointer(x))[:6:6], fmt.Sprintf("%06d", int(1e9+r%1e9)%1e6))
 }
 
@@ -59,10 +59,10 @@ func tempFile(s, x uintptr) (fd, err int) {
 		}
 
 		if nconflict++; nconflict > 10 {
-			randmu.Lock()
-			rand = reseed()
+			randStateMu.Lock()
+			randState = reseed()
 			nconflict = 0
-			randmu.Unlock()
+			randStateMu.Unlock()
 		}
 	}
 	return -1, errno.EEXIST

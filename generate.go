@@ -30,7 +30,7 @@ func main() {
 		goarch = s
 	}
 	switch goos {
-	case "linux":
+	case "linux", "darwin":
 		makeMusl(goos, goarch)
 	}
 	_, _, hostSysIncludes, err := cc.HostConfig(os.Getenv("CCGO_CPP"))
@@ -145,8 +145,8 @@ func makeMusl(goos, goarch string) {
 		"ccgo",
 		"-ccgo-export-externs", "X",
 		"-ccgo-hide", "__syscall0,__syscall1,__syscall2,__syscall3,__syscall4,__syscall5,__syscall6",
-		"-ccgo-libc",
 		"-ccgo-hide-asm",
+		"-ccgo-libc",
 		"-ccgo-long-double-is-double",
 		"-ccgo-pkgname", "libc",
 		"-nostdinc",
@@ -168,6 +168,7 @@ func makeMusl(goos, goarch string) {
 		"src/ctype/isalnum.c",
 		"src/ctype/isalpha.c",
 		"src/ctype/isdigit.c",
+		"src/ctype/isprint.c",
 		"src/dirent/closedir.c",
 		"src/dirent/opendir.c",
 		"src/dirent/readdir.c",
@@ -191,6 +192,8 @@ func makeMusl(goos, goarch string) {
 		"src/stdio/__toread.c",
 		"src/stdio/__uflow.c",
 		"src/stdlib/strtol.c",
+		"src/string/strlcat.c",
+		"src/string/strlcpy.c",
 		"src/string/strnlen.c",
 		"src/string/strspn.c",
 	)
@@ -233,13 +236,6 @@ func libcHeaders(paths []string) error {
 			return nil
 		}
 
-		if goos == "darwin" { //TODO-
-			switch filepath.Base(path) {
-			case "netdb", "in", "stdio", "socket", "types", "unistd", "signal":
-				return nil
-			}
-		}
-
 		src := fmt.Sprintf(`#include <%s.h>
 static char _;
 `, dir)
@@ -254,21 +250,18 @@ static char _;
 		base := filepath.Base(dir)
 		argv := []string{
 			fn,
-			"-D__signed__=signed", // <asm/signal.h>
 			"-ccgo-crt-import-path", "",
 			"-ccgo-export-defines", "",
 			"-ccgo-export-enums", "",
-			"-ccgo-hide-asm",
 			"-ccgo-export-externs", "X",
 			"-ccgo-export-fields", "F",
 			"-ccgo-export-structs", "",
 			"-ccgo-export-typedefs", "",
+			"-ccgo-hide", "_OSSwapInt16,_OSSwapInt32,_OSSwapInt64",
+			"-ccgo-hide-asm",
 			"-ccgo-long-double-is-double",
 			"-ccgo-pkgname", base,
 			"-o", dest,
-		}
-		if goos == "darwin" {
-			argv = append(argv, "-ccgo-hide-asm")
 		}
 		cmd := exec.Command("ccgo", argv...)
 		out, err := cmd.CombinedOutput()

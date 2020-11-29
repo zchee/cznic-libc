@@ -7,6 +7,7 @@ package libc // import "modernc.org/libc"
 import (
 	"os"
 	"strings"
+	"time"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -389,7 +390,11 @@ func Xchmod(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
 
 // time_t time(time_t *tloc);
 func Xtime(t *TLS, tloc uintptr) types.Time_t {
-	panic(todo(""))
+	n := time.Now().UTC().Unix()
+	if tloc != 0 {
+		*(*types.Time_t)(unsafe.Pointer(tloc)) = types.Time_t(n)
+	}
+	return types.Time_t(n)
 }
 
 // int utimes(const char *filename, const struct timeval times[2]);
