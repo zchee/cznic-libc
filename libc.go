@@ -94,6 +94,11 @@ func SetEnviron(t *TLS, env []string) {
 	}
 }
 
+// void setbuf(FILE *stream, char *buf);
+func Xsetbuf(t *TLS, stream, buf uintptr) {
+	//TODO panic(todo(""))
+}
+
 // size_t confstr(int name, char *buf, size_t len);
 func Xconfstr(t *TLS, name int32, buf uintptr, len types.Size_t) types.Size_t {
 	panic(todo(""))
@@ -417,6 +422,16 @@ func Xobstack_vprintf(t *TLS, obstack, template, va uintptr) int32 {
 
 // extern void _obstack_newchunk(struct obstack *, int);
 func X_obstack_newchunk(t *TLS, obstack uintptr, length int32) int32 {
+	panic(todo(""))
+}
+
+// int _obstack_begin (struct obstack *h, _OBSTACK_SIZE_T size, _OBSTACK_SIZE_T alignment,	void *(*chunkfun) (size_t),  void (*freefun) (void *))
+func X_obstack_begin(t *TLS, obstack uintptr, size, alignment int32, chunkfun, freefun uintptr) int32 {
+	panic(todo(""))
+}
+
+// void obstack_free (struct obstack *h, void *obj)
+func Xobstack_free(t *TLS, obstack, obj uintptr) {
 	panic(todo(""))
 }
 

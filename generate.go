@@ -143,14 +143,13 @@ func makeMusl(goos, goarch string) {
 	run("sh", "-c", fmt.Sprintf("sed -n -e s/__NR_/SYS_/p < arch/%s/bits/syscall.h.in >> obj/include/bits/syscall.h", arch))
 	out := run(
 		"ccgo",
-		"-ccgo-export-externs", "X",
-		"-ccgo-hide", "__syscall0,__syscall1,__syscall2,__syscall3,__syscall4,__syscall5,__syscall6",
-		"-ccgo-hide-asm",
-		"-ccgo-libc",
-		"-ccgo-long-double-is-double",
-		"-ccgo-pkgname", "libc",
+
+		"--libc",
+		"-export-externs", "X",
+		"-hide", "__syscall0,__syscall1,__syscall2,__syscall3,__syscall4,__syscall5,__syscall6",
 		"-nostdinc",
 		"-o", fmt.Sprintf("../musl_%s_%s.go", goos, goarch),
+		"-pkgname", "libc",
 
 		// Keep the order below, don't sort!
 		fmt.Sprintf("-I%s", filepath.Join("arch", arch)),
@@ -250,18 +249,17 @@ static char _;
 		base := filepath.Base(dir)
 		argv := []string{
 			fn,
-			"-ccgo-crt-import-path", "",
-			"-ccgo-export-defines", "",
-			"-ccgo-export-enums", "",
-			"-ccgo-export-externs", "X",
-			"-ccgo-export-fields", "F",
-			"-ccgo-export-structs", "",
-			"-ccgo-export-typedefs", "",
-			"-ccgo-hide", "_OSSwapInt16,_OSSwapInt32,_OSSwapInt64",
-			"-ccgo-hide-asm",
-			"-ccgo-long-double-is-double",
-			"-ccgo-pkgname", base,
+
+			"-crt-import-path", "",
+			"-export-defines", "",
+			"-export-enums", "",
+			"-export-externs", "X",
+			"-export-fields", "F",
+			"-export-structs", "",
+			"-export-typedefs", "",
+			"-hide", "_OSSwapInt16,_OSSwapInt32,_OSSwapInt64",
 			"-o", dest,
+			"-pkgname", base,
 		}
 		cmd := exec.Command("ccgo", argv...)
 		out, err := cmd.CombinedOutput()
