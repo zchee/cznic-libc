@@ -395,6 +395,31 @@ func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
 
 }
 
+// int sscanf(const char *str, const char *format, ...);
+func Xsscanf(t *TLS, str, format, va uintptr) int32 {
+	panic(todo(""))
+}
+
+// int vsprintf(char *str, const char *format, va_list ap);
+func Xvsprintf(t *TLS, str, format, va uintptr) int32 {
+	panic(todo(""))
+}
+
+// int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+func Xvsnprintf(t *TLS, str uintptr, size types.Size_t, format, va uintptr) int32 {
+	panic(todo(""))
+}
+
+// int obstack_vprintf (struct obstack *obstack, const char *template, va_list ap)
+func Xobstack_vprintf(t *TLS, obstack, template, va uintptr) int32 {
+	panic(todo(""))
+}
+
+// extern void _obstack_newchunk(struct obstack *, int);
+func X_obstack_newchunk(t *TLS, obstack uintptr, length int32) int32 {
+	panic(todo(""))
+}
+
 // unsigned int sleep(unsigned int seconds);
 func Xsleep(t *TLS, seconds uint32) uint32 {
 	gotime.Sleep(gotime.Second * gotime.Duration(seconds))

@@ -1389,6 +1389,21 @@ func Xfgetc(t *TLS, stream uintptr) int32 {
 	panic(todo(""))
 }
 
+// int getc(FILE *stream);
+func Xgetc(t *TLS, stream uintptr) int32 {
+	return Xfgetc(t, stream)
+}
+
+// int ungetc(int c, FILE *stream);
+func Xungetc(t *TLS, c int32, stream uintptr) int32 {
+	panic(todo(""))
+}
+
+// int fscanf(FILE *stream, const char *format, ...);
+func Xfscanf(t *TLS, stream, format, va uintptr) int32 {
+	panic(todo(""))
+}
+
 // FILE *fdopen(int fd, const char *mode);
 func Xfdopen(t *TLS, fd int32, mode uintptr) uintptr {
 	panic(todo(""))
