@@ -104,6 +104,11 @@ func Xconfstr(t *TLS, name int32, buf uintptr, len types.Size_t) types.Size_t {
 	panic(todo(""))
 }
 
+// int puts(const char *s);
+func Xputs(t *TLS, s uintptr) int32 {
+	panic(todo(""))
+}
+
 var (
 	randomMu  sync.Mutex
 	randomGen = rand.New(rand.NewSource(42))
@@ -210,6 +215,7 @@ func X__builtin_inf(t *TLS) float64                                  { return ma
 func X__builtin_inff(t *TLS) float32                                 { return float32(math.Inf(1)) }
 func X__builtin_malloc(t *TLS, size types.Size_t) uintptr            { return Xmalloc(t, size) }
 func X__builtin_memcmp(t *TLS, s1, s2 uintptr, n types.Size_t) int32 { return Xmemcmp(t, s1, s2, n) }
+func X__builtin_nanf(t *TLS, s uintptr) float32                      { return float32(math.NaN()) }
 func X__builtin_prefetch(t *TLS, addr, args uintptr)                 {}
 func X__builtin_printf(t *TLS, s, args uintptr) int32                { return Xprintf(t, s, args) }
 func X__builtin_strchr(t *TLS, s uintptr, c int32) uintptr           { return Xstrchr(t, s, c) }
