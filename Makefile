@@ -85,7 +85,7 @@ edit:
 	&
 
 editor:
-	go generate 2>&1 | tee log
+	GO111MODULE=off go generate 2>&1 | tee log
 	gofmt -l -s -w *.go
 	go test -i
 	go test -short 2>&1 | tee -a log

@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"modernc.org/cc/v3"
+	ccgo "modernc.org/ccgo/v3/lib"
 )
 
 var (
@@ -141,13 +142,11 @@ func makeMusl(goos, goarch string) {
 	run("sh", "-c", fmt.Sprintf("sed -f ./tools/mkalltypes.sed ./arch/%s/bits/alltypes.h.in ./include/alltypes.h.in > obj/include/bits/alltypes.h", arch))
 	run("sh", "-c", fmt.Sprintf("cp arch/%s/bits/syscall.h.in obj/include/bits/syscall.h", arch))
 	run("sh", "-c", fmt.Sprintf("sed -n -e s/__NR_/SYS_/p < arch/%s/bits/syscall.h.in >> obj/include/bits/syscall.h", arch))
-	out := run(
-		"ccgo",
-
-		"--libc",
+	if _, err := runcc(
 		"-export-externs", "X",
 		"-hide", "__syscall0,__syscall1,__syscall2,__syscall3,__syscall4,__syscall5,__syscall6",
 		"-nostdinc",
+		"-nostdlib",
 		"-o", fmt.Sprintf("../musl_%s_%s.go", goos, goarch),
 		"-pkgname", "libc",
 
@@ -210,8 +209,9 @@ func makeMusl(goos, goarch string) {
 		"src/string/strlcpy.c",
 		"src/string/strnlen.c",
 		"src/string/strspn.c",
-	)
-	fmt.Printf("%s\n", out)
+	); err != nil {
+		fail(err)
+	}
 }
 
 func run(arg0 string, args ...string) []byte {
@@ -219,11 +219,28 @@ func run(arg0 string, args ...string) []byte {
 	cmd := exec.Command(arg0, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		sout := strings.TrimSpace(string(out) + "\n")
+		sout := strings.TrimSpace(string(out))
 		fmt.Fprintf(os.Stderr, "==== FAIL\n%s\n%s\n", sout, err)
 		fail(err)
 	}
 	return out
+}
+
+type echoWriter struct {
+	w bytes.Buffer
+}
+
+func (w *echoWriter) Write(b []byte) (int, error) {
+	os.Stdout.Write(b)
+	return w.w.Write(b)
+}
+
+func runcc(args ...string) ([]byte, error) {
+	args = append([]string{"ccgo"}, args...)
+	fmt.Printf("%q\n", args)
+	var out echoWriter
+	err := ccgo.NewTask(args, &out, &out).Main()
+	return out.w.Bytes(), err
 }
 
 func libcHeaders(paths []string) error {
@@ -276,13 +293,11 @@ static char _;
 			"-o", dest,
 			"-pkgname", base,
 		}
-		cmd := exec.Command("ccgo", argv...)
-		out, err := cmd.CombinedOutput()
-		sout := strings.TrimSpace(string(out) + "\n")
+		out, err := runcc(argv...)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %s%s\n", path, sout, err)
+			fmt.Fprintf(os.Stderr, "%s: %s%s\n", path, out, err)
 		} else {
-			fmt.Fprintf(os.Stdout, "%s\n%s", path, sout)
+			fmt.Fprintf(os.Stdout, "%s\n%s", path, out)
 		}
 		return nil
 	})
