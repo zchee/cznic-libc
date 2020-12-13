@@ -1076,3 +1076,8 @@ func X__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr) 
 func X_IO_putc(t *TLS, c int32, fp uintptr) int32 {
 	return Xputc(t, c, fp)
 }
+
+// int atexit(void (*function)(void));
+func Xatexit(t *TLS, function uintptr) int32 {
+	panic(todo(""))
+}

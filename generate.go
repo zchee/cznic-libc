@@ -173,12 +173,6 @@ func makeMusl(goos, goarch string) {
 		"src/internal/floatscan.c",
 		"src/internal/intscan.c",
 		"src/internal/shgetc.c",
-
-		//TODO "src/locale/langinfo.c",
-		//TODO "src/locale/__lctrans.c",
-		//TODO "src/locale/locale_map.c",
-		//TODO "src/locale/c_locale.c",
-
 		"src/math/__fpclassifyl.c",
 		"src/math/copysignl.c",
 		"src/math/fabsl.c",
@@ -201,14 +195,20 @@ func makeMusl(goos, goarch string) {
 		"src/network/lookup_ipliteral.c",
 		"src/network/lookup_name.c",
 		"src/network/lookup_serv.c",
+		"src/prng/rand_r.c",
 		"src/stdio/__toread.c",
 		"src/stdio/__uflow.c",
 		"src/stdlib/strtod.c",
 		"src/stdlib/strtol.c",
 		"src/string/strlcat.c",
 		"src/string/strlcpy.c",
+		"src/string/strncat.c",
 		"src/string/strnlen.c",
 		"src/string/strspn.c",
+		"src/string/strtok.c",
+		//TODO "src/time/__tm_to_secs.c",
+		//TODO "src/time/__year_to_secs.c",
+		//TODO "src/time/strftime.c",
 	); err != nil {
 		fail(err)
 	}
