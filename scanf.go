@@ -7,8 +7,6 @@ package libc // import "modernc.org/libc"
 import (
 	"strings"
 	"unsafe"
-
-	"modernc.org/libc/stdio"
 )
 
 // The format string consists of a sequence of directives which describe how to
@@ -72,7 +70,7 @@ out:
 		return nvalues
 	}
 
-	return stdio.EOF
+	return -1 // stdio.EOF but not defined for windows
 }
 
 func scanfConversion(r *strings.Reader, format uintptr, args *uintptr) (_ uintptr, nvalues int, match bool) {

@@ -606,8 +606,6 @@ out:
 						default:
 							panic(todo("%q %q", b, string(c)))
 						}
-
-						s++
 					}
 				default:
 					panic(todo("%q %q", b, string(c)))

@@ -20,20 +20,16 @@ import (
 	mbits "math/bits"
 	"math/rand"
 	"os"
-	gosignal "os/signal"
 	"runtime"
 	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
-	"syscall"
 	gotime "time"
 	"unsafe"
 
 	"github.com/mattn/go-isatty"
 	"modernc.org/libc/errno"
-	"modernc.org/libc/signal"
-	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/types"
 	"modernc.org/libc/time"
 	"modernc.org/libc/unistd"
@@ -223,7 +219,7 @@ func X__builtin_strcmp(t *TLS, s1, s2 uintptr) int32                 { return Xs
 func X__builtin_strcpy(t *TLS, dest, src uintptr) uintptr            { return Xstrcpy(t, dest, src) }
 func X__builtin_strlen(t *TLS, s uintptr) types.Size_t               { return Xstrlen(t, s) }
 func X__builtin_trap(t *TLS)                                         { Xabort(t) }
-func X__isnan(t *TLS, arg float64) int32                             { return Xisnan(t, arg) }
+func X__isnan(t *TLS, arg float64) int32                             { return X__builtin_isnan(t, arg) }
 func X__isnanf(t *TLS, arg float32) int32                            { return Xisnanf(t, arg) }
 func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
 func Xvfprintf(t *TLS, stream, format, ap uintptr) int32             { return Xfprintf(t, stream, format, ap) }
@@ -447,50 +443,6 @@ func Xsleep(t *TLS, seconds uint32) uint32 {
 	return 0
 }
 
-// sighandler_t signal(int signum, sighandler_t handler);
-func Xsignal(t *TLS, signum int32, handler uintptr) uintptr { //TODO use sigaction?
-	signalsMu.Lock()
-
-	defer signalsMu.Unlock()
-
-	r := signals[signum]
-	signals[signum] = handler
-	switch handler {
-	case signal.SIG_DFL:
-		panic(todo("%v %#x", syscall.Signal(signum), handler))
-	case signal.SIG_IGN:
-		switch r {
-		case signal.SIG_DFL:
-			gosignal.Ignore(syscall.Signal(signum))
-		case signal.SIG_IGN:
-			panic(todo("%v %#x", syscall.Signal(signum), handler))
-		default:
-			panic(todo("%v %#x", syscall.Signal(signum), handler))
-		}
-	default:
-		switch r {
-		case signal.SIG_DFL:
-			c := make(chan os.Signal, 1)
-			gosignal.Notify(c, syscall.Signal(signum))
-			go func() { //TODO mechanism to stop/cancel
-				for {
-					<-c
-					var f func(*TLS, int32)
-					*(*uintptr)(unsafe.Pointer(&f)) = handler
-					tls := NewTLS()
-					f(tls, signum)
-					tls.Close()
-				}
-			}()
-		case signal.SIG_IGN:
-			panic(todo("%v %#x", syscall.Signal(signum), handler))
-		default:
-			panic(todo("%v %#x", syscall.Signal(signum), handler))
-		}
-	}
-	return r
-}
-
 // size_t strcspn(const char *s, const char *reject);
 func Xstrcspn(t *TLS, s, reject uintptr) (r types.Size_t) {
 	bits := newBits(256)
@@ -558,6 +510,7 @@ func Xabs(t *TLS, j int32) int32 {
 	return -j
 }
 
+func X__builtin_isnan(t *TLS, x float64) int32    { return Bool32(math.IsNaN(x)) }
 func Xacos(t *TLS, x float64) float64             { return math.Acos(x) }
 func Xasin(t *TLS, x float64) float64             { return math.Asin(x) }
 func Xatan(t *TLS, x float64) float64             { return math.Atan(x) }
@@ -574,7 +527,7 @@ func Xfabsf(t *TLS, x float32) float32            { return float32(math.Abs(floa
 func Xfloor(t *TLS, x float64) float64            { return math.Floor(x) }
 func Xfmod(t *TLS, x, y float64) float64          { return math.Mod(x, y) }
 func Xhypot(t *TLS, x, y float64) float64         { return math.Hypot(x, y) }
-func Xisnan(t *TLS, x float64) int32              { return Bool32(math.IsNaN(x)) }
+func Xisnan(t *TLS, x float64) int32              { return X__builtin_isnan(t, x) }
 func Xisnanf(t *TLS, x float32) int32             { return Bool32(math.IsNaN(float64(x))) }
 func Xisnanl(t *TLS, x float64) int32             { return Bool32(math.IsNaN(x)) } // ccgo has to handle long double as double as Go does not support long double.
 func Xldexp(t *TLS, x float64, exp int32) float64 { return math.Ldexp(x, int(exp)) }
@@ -800,11 +753,6 @@ func Xmemchr(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
 	return 0
 }
 
-// void rewind(FILE *stream);
-func Xrewind(t *TLS, stream uintptr) {
-	Xfseek(t, stream, 0, stdio.SEEK_SET)
-}
-
 // void *memmove(void *dest, const void *src, size_t n);
 func Xmemmove(t *TLS, dest, src uintptr, n types.Size_t) uintptr {
 	copy((*RawMem)(unsafe.Pointer(uintptr(dest)))[:n:n], (*RawMem)(unsafe.Pointer(uintptr(src)))[:n:n])
@@ -925,15 +873,6 @@ func Xatol(t *TLS, nptr uintptr) long {
 	default:
 		return long(n)
 	}
-}
-
-// int putchar(int c);
-func Xputchar(t *TLS, c int32) int32 {
-	if _, err := write([]byte{byte(c)}); err != nil {
-		return stdio.EOF
-	}
-
-	return int32(c)
 }
 
 // time_t mktime(struct tm *tm);
@@ -1079,5 +1018,10 @@ func X_IO_putc(t *TLS, c int32, fp uintptr) int32 {
 
 // int atexit(void (*function)(void));
 func Xatexit(t *TLS, function uintptr) int32 {
+	panic(todo(""))
+}
+
+// int vasprintf(char **strp, const char *fmt, va_list ap);
+func Xvasprintf(t *TLS, strp, fmt, ap uintptr) int32 {
 	panic(todo(""))
 }

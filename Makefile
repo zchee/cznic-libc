@@ -22,17 +22,18 @@ all:
 	go install -v ./...
 	go test -i
 	go test 2>&1 -timeout 1h | tee -a $(log)
+	GOOS=darwin GOARCH=amd64 go build
 	GOOS=linux GOARCH=386 go build
 	GOOS=linux GOARCH=amd64 go build
 	GOOS=linux GOARCH=arm go build
 	GOOS=linux GOARCH=arm64 go build
-	# GOOS=windows GOARCH=386 go build
-	# GOOS=windows GOARCH=amd64 go build
-	go vet 2>&1 | grep -v $(ngrep) || true
+	GOOS=windows GOARCH=386 go build
+	GOOS=windows GOARCH=amd64 go build
+	go vet -unsafeptr=false 2>&1 | grep -v $(ngrep) || true
 	golint 2>&1 | grep -v $(ngrep) || true
 	make todo
 	misspell *.go
-	staticcheck | grep -v 'lexer\.go\|parser\.go' || true
+	staticcheck || true
 	maligned || true
 	grep -n 'FAIL\|PASS' $(log)
 	go version
@@ -57,6 +58,14 @@ linux_arm:
 linux_arm64:
 	CCGO_CPP=aarch64-linux-gnu-cpp-8 TARGET_GOOS=linux TARGET_GOARCH=arm64 go generate
 	GOOS=linux GOARCH=arm64 go build -v ./...
+
+windows_amd64:
+	CCGO_CPP=x86_64-w64-mingw32-cpp-posix TARGET_GOOS=windows TARGET_GOARCH=amd64 go generate
+	CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 go build -v ./...
+
+windows_386:
+	CCGO_CPP=i686-w64-mingw32-cpp-posix TARGET_GOOS=windows TARGET_GOARCH=386 go generate
+	CC=i686-w64-mingw32-gcc GOOS=windows GOARCH=386 go build -v ./...
 
 devbench:
 	date 2>&1 | tee log-devbench
