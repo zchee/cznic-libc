@@ -3473,3 +3473,13 @@ func XRegDeleteKeyW(t *TLS, _ ...interface{}) int32 {
 func XRegSetValueExW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
+
+// int _vsnwprintf(
+//    wchar_t *buffer,
+//    size_t count,
+//    const wchar_t *format,
+//    va_list argptr
+// );
+func X__mingw_vsnwprintf(t *TLS, buffer uintptr, count types.Size_t, format, va uintptr) int32 {
+	panic(todo(""))
+}
