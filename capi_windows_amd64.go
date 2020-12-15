@@ -291,6 +291,7 @@ var CAPI = map[string]struct{}{
 	"__isprint_l":                       {},
 	"__isspace_l":                       {},
 	"__isxdigit_l":                      {},
+	"__mingw_vsnwprintf":                {},
 	"__ms_vfscanf":                      {},
 	"__ms_vfwscanf":                     {},
 	"__ms_vscanf":                       {},
