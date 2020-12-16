@@ -460,3 +460,11 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	// 	t.setErrno(errno.ENOMEM)
 	// 	return 0
 }
+
+func Xrecv(t *TLS, sockfd uint32, buf uintptr, len, flags int32) int32 {
+	panic(todo(""))
+}
+
+func Xsend(t *TLS, sockfd uint32, buf uintptr, len, flags int32) int32 {
+	panic(todo(""))
+}

@@ -318,7 +318,7 @@ func (w *echoWriter) Write(b []byte) (int, error) {
 
 func runcc(args ...string) ([]byte, error) {
 	args = append([]string{"ccgo"}, args...)
-	fmt.Printf("%q\n", args)
+	// fmt.Printf("%q\n", args)
 	var out echoWriter
 	err := ccgo.NewTask(args, &out, &out).Main()
 	return out.w.Bytes(), err
@@ -335,11 +335,14 @@ func libcHeaders(paths []string) error {
 			return nil
 		}
 
+		//fmt.Printf("%q: %v\n", path, err) //TODO-
 		dir := path
 		ok := false
 		for _, v := range paths {
 			full := filepath.Join(v, dir+".h")
+			//fmt.Printf("%s\n", full) //TODO-
 			if fi, err := os.Stat(full); err == nil && !fi.IsDir() {
+				// fmt.Printf("OK %s\n", full) //TODO-
 				ok = true
 				break
 			}
