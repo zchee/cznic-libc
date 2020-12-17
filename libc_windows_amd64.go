@@ -489,6 +489,3 @@ func Xaccept(t *TLS, sockfd uint64, addr uintptr, addrlen uintptr) uint64 {
 	panic(todo(""))
 }
 
-func Xwrite(t *TLS, fd int32, buf uintptr, count uint32) int32 {
-	panic(todo(""))
-}

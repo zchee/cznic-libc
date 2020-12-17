@@ -6,11 +6,17 @@ package libc // import "modernc.org/libc"
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"modernc.org/libc/unistd"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
+	"sync/atomic"
+	"syscall"
 	gotime "time"
+	"unicode/utf16"
 	"unsafe"
 
 	"modernc.org/libc/errno"
@@ -30,61 +36,157 @@ type (
 	ulong = uint32
 )
 
-type file uintptr
+// ---------------------------------
+// Windows filehandle-to-fd mapping
+// so the lib-c interface contract looks
+// like normal fds being passed around
+// but we're mapping them back and forth to
+// native windows file handles (syscall.Handle)
+//
 
-func (f file) fd() int32 {
-	panic(todo(""))
+var EBADF = errors.New("EBADF")
+
+type file struct {
+	_fd int32
+	syscall.Handle
+	hadErr bool
 }
 
-func (f file) setFd(fd int32) {
-	panic(todo(""))
+var w_nextFd int32 = 42
+var w_fdLock sync.Mutex
+var w_fd_to_file = map[int32]*file{}
+var w_file_to_fd = map[*file]int32{}
+
+func addFile(hdl syscall.Handle, fd int32) *file {
+	var f file
+	f.Handle = hdl
+	f._fd = fd
+
+	w_fdLock.Lock()
+	defer w_fdLock.Unlock()
+	w_fd_to_file[fd] = &f
+	w_file_to_fd[&f] = fd
+
+	return &f
 }
 
-func (f file) err() bool {
-	panic(todo(""))
+func remFile(f *file) {
+	w_fdLock.Lock()
+	defer w_fdLock.Unlock()
+	delete(w_fd_to_file, f._fd)
+	delete(w_file_to_fd, f)
 }
 
-func (f file) setErr() {
-	panic(todo(""))
+func fileToFd(f *file) (int32, bool) {
+	w_fdLock.Lock()
+	defer w_fdLock.Unlock()
+	fd, ok := w_file_to_fd[f]
+	return fd, ok
 }
 
-func (f file) close(t *TLS) int32 {
-	panic(todo(""))
-	// r := Xclose(t, f.fd())
-	// Xfree(t, uintptr(f))
-	// if r < 0 {
-	// 	return stdio.EOF
-	// }
-	// return 0
+func fdToFile(fd int32) (*file, bool) {
+	w_fdLock.Lock()
+	defer w_fdLock.Unlock()
+	f, ok := w_fd_to_file[fd]
+	return f, ok
 }
+
+// Wrap the windows handle up tied to a unique fd
+func wrapFdHandle(hdl syscall.Handle) uintptr {
+	var newFd = atomic.AddInt32(&w_nextFd, 1)
+	return uintptr(unsafe.Pointer(addFile(hdl, newFd)))
+}
+
+func (f *file) fd() int32 {
+	return f._fd
+}
+
+func (f *file) err() bool {
+	return f.hadErr
+}
+
+func (f *file) setErr() {
+	f.hadErr = true
+}
+
+// -----------------------------------
+// On windows we have to fetch these
+//
+// stdout, stdin, sterr
+//
+// Using the windows specific GetStdHandle
+// they're mapped to the standrd fds (0,1,2)
+// Note: it's possible they don't exist
+// if the app has been built for a GUI only
+// target in windows. If that's the case
+// panic seems like the only reasonable option
+// ------------------------------
 
 func newFile(t *TLS, fd int32) uintptr {
-	panic(todo(""))
-	// p := Xcalloc(t, 1, types.Size_t(unsafe.Sizeof(stdio.FILE{})))
-	// if p == 0 {
-	// 	return 0
-	// }
-	// file(p).setFd(fd)
-	// return p
+
+	if fd == unistd.STDIN_FILENO {
+		h, err := syscall.GetStdHandle(syscall.STD_INPUT_HANDLE)
+		if err != nil {
+			panic("no console")
+		}
+		f := addFile(h, fd)
+		return uintptr(unsafe.Pointer(f))
+	}
+	if fd == unistd.STDOUT_FILENO {
+		h, err := syscall.GetStdHandle(syscall.STD_OUTPUT_HANDLE)
+		if err != nil {
+			panic("no console")
+		}
+		f := addFile(h, fd)
+		return uintptr(unsafe.Pointer(f))
+	}
+	if fd == unistd.STDERR_FILENO {
+		h, err := syscall.GetStdHandle(syscall.STD_ERROR_HANDLE)
+		if err != nil {
+			panic("no console")
+		}
+		f := addFile(h, fd)
+		return uintptr(unsafe.Pointer(f))
+	}
+
+	// should not get here -- unless newFile
+	// is being used from somewhere we don't know about
+	// to originate fds.
+
+	panic("unknown fd source")
+	return 0
+}
+
+func (f *file) close(t *TLS) int32 {
+
+	remFile(f)
+	err := syscall.Close(f.Handle)
+	if err != nil {
+		return (-1) // EOF
+	}
+	return 0
 }
 
 func fwrite(fd int32, b []byte) (int, error) {
-	panic(todo(""))
-	// if fd == unistd.STDOUT_FILENO {
-	// 	return write(b)
-	// }
+	if fd == unistd.STDOUT_FILENO {
+		return write(b)
+	}
 
-	// if dmesgs {
-	// 	dmesg("%v: fd %v: %s", origin(1), fd, b)
-	// }
-	// return unix.Write(int(fd), b) //TODO use Xwrite
+	f, ok := fdToFile(fd)
+	if !ok {
+		return -1, EBADF
+	}
+
+	if dmesgs {
+		dmesg("%v: fd %v: %s", origin(1), fd, b)
+	}
+	return syscall.Write(f.Handle, b)
 }
 
 // int fprintf(FILE *stream, const char *format, ...);
 func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
-	panic(todo(""))
-	// 	n, _ := fwrite((*stdio.FILE)(unsafe.Pointer(stream)).F_fileno, printf(format, args))
-	// 	return int32(n)
+	n, _ := fwrite((*file)(unsafe.Pointer(stream))._fd, printf(format, args))
+	return int32(n)
 }
 
 // int usleep(useconds_t usec);
@@ -106,43 +208,43 @@ func Xgetrusage(t *TLS, who int32, usage uintptr) int32 {
 
 // char *fgets(char *s, int size, FILE *stream);
 func Xfgets(t *TLS, s uintptr, size int32, stream uintptr) uintptr {
+
+	f := (*file)(unsafe.Pointer(stream))
+
+	var b []byte
+	buf := [1]byte{}
+	for ; size > 0; size-- {
+		n, err := syscall.Read(f.Handle, buf[:])
+		if n != 0 {
+			b = append(b, buf[0])
+			if buf[0] == '\n' {
+				b = append(b, 0)
+				copy((*RawMem)(unsafe.Pointer(s))[:len(b):len(b)], b)
+				return s
+			}
+			continue
+		}
+
+		switch {
+		case n == 0 && err == nil && len(b) == 0:
+			return 0
+		default:
+			panic(todo(""))
+		}
+
+		// if err == nil {
+		// 	panic("internal error")
+		// }
+
+		// if len(b) != 0 {
+		// 		b = append(b, 0)
+		// 		copy((*RawMem)(unsafe.Pointer(s)[:len(b)]), b)
+		// 		return s
+		// }
+
+		// t.setErrno(err)
+	}
 	panic(todo(""))
-	// fd := int((*stdio.FILE)(unsafe.Pointer(stream)).F_fileno)
-	// var b []byte
-	// buf := [1]byte{}
-	// for ; size > 0; size-- {
-	// 	n, err := unix.Read(fd, buf[:])
-	// 	if n != 0 {
-	// 		b = append(b, buf[0])
-	// 		if buf[0] == '\n' {
-	// 			b = append(b, 0)
-	// 			copy((*RawMem)(unsafe.Pointer(s))[:len(b):len(b)], b)
-	// 			return s
-	// 		}
-
-	// 		continue
-	// 	}
-
-	// 	switch {
-	// 	case n == 0 && err == nil && len(b) == 0:
-	// 		return 0
-	// 	default:
-	// 		panic(todo(""))
-	// 	}
-
-	// 	// if err == nil {
-	// 	// 	panic("internal error")
-	// 	// }
-
-	// 	// if len(b) != 0 {
-	// 	// 		b = append(b, 0)
-	// 	// 		copy((*RawMem)(unsafe.Pointer(s)[:len(b)]), b)
-	// 	// 		return s
-	// 	// }
-
-	// 	// t.setErrno(err)
-	// }
-	// panic(todo(""))
 }
 
 // int lstat(const char *pathname, struct stat *statbuf);
@@ -157,16 +259,17 @@ func Xstat(t *TLS, pathname, statbuf uintptr) int32 {
 
 // int chdir(const char *path);
 func Xchdir(t *TLS, path uintptr) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_CHDIR, path, 0, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
 
-	// if dmesgs {
-	// 	dmesg("%v: %q: ok", origin(1), GoString(path))
-	// }
-	// return 0
+	err := syscall.Chdir(GoString(path))
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %q: ok", origin(1), GoString(path))
+	}
+	return 0
 }
 
 var localtime time.Tm
@@ -221,26 +324,31 @@ func Xopen(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
 }
 
 // int open(const char *pathname, int flags, ...);
-func Xopen64(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
-	panic(todo(""))
-	// var mode types.Mode_t
-	// if args != 0 {
-	// 	mode = *(*types.Mode_t)(unsafe.Pointer(args))
-	// }
-	// fdcwd := fcntl.AT_FDCWD
-	// n, _, err := unix.Syscall6(unix.SYS_OPENAT, uintptr(fdcwd), pathname, uintptr(flags), uintptr(mode), 0, 0)
-	// if err != 0 {
-	// 	if dmesgs {
-	// 		dmesg("%v: %q %#x: %v", origin(1), GoString(pathname), flags, err)
-	// 	}
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+func Xopen64(t *TLS, pathname uintptr, flags int32, cmode uintptr) int32 {
 
-	// if dmesgs {
-	// 	dmesg("%v: %q flags %#x mode %#o: fd %v", origin(1), GoString(pathname), flags, mode, n)
-	// }
-	// return int32(n)
+	var mode types.Mode_t
+	if cmode != 0 {
+		mode = *(*types.Mode_t)(unsafe.Pointer(cmode))
+	}
+	// 	fdcwd := fcntl.AT_FDCWD
+	h, err := syscall.Open(GoString(pathname), int(flags), uint32(mode))
+	if err != nil {
+
+		if dmesgs {
+			dmesg("%v: %q %#x: %v", origin(1), GoString(pathname), flags, err)
+		}
+
+		t.setErrno(err)
+		return 0
+	}
+
+	p := wrapFdHandle(h)
+	n := (*file)(unsafe.Pointer(p))._fd
+
+	if dmesgs {
+		dmesg("%v: %q flags %#x mode %#o: fd %v", origin(1), GoString(pathname), flags, mode, n)
+	}
+	return n
 }
 
 // off_t lseek(int fd, off_t offset, int whence);
@@ -249,38 +357,38 @@ func Xlseek(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
 }
 
 func whenceStr(whence int32) string {
-	panic(todo(""))
-	// 	switch whence {
-	// 	case fcntl.SEEK_CUR:
-	// 		return "SEEK_CUR"
-	// 	case fcntl.SEEK_END:
-	// 		return "SEEK_END"
-	// 	case fcntl.SEEK_SET:
-	// 		return "SEEK_SET"
-	// 	default:
-	// 		return fmt.Sprintf("whence(%d)", whence)
-	// 	}
+	switch whence {
+	case syscall.FILE_CURRENT:
+		return "SEEK_CUR"
+	case syscall.FILE_END:
+		return "SEEK_END"
+	case syscall.FILE_BEGIN:
+		return "SEEK_SET"
+	default:
+		return fmt.Sprintf("whence(%d)", whence)
+	}
 }
 
 var fsyncStatbuf stat.Stat
 
 // int fsync(int fd);
 func Xfsync(t *TLS, fd int32) int32 {
-	panic(todo(""))
-	// if noFsync {
-	// 	// Simulate -DSQLITE_NO_SYNC for sqlite3 testfixture, see function full_sync in sqlite3.c
-	// 	return Xfstat(t, fd, uintptr(unsafe.Pointer(&fsyncStatbuf)))
-	// }
 
-	// if _, _, err := unix.Syscall(unix.SYS_FSYNC, uintptr(fd), 0, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+	f, ok := fdToFile(fd)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+	err := syscall.FlushFileBuffers(f.Handle)
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
 
-	// if dmesgs {
-	// 	dmesg("%v: %d: ok", origin(1), fd)
-	// }
-	// return 0
+	if dmesgs {
+		dmesg("%v: %d: ok", origin(1), fd)
+	}
+	return 0
 }
 
 // long sysconf(int name);
@@ -296,31 +404,48 @@ func Xsysconf(t *TLS, name int32) long {
 
 // int close(int fd);
 func Xclose(t *TLS, fd int32) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_CLOSE, uintptr(fd), 0, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
 
-	// if dmesgs {
-	// 	dmesg("%v: %d: ok", origin(1), fd)
-	// }
-	// return 0
+	f, ok := fdToFile(fd)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+
+	err := syscall.Close(f.Handle)
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %d: ok", origin(1), fd)
+	}
+	return 0
 }
 
 // char *getcwd(char *buf, size_t size);
 func Xgetcwd(t *TLS, buf uintptr, size types.Size_t) uintptr {
-	panic(todo(""))
-	// n, _, err := unix.Syscall(unix.SYS_GETCWD, buf, uintptr(size), 0)
-	// if err != 0 {
-	// 	t.setErrno(err)
-	// 	return 0
-	// }
 
-	// if dmesgs {
-	// 	dmesg("%v: %q: ok", origin(1), GoString(buf))
-	// }
-	// return n
+	b := make([]uint16, size)
+	n, err := syscall.GetCurrentDirectory(uint32(len(b)), &b[0])
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+	// to bytes
+	var wd = []byte(string(utf16.Decode(b[0:n])))
+	if uint64(len(wd)) > size {
+		t.setErrno(errno.ERANGE)
+		return 0
+	}
+
+	copy((*RawMem)(unsafe.Pointer(buf))[:], wd)
+	(*RawMem)(unsafe.Pointer(buf))[len(wd)] = 0
+
+	if dmesgs {
+		dmesg("%v: %q: ok", origin(1), GoString(buf))
+	}
+	return buf
 }
 
 // int fstat(int fd, struct stat *statbuf);
@@ -340,18 +465,51 @@ func Xfcntl(t *TLS, fd, cmd int32, args uintptr) int32 {
 
 // ssize_t read(int fd, void *buf, size_t count);
 func Xread(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
-	panic(todo(""))
-	// n, _, err := unix.Syscall(unix.SYS_READ, uintptr(fd), buf, uintptr(count))
-	// if err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
 
-	// if dmesgs {
-	// 	// dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
-	// 	dmesg("%v: %d %#x: %#x", origin(1), fd, count, n)
-	// }
-	// return types.Ssize_t(n)
+	f, ok := fdToFile(fd)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+
+	var obuf = ((*RawMem)(unsafe.Pointer(buf)))[:count]
+	n, err := syscall.Read(f.Handle, obuf)
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		// dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
+		dmesg("%v: %d %#x: %#x", origin(1), fd, count, n)
+	}
+	return types.Ssize_t(n)
+}
+
+// ssize_t write(int fd, const void *buf, size_t count);
+func Xwrite(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
+
+	f, ok := fdToFile(fd)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+
+	var obuf = ((*RawMem)(unsafe.Pointer(buf)))[:count]
+	n, err := syscall.Write(f.Handle, obuf)
+	if err != nil {
+		if dmesgs {
+			dmesg("%v: fd %v, count %#x: %v", origin(1), fd, count, err)
+		}
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		// dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
+		dmesg("%v: %d %#x: %#x", origin(1), fd, count, n)
+	}
+	return types.Ssize_t(n)
 }
 
 // int fchmod(int fd, mode_t mode);
@@ -515,6 +673,8 @@ func Xuname(t *TLS, buf uintptr) int32 {
 	// 	return 0
 }
 
+
+
 // int getrlimit(int resource, struct rlimit *rlim);
 func Xgetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
 	return Xgetrlimit64(t, resource, rlim)
@@ -660,18 +820,19 @@ func Xbacktrace_symbols_fd(t *TLS, buffer uintptr, size, fd int32) {
 
 // int fileno(FILE *stream);
 func Xfileno(t *TLS, stream uintptr) int32 {
-	panic(todo(""))
-	// 	if stream == 0 {
-	// 		t.setErrno(errno.EBADF)
-	// 		return -1
-	// 	}
-	//
-	// 	if fd := (*stdio.FILE)(unsafe.Pointer(stream)).F_fileno; fd >= 0 {
-	// 		return fd
-	// 	}
-	//
-	// 	t.setErrno(errno.EBADF)
-	// 	return -1
+
+	if stream == 0 {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+
+	f := (*file)(unsafe.Pointer(stream))
+	fd, ok := fileToFd(f)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+	return fd
 }
 
 // var staticGetpwnam pwd.Passwd
@@ -1241,53 +1402,64 @@ func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) type
 
 // int fclose(FILE *stream);
 func Xfclose(t *TLS, stream uintptr) int32 {
-	return file(stream).close(t)
+	f := (*file)(unsafe.Pointer(stream))
+	return f.close(t)
 }
 
 // int fputc(int c, FILE *stream);
 func Xfputc(t *TLS, c int32, stream uintptr) int32 {
-	panic(todo(""))
-	// 	if _, err := fwrite(file(stream).fd(), []byte{byte(c)}); err != nil {
-	// 		return stdio.EOF
-	// 	}
-	//
-	// 	return int32(byte(c))
+	f := (*file)(unsafe.Pointer(stream))
+
+	fd, ok := fileToFd(f)
+	if !ok {
+		t.setErrno(errno.EBADF)
+	}
+	if _, err := fwrite(fd, []byte{byte(c)}); err != nil {
+		return -1
+	}
+	return int32(byte(c))
 }
 
 // int fseek(FILE *stream, long offset, int whence);
 func Xfseek(t *TLS, stream uintptr, offset long, whence int32) int32 {
-	if n := Xlseek(t, int32(file(stream).fd()), types.Off_t(offset), whence); n < 0 {
+
+	f := (*file)(unsafe.Pointer(stream))
+
+	if n := Xlseek(t, f._fd, types.Off_t(offset), whence); n < 0 {
 		if dmesgs {
-			dmesg("%v: fd %v, off %#x, whence %v: %v", origin(1), file(stream).fd(), offset, whenceStr(whence), n)
+			dmesg("%v: fd %v, off %#x, whence %v: %v", origin(1), f._fd, offset, whenceStr(whence), n)
 		}
-		file(stream).setErr()
+		f.setErr()
 		return -1
 	}
 
 	if dmesgs {
-		dmesg("%v: fd %v, off %#x, whence %v: ok", origin(1), file(stream).fd(), offset, whenceStr(whence))
+		dmesg("%v: fd %v, off %#x, whence %v: ok", origin(1), f._fd, offset, whenceStr(whence))
 	}
 	return 0
 }
 
 // long ftell(FILE *stream);
 func Xftell(t *TLS, stream uintptr) long {
-	panic(todo(""))
-	// 	n := Xlseek(t, file(stream).fd(), 0, stdio.SEEK_CUR)
-	// 	if n < 0 {
-	// 		file(stream).setErr()
-	// 		return -1
-	// 	}
-	//
-	// 	if dmesgs {
-	// 		dmesg("%v: fd %v, n %#x: ok %#x", origin(1), file(stream).fd(), n, long(n))
-	// 	}
-	// 	return long(n)
+
+	f := (*file)(unsafe.Pointer(stream))
+
+	n := Xlseek(t, f._fd, 0, syscall.FILE_CURRENT)
+	if n < 0 {
+		f.setErr()
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: fd %v, n %#x: ok %#x", origin(1), f.fd(), n, long(n))
+	}
+	return long(n)
 }
 
 // int ferror(FILE *stream);
 func Xferror(t *TLS, stream uintptr) int32 {
-	return Bool32(file(stream).err())
+	f := (*file)(unsafe.Pointer(stream))
+	return Bool32(f.err())
 }
 
 // int fgetc(FILE *stream);
@@ -1495,7 +1667,13 @@ func X__ms_vswscanf(t *TLS, stream uintptr, format, ap uintptr) int32 {
 
 // __acrt_iob_func
 func X__acrt_iob_func(t *TLS, fd uint32) uintptr {
-	panic(todo(""))
+
+	f, ok := fdToFile(int32(fd))
+	if !ok {
+		t.setErrno(EBADF)
+		return 0
+	}
+	return uintptr(unsafe.Pointer(f))
 }
 
 // unsigned long int strtoul(const char *nptr, char **endptr, int base);
@@ -3358,10 +3536,9 @@ func X__mingw_vfscanf(t *TLS, stream, format, ap uintptr) int32 {
 func X__mingw_vsscanf(t *TLS, str, format, ap uintptr) int32 {
 	panic(todo(""))
 }
-
 // int vfprintf(FILE * restrict stream, const char * restrict format, va_list arg);
-func X__mingw_vfprintf(t *TLS, stream, format, ap uintptr) int32 {
-	panic(todo(""))
+func X__mingw_vfprintf(t *TLS, f uintptr, format, va uintptr) int32 {
+	return Xvfprintf(t, f, format, va)
 }
 
 // int vsprintf(char * restrict s, const char * restrict format, va_list arg);
@@ -3372,6 +3549,14 @@ func X__mingw_vsprintf(t *TLS, s, format, ap uintptr) int32 {
 // int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 func X__mingw_vsnprintf(t *TLS, str uintptr, size types.Size_t, format, ap uintptr) int32 {
 	panic(todo(""))
+}
+
+//int putchar(int char)
+func X_putchar(t *TLS, c int32) int32 {
+	if _, err := fwrite(unistd.STDOUT_FILENO, []byte{byte(c)}); err != nil {
+		return -1
+	}
+	return int32(byte(c))
 }
 
 // int vfwscanf(FILE *stream, const wchar_t *format, va_list argptr;);
