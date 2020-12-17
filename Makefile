@@ -60,12 +60,12 @@ linux_arm64:
 	GOOS=linux GOARCH=arm64 go build -v ./...
 
 windows_amd64:
-	CCGO_CPP=x86_64-w64-mingw32-cpp-posix TARGET_GOOS=windows TARGET_GOARCH=amd64 go generate
-	CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 go build -v ./...
+	CCGO_CPP=x86_64-w64-mingw32-cpp TARGET_GOOS=windows TARGET_GOARCH=amd64 go generate
+	GOOS=windows GOARCH=amd64 go build -v ./...
 
 windows_386:
-	CCGO_CPP=i686-w64-mingw32-cpp-posix TARGET_GOOS=windows TARGET_GOARCH=386 go generate
-	CC=i686-w64-mingw32-gcc GOOS=windows GOARCH=386 go build -v ./...
+	CCGO_CPP=i686-w64-mingw32-cpp TARGET_GOOS=windows TARGET_GOARCH=386 go generate
+	GOOS=windows GOARCH=386 go build -v ./...
 
 devbench:
 	date 2>&1 | tee log-devbench

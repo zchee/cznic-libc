@@ -146,7 +146,6 @@ const (
 	X_P_NOWAITO                                     = 3
 	X_P_OVERLAY                                     = 2
 	X_P_WAIT                                        = 0
-	X_REENTRANT                                     = 1
 	X_RSIZE_T_DEFINED                               = 0
 	X_SECIMP                                        = 0
 	X_SECURECRT_FILL_BUFFER_PATTERN                 = 0xFD

@@ -282,18 +282,8 @@ func Xsymlink(t *TLS, target, linkpath uintptr) int32 {
 	// 	return 0
 }
 
-// int chmod(const char *pathname, mode_t mode)
-func Xchmod(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
+func Xchmod(t *TLS, pathname uintptr, mode int32) int32 {
 	panic(todo(""))
-	// 	if _, _, err := unix.Syscall(unix.SYS_CHMOD, pathname, uintptr(mode), 0); err != 0 {
-	// 		t.setErrno(err)
-	// 		return -1
-	// 	}
-	//
-	// 	if dmesgs {
-	// 		dmesg("%v: %q %#o: ok", origin(1), GoString(pathname), mode)
-	// 	}
-	// 	return 0
 }
 
 // int utimes(const char *filename, const struct timeval times[2]);
@@ -466,5 +456,47 @@ func Xrecv(t *TLS, sockfd uint32, buf uintptr, len, flags int32) int32 {
 }
 
 func Xsend(t *TLS, sockfd uint32, buf uintptr, len, flags int32) int32 {
+	panic(todo(""))
+}
+
+func Xshutdown(t *TLS, sockfd uint32, how int32) int32 {
+	panic(todo(""))
+	// 	if _, _, err := unix.Syscall(unix.SYS_SHUTDOWN, uintptr(sockfd), uintptr(how), 0); err != 0 {
+	// 		t.setErrno(err)
+	// 		return -1
+	// 	}
+	//
+	// 	return 0
+}
+
+func Xgetpeername(t *TLS, sockfd uint32, addr uintptr, addrlen uintptr) int32 {
+	panic(todo(""))
+}
+
+func Xgetsockname(t *TLS, sockfd uint32, addr, addrlen uintptr) int32 {
+	panic(todo(""))
+}
+
+func Xsocket(t *TLS, domain, type1, protocol int32) uint32 {
+	panic(todo(""))
+}
+
+func Xbind(t *TLS, sockfd uint32, addr uintptr, addrlen int32) int32 {
+	panic(todo(""))
+}
+
+func Xconnect(t *TLS, sockfd uint32, addr uintptr, addrlen int32) int32 {
+	panic(todo(""))
+}
+
+func Xlisten(t *TLS, sockfd uint32, backlog int32) int32 {
+	panic(todo(""))
+}
+
+func Xaccept(t *TLS, sockfd uint32, addr uintptr, addrlen uintptr) uint32 {
+	panic(todo(""))
+}
+
+func Xwrite(t *TLS, fd int32, buf uintptr, count uint32) int32 {
 	panic(todo(""))
 }

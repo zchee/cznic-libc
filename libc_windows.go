@@ -22,6 +22,7 @@ import (
 
 // Keep these outside of the var block otherwise go generate will miss them.
 var X__imp__environ uintptr //TODO must initialize
+var X_imp___environ uintptr //TODO must initialize
 var Xtimezone long          // extern long timezone;
 
 type (
@@ -353,25 +354,6 @@ func Xread(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 	// return types.Ssize_t(n)
 }
 
-// ssize_t write(int fd, const void *buf, size_t count);
-func Xwrite(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
-	panic(todo(""))
-	// n, _, err := unix.Syscall(unix.SYS_WRITE, uintptr(fd), buf, uintptr(count))
-	// if err != 0 {
-	// 	if dmesgs {
-	// 		dmesg("%v: fd %v, count %#x: %v", origin(1), fd, count, err)
-	// 	}
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
-
-	// if dmesgs {
-	// 	// dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
-	// 	dmesg("%v: %d %#x: %#x", origin(1), fd, count, n)
-	// }
-	// return types.Ssize_t(n)
-}
-
 // int fchmod(int fd, mode_t mode);
 func Xfchmod(t *TLS, fd int32, mode types.Mode_t) int32 {
 	panic(todo(""))
@@ -463,20 +445,6 @@ func Xioctl(t *TLS, fd int32, request ulong, va uintptr) int32 {
 	// return int32(n)
 }
 
-// int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-func Xgetsockname(t *TLS, sockfd int32, addr, addrlen uintptr) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_GETSOCKNAME, uintptr(sockfd), addr, addrlen); err != 0 {
-	// 	if dmesgs {
-	// 		dmesg("%v: fd %v: %v", origin(1), sockfd, err)
-	// 	}
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
-
-	// return 0
-}
-
 // int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
 func Xselect(t *TLS, nfds int32, readfds, writefds, exceptfds, timeout uintptr) int32 {
 	panic(todo(""))
@@ -545,86 +513,6 @@ func Xuname(t *TLS, buf uintptr) int32 {
 	// 	}
 	//
 	// 	return 0
-}
-
-// int shutdown(int sockfd, int how);
-func Xshutdown(t *TLS, sockfd, how int32) int32 {
-	panic(todo(""))
-	// 	if _, _, err := unix.Syscall(unix.SYS_SHUTDOWN, uintptr(sockfd), uintptr(how), 0); err != 0 {
-	// 		t.setErrno(err)
-	// 		return -1
-	// 	}
-	//
-	// 	return 0
-}
-
-// int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-func Xgetpeername(t *TLS, sockfd int32, addr uintptr, addrlen uintptr) int32 {
-	panic(todo(""))
-	// 	if _, _, err := unix.Syscall(unix.SYS_GETPEERNAME, uintptr(sockfd), addr, uintptr(addrlen)); err != 0 {
-	// 		t.setErrno(err)
-	// 		return -1
-	// 	}
-	//
-	// 	return 0
-}
-
-// int socket(int domain, int type, int protocol);
-func Xsocket(t *TLS, domain, type1, protocol int32) int32 {
-	panic(todo(""))
-	// 	n, _, err := unix.Syscall(unix.SYS_SOCKET, uintptr(domain), uintptr(type1), uintptr(protocol))
-	// 	if err != 0 {
-	// 		t.setErrno(err)
-	// 		return -1
-	// 	}
-	//
-	// 	return int32(n)
-}
-
-// int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
-func Xbind(t *TLS, sockfd int32, addr uintptr, addrlen uint32) int32 {
-	panic(todo(""))
-	// 	n, _, err := unix.Syscall(unix.SYS_BIND, uintptr(sockfd), addr, uintptr(addrlen))
-	// 	if err != 0 {
-	// 		t.setErrno(err)
-	// 		return -1
-	// 	}
-	//
-	// 	return int32(n)
-}
-
-// int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
-func Xconnect(t *TLS, sockfd int32, addr uintptr, addrlen uint32) int32 {
-	panic(todo(""))
-	// 	if _, _, err := unix.Syscall(unix.SYS_CONNECT, uintptr(sockfd), addr, uintptr(addrlen)); err != 0 {
-	// 		t.setErrno(err)
-	// 		return -1
-	// 	}
-	//
-	// 	return 0
-}
-
-// int listen(int sockfd, int backlog);
-func Xlisten(t *TLS, sockfd, backlog int32) int32 {
-	panic(todo(""))
-	// 	if _, _, err := unix.Syscall(unix.SYS_LISTEN, uintptr(sockfd), uintptr(backlog), 0); err != 0 {
-	// 		t.setErrno(err)
-	// 		return -1
-	// 	}
-	//
-	// 	return 0
-}
-
-// int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-func Xaccept(t *TLS, sockfd int32, addr uintptr, addrlen uintptr) int32 {
-	panic(todo(""))
-	// 	n, _, err := unix.Syscall6(unix.SYS_ACCEPT4, uintptr(sockfd), addr, uintptr(addrlen), 0, 0, 0)
-	// 	if err != 0 {
-	// 		t.setErrno(err)
-	// 		return -1
-	// 	}
-	//
-	// 	return int32(n)
 }
 
 // int getrlimit(int resource, struct rlimit *rlim);

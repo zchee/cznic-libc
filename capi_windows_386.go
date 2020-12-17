@@ -349,6 +349,7 @@ var CAPI = map[string]struct{}{
 	"_findnext64i32":                    {},
 	"_fstat64":                          {},
 	"_ftime":                            {},
+	"_imp___environ":                    {},
 	"_isatty":                           {},
 	"_mkdir":                            {},
 	"_obstack_begin":                    {},

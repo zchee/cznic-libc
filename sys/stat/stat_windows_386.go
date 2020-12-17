@@ -128,7 +128,6 @@ const (
 	X_PID_T_                                        = 0
 	X_PTRDIFF_T_                                    = 0
 	X_PTRDIFF_T_DEFINED                             = 0
-	X_REENTRANT                                     = 1
 	X_RSIZE_T_DEFINED                               = 0
 	X_SECIMP                                        = 0
 	X_SECURECRT_FILL_BUFFER_PATTERN                 = 0xFD
