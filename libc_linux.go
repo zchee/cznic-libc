@@ -885,10 +885,17 @@ func Xgetgrnam(t *TLS, name uintptr) uintptr {
 func closeGroup(p *grp.Group) {
 	Xfree(nil, p.Fgr_name)
 	Xfree(nil, p.Fgr_passwd)
-	if p.Fgr_mem != 0 {
-		panic(todo(""))
-	}
+	if p := p.Fgr_mem; p != 0 {
+		for {
+			q := *(*uintptr)(unsafe.Pointer(p))
+			if q == 0 {
+				break
+			}
 
+			Xfree(nil, q)
+			p += unsafe.Sizeof(uintptr(0))
+		}
+	}
 	*p = grp.Group{}
 }
 
@@ -896,10 +903,12 @@ func initGroup(t *TLS, p *grp.Group, name, pwd string, gid uint32, names []strin
 	p.Fgr_name = cString(t, name)
 	p.Fgr_passwd = cString(t, pwd)
 	p.Fgr_gid = gid
-	p.Fgr_mem = 0
-	if len(names) != 0 {
-		panic(todo("%q %q %v %q %v", name, pwd, gid, names, len(names)))
+	a := mustCalloc(t, types.Size_t(unsafe.Sizeof(uintptr(0)))*types.Size_t((len(names)+1)))
+	for p := a; len(names) != 0; p += unsafe.Sizeof(uintptr(0)) {
+		*(*uintptr)(unsafe.Pointer(p)) = cString(t, names[0])
+		names = names[1:]
 	}
+	p.Fgr_mem = a
 }
 
 func init() {
