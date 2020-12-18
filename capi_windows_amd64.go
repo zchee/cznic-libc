@@ -356,6 +356,7 @@ var CAPI = map[string]struct{}{
 	"_obstack_newchunk":                 {},
 	"_pclose":                           {},
 	"_popen":                            {},
+	"_putchar":                          {},
 	"_set_abort_behavior":               {},
 	"_setmode":                          {},
 	"_snprintf":                         {},

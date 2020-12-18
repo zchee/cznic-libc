@@ -497,3 +497,43 @@ func Xaccept(t *TLS, sockfd uint32, addr uintptr, addrlen uintptr) uint32 {
 	panic(todo(""))
 }
 
+// struct tm *_localtime32( const __time32_t *sourceTime );
+func X_localtime32(t *TLS, sourceTime uintptr) uintptr {
+	panic(todo(""))
+}
+
+// struct tm *_gmtime32( const __time32_t *sourceTime );
+func X_gmtime32(t *TLS, sourceTime uintptr) uintptr {
+	panic(todo(""))
+}
+
+// LONG SetWindowLongW(
+//   HWND hWnd,
+//   int  nIndex,
+//   LONG dwNewLong
+// );
+func XSetWindowLongW(t *TLS, hwnd uintptr, nIndex int32, dwNewLong long) long {
+	panic(todo(""))
+}
+
+// LONG GetWindowLongW(
+//   HWND hWnd,
+//   int  nIndex
+// );
+func XGetWindowLongW(t *TLS, hwnd uintptr, nIndex int32) long {
+	panic(todo(""))
+}
+
+// LRESULT LRESULT DefWindowProcW(
+//   HWND   hWnd,
+//   UINT   Msg,
+//   WPARAM wParam,
+//   LPARAM lParam
+// );
+func XDefWindowProcW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}
+
+func XSendMessageTimeoutW(t *TLS, _ ...interface{}) int32 {
+	panic(todo(""))
+}

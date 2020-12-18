@@ -434,7 +434,7 @@ func Xgetcwd(t *TLS, buf uintptr, size types.Size_t) uintptr {
 	}
 	// to bytes
 	var wd = []byte(string(utf16.Decode(b[0:n])))
-	if uint64(len(wd)) > size {
+	if types.Size_t(len(wd)) > size {
 		t.setErrno(errno.ERANGE)
 		return 0
 	}
@@ -486,8 +486,12 @@ func Xread(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 	return types.Ssize_t(n)
 }
 
-// ssize_t write(int fd, const void *buf, size_t count);
-func Xwrite(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
+// int _write( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/write?view=msvc-160
+//    int fd,
+//    const void *buffer,
+//    unsigned int count
+// );
+func Xwrite(t *TLS, fd int32, buf uintptr, count uint32) int32 {
 
 	f, ok := fdToFile(fd)
 	if !ok {
@@ -509,7 +513,7 @@ func Xwrite(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 		// dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
 		dmesg("%v: %d %#x: %#x", origin(1), fd, count, n)
 	}
-	return types.Ssize_t(n)
+	return int32(n)
 }
 
 // int fchmod(int fd, mode_t mode);
@@ -672,8 +676,6 @@ func Xuname(t *TLS, buf uintptr) int32 {
 	//
 	// 	return 0
 }
-
-
 
 // int getrlimit(int resource, struct rlimit *rlim);
 func Xgetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
@@ -3162,16 +3164,6 @@ func XCreateWindowExW(t *TLS, dwExStyle uint32, lpClassName, lpWindowName uintpt
 	panic(todo(""))
 }
 
-// LRESULT LRESULT DefWindowProcW(
-//   HWND   hWnd,
-//   UINT   Msg,
-//   WPARAM wParam,
-//   LPARAM lParam
-// );
-func XDefWindowProcW(t *TLS, _ ...interface{}) int64 {
-	panic(todo(""))
-}
-
 // BOOL PeekMessageW(
 //   LPMSG lpMsg,
 //   HWND  hWnd,
@@ -3433,10 +3425,6 @@ func XGlobalGetAtomNameW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
-func XSendMessageTimeoutW(t *TLS, _ ...interface{}) int64 {
-	panic(todo(""))
-}
-
 func XGlobalAddAtomW(t *TLS, _ ...interface{}) uint16 {
 	panic(todo(""))
 }
@@ -3457,7 +3445,17 @@ func XDdeGetLastError(t *TLS, _ ...interface{}) uint32 {
 	panic(todo(""))
 }
 
-func XDdeClientTransaction(t *TLS, _ ...interface{}) uintptr {
+// HDDEDATA DdeClientTransaction(
+//   LPBYTE  pData,
+//   DWORD   cbData,
+//   HCONV   hConv,
+//   HSZ     hszItem,
+//   UINT    wFmt,
+//   UINT    wType,
+//   DWORD   dwTimeout,
+//   LPDWORD pdwResult
+// );
+func XDdeClientTransaction(t *TLS, pData uintptr, cbData uint32, hConv uintptr, hszItem uintptr, wFmt, wType, dwTimeout uint32, pdwResult uintptr) uintptr {
 	panic(todo(""))
 }
 
@@ -3536,6 +3534,7 @@ func X__mingw_vfscanf(t *TLS, stream, format, ap uintptr) int32 {
 func X__mingw_vsscanf(t *TLS, str, format, ap uintptr) int32 {
 	panic(todo(""))
 }
+
 // int vfprintf(FILE * restrict stream, const char * restrict format, va_list arg);
 func X__mingw_vfprintf(t *TLS, f uintptr, format, va uintptr) int32 {
 	return Xvfprintf(t, f, format, va)
@@ -3796,7 +3795,7 @@ func XGetFileSecurityA(t *TLS, lpFileName uintptr, RequestedInformation uint32, 
 // DWORD GetLengthSid(
 //   PSID pSid
 // );
-func XGetLengthSid(t *TLS, pSid uintptr) int32 {
+func XGetLengthSid(t *TLS, pSid uintptr) uint32 {
 	panic(todo(""))
 }
 
