@@ -351,6 +351,7 @@ var CAPI = map[string]struct{}{
 	"_ftime":                            {},
 	"_imp___environ":                    {},
 	"_isatty":                           {},
+	"_localtime64":                      {},
 	"_mkdir":                            {},
 	"_obstack_begin":                    {},
 	"_obstack_newchunk":                 {},

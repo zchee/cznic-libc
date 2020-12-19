@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"modernc.org/libc/fcntl"
 	"modernc.org/libc/unistd"
 	"os"
 	"os/exec"
@@ -34,6 +35,17 @@ var Xtimezone long          // extern long timezone;
 type (
 	long  = int32
 	ulong = uint32
+)
+
+var (
+	modkernel32       = syscall.NewLazyDLL("kernel32.dll")
+	procGetSystemInfo = modkernel32.NewProc("GetSystemInfo")
+	procSetConsoleCtrlHandler = modkernel32.NewProc("SetConsoleCtrlHandler")
+	procGetConsoleScreenBufferInfo = modkernel32.NewProc("GetConsoleScreenBufferInfo")
+	procSetConsoleTextAttribute = modkernel32.NewProc("SetConsoleTextAttribute")
+	procMultiByteToWideChar = modkernel32.NewProc("MultiByteToWideChar")
+	procWideCharToMultiByte = modkernel32.NewProc("WideCharToMultiByte")
+	procGetVersionExA = modkernel32.NewProc("GetVersionExA")
 )
 
 // ---------------------------------
@@ -295,6 +307,29 @@ func Xlocaltime(_ *TLS, timep uintptr) uintptr {
 	// localtime.Ftm_isdst = Bool32(isTimeDST(t))
 	// return uintptr(unsafe.Pointer(&localtime))
 }
+
+// struct tm *localtime(const time_t *timep);
+func X_localtime64(_ *TLS, timep uintptr) uintptr {
+	panic(todo(""))
+	// loc := gotime.Local
+	// if r := getenv(Environ(), "TZ"); r != 0 {
+	// 	zone, off := parseZone(GoString(r))
+	// 	loc = gotime.FixedZone(zone, -off)
+	// }
+	// ut := *(*unix.Time_t)(unsafe.Pointer(timep))
+	// t := gotime.Unix(int64(ut), 0).In(loc)
+	// localtime.Ftm_sec = int32(t.Second())
+	// localtime.Ftm_min = int32(t.Minute())
+	// localtime.Ftm_hour = int32(t.Hour())
+	// localtime.Ftm_mday = int32(t.Day())
+	// localtime.Ftm_mon = int32(t.Month() - 1)
+	// localtime.Ftm_year = int32(t.Year() - 1900)
+	// localtime.Ftm_wday = int32(t.Weekday())
+	// localtime.Ftm_yday = int32(t.YearDay())
+	// localtime.Ftm_isdst = Bool32(isTimeDST(t))
+	// return uintptr(unsafe.Pointer(&localtime))
+}
+
 
 // struct tm *localtime_r(const time_t *timep, struct tm *result);
 func Xlocaltime_r(_ *TLS, timep, result uintptr) uintptr {
@@ -676,6 +711,8 @@ func Xuname(t *TLS, buf uintptr) int32 {
 	//
 	// 	return 0
 }
+
+
 
 // int getrlimit(int resource, struct rlimit *rlim);
 func Xgetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
@@ -1802,7 +1839,12 @@ func Xwcslen(t *TLS, str uintptr) types.Size_t {
 //   _In_ DWORD nStdHandle
 // );
 func XGetStdHandle(t *TLS, nStdHandle uint32) uintptr {
-	panic(todo(""))
+
+	h, err := syscall.GetStdHandle(int(nStdHandle))
+	if err != nil {
+		panic("no console")
+	}
+	return uintptr(h)
 }
 
 // BOOL CloseHandle(
@@ -2255,7 +2297,10 @@ func Xwcsncmp(t *TLS, string1, string2 uintptr, count types.Size_t) int32 {
 //   int                               cchWideChar
 // );
 func XMultiByteToWideChar(t *TLS, CodePage uint32, dwFlags uint32, lpMultiByteStr uintptr, cbMultiByte int32, lpWideCharStr uintptr, cchWideChar int32) int32 {
-	panic(todo(""))
+	r1, _, _ := syscall.Syscall6(procMultiByteToWideChar.Addr(), 6,
+		uintptr(CodePage), uintptr(dwFlags), uintptr(lpMultiByteStr),
+		uintptr(cbMultiByte), uintptr(lpWideCharStr), uintptr(cchWideChar) )
+	return(int32(r1))
 }
 
 // void OutputDebugStringW(
@@ -2277,7 +2322,12 @@ func XMessageBeep(t *TLS, _ ...interface{}) int32 {
 //    long Comparand
 // );
 func X_InterlockedCompareExchange(t *TLS, Destination uintptr, Exchange, Comparand long) long {
-	panic(todo(""))
+
+	swapped := atomic.CompareAndSwapUintptr(&Destination, uintptr(Comparand), uintptr(Exchange) )
+	if swapped {
+		return Exchange
+	}
+	return 0
 }
 
 // int rename(const char *oldpath, const char *newpath);
@@ -2451,7 +2501,7 @@ func XRtlGetVersion(t *TLS, lpVersionInformation uintptr) uintptr {
 //   LPSYSTEM_INFO lpSystemInfo
 // );
 func XGetSystemInfo(t *TLS, lpSystemInfo uintptr) {
-	panic(todo(""))
+	syscall.Syscall(procGetSystemInfo.Addr(), 1, lpSystemInfo, 0, 0)
 }
 
 // void GetSystemTime(LPSYSTEMTIME lpSystemTime);
@@ -2491,7 +2541,8 @@ func XGetTickCount(t *TLS) uint32 {
 //   LPOSVERSIONINFOA lpVersionInformation
 // );
 func XGetVersionExA(t *TLS, lpVersionInformation uintptr) int32 {
-	panic(todo(""))
+  r0 , _ , _ := syscall.Syscall(procGetVersionExA.Addr(), 1, lpVersionInformation, 0, 0)
+  return int32(r0)
 }
 
 // HANDLE HeapCreate(
@@ -2658,7 +2709,12 @@ func XUnmapViewOfFile(t *TLS, lpBaseAddress uintptr) int32 {
 //   LPBOOL                             lpUsedDefaultChar
 // );
 func XWideCharToMultiByte(t *TLS, CodePage uint32, dwFlags uint32, lpWideCharStr uintptr, cchWideChar int32, lpMultiByteStr uintptr, cbMultiByte int32, lpDefaultChar, lpUsedDefaultChar uintptr) int32 {
-	panic(todo(""))
+
+	r1, _, _ := syscall.Syscall9(procWideCharToMultiByte.Addr(), 8,
+		uintptr(CodePage), uintptr(dwFlags), lpWideCharStr,
+		uintptr(cchWideChar), lpMultiByteStr, uintptr(cbMultiByte),
+		lpDefaultChar, lpUsedDefaultChar , 0)
+	return(int32(r1))
 }
 
 // void OutputDebugStringA(
@@ -3164,6 +3220,16 @@ func XCreateWindowExW(t *TLS, dwExStyle uint32, lpClassName, lpWindowName uintpt
 	panic(todo(""))
 }
 
+// LRESULT LRESULT DefWindowProcW(
+//   HWND   hWnd,
+//   UINT   Msg,
+//   WPARAM wParam,
+//   LPARAM lParam
+// );
+func XDefWindowProcW(t *TLS, _ ...interface{}) int64 {
+	panic(todo(""))
+}
+
 // BOOL PeekMessageW(
 //   LPMSG lpMsg,
 //   HWND  hWnd,
@@ -3425,6 +3491,10 @@ func XGlobalGetAtomNameW(t *TLS, _ ...interface{}) int32 {
 	panic(todo(""))
 }
 
+func XSendMessageTimeoutW(t *TLS, _ ...interface{}) int64 {
+	panic(todo(""))
+}
+
 func XGlobalAddAtomW(t *TLS, _ ...interface{}) uint16 {
 	panic(todo(""))
 }
@@ -3534,7 +3604,6 @@ func X__mingw_vfscanf(t *TLS, stream, format, ap uintptr) int32 {
 func X__mingw_vsscanf(t *TLS, str, format, ap uintptr) int32 {
 	panic(todo(""))
 }
-
 // int vfprintf(FILE * restrict stream, const char * restrict format, va_list arg);
 func X__mingw_vfprintf(t *TLS, f uintptr, format, va uintptr) int32 {
 	return Xvfprintf(t, f, format, va)
@@ -3597,7 +3666,43 @@ func X_strdup(t *TLS, s uintptr) uintptr {
 //    int mode
 // );
 func X_access(t *TLS, pathname uintptr, mode int32) int32 {
-	panic(todo(""))
+
+	var path = GoString(pathname)
+	
+	info, err := os.Stat(path)
+	if err != nil {
+		// doesn't exist
+		return errno.ENOENT
+	}
+
+	switch mode {
+	case 0:
+		// exists
+		return 0
+	case 2:
+		// write-only
+		// Check if the user bit is enabled in file permission
+		if info.Mode().Perm()&(1<<(uint(7))) == 1 {
+			// write-able
+			return 0
+		}
+	case 4:
+		// read-only
+		// Check if the user bit is enabled in file permission
+		if info.Mode().Perm()&(1<<(uint(7))) == 0 {
+			// not set, so read-only
+			return 0
+		}
+	case 6:
+		// r/w
+		if info.Mode().Perm()&(1<<(uint(7))) == 1 {
+			// write-able
+			return 0
+		}
+	}
+
+	return errno.EACCES
+
 }
 
 // BOOL WINAPI SetConsoleCtrlHandler(
@@ -3605,7 +3710,23 @@ func X_access(t *TLS, pathname uintptr, mode int32) int32 {
 //   _In_     BOOL             Add
 // );
 func XSetConsoleCtrlHandler(t *TLS, HandlerRoutine uintptr, Add int32) int32 {
-	panic(todo(""))
+
+	//var fcc = &struct {
+	//	f func(*TLS, uint32) int32
+	//}{}
+	//fcc = (*struct{ f func(*TLS, uint32) int32 })(unsafe.Pointer(HandlerRoutine))
+	//var hdlr = fcc.f
+	//
+	//_, _, err := procSetConsoleCtrlHandler.Call(
+	//syscall.NewCallback(func(controlType uint) uint {
+	//		return uint( hdlr(t, uint32(controlType)) )
+	//	}), 1)
+	//
+	//if err != nil {
+	//	panic("failed: SetConsoleCtrlHandler")
+	//}
+
+	return 0
 }
 
 // DebugBreak
@@ -3615,7 +3736,27 @@ func XDebugBreak(t *TLS) {
 
 // int _isatty( int fd );
 func X_isatty(t *TLS, fd int32) int32 {
-	panic(todo(""))
+
+	f, ok := fdToFile(fd)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return 0
+	}
+
+	if fd == unistd.STDOUT_FILENO ||
+		fd == unistd.STDIN_FILENO ||
+		fd == unistd.STDERR_FILENO 	{
+		var mode uint32
+		err := syscall.GetConsoleMode(f.Handle, &mode)
+		if err != nil {
+			t.setErrno(errno.EINVAL)
+			return 0
+		}
+		// is console
+		return 1
+	}
+
+	return 0
 }
 
 // BOOL WINAPI SetConsoleTextAttribute(
@@ -3623,6 +3764,9 @@ func X_isatty(t *TLS, fd int32) int32 {
 //   _In_ WORD   wAttributes
 // );
 func XSetConsoleTextAttribute(t *TLS, hConsoleOutput uintptr, wAttributes uint16) int32 {
+	r1, _, _ := syscall.Syscall(procSetConsoleTextAttribute.Addr(), 2, hConsoleOutput, uintptr(wAttributes), 0)
+	return int32(r1)
+
 	panic(todo(""))
 }
 
@@ -3631,7 +3775,8 @@ func XSetConsoleTextAttribute(t *TLS, hConsoleOutput uintptr, wAttributes uint16
 //   _Out_ PCONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo
 // );
 func XGetConsoleScreenBufferInfo(t *TLS, hConsoleOutput, lpConsoleScreenBufferInfo uintptr) int32 {
-	panic(todo(""))
+	r1, _, _ := syscall.Syscall(procGetConsoleScreenBufferInfo.Addr(), 2, hConsoleOutput, lpConsoleScreenBufferInfo, 0)
+	return int32(r1)
 }
 
 // FILE *_popen(
@@ -3675,7 +3820,22 @@ func X_pclose(t *TLS, stream uintptr) int32 {
 
 // int _setmode (int fd, int mode);
 func X_setmode(t *TLS, fd, mode int32) int32 {
-	panic(todo(""))
+
+	_ ,ok := fdToFile(fd)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+
+	// we're always in binary mode.
+	// at least for now.
+
+	if mode == fcntl.O_BINARY {
+		return fcntl.O_BINARY
+	} else {
+		t.setErrno(errno.EINVAL)
+		return -1
+	}
 }
 
 // int _mkdir(const char *dirname);
@@ -3690,7 +3850,14 @@ func X_chmod(t *TLS, filename uintptr, pmode int32) int32 {
 
 // int _fileno(FILE *stream);
 func X_fileno(t *TLS, stream uintptr) int32 {
-	panic(todo(""))
+
+	f := (*file)(unsafe.Pointer(stream))
+	fd, ok := fileToFd(f)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+	return fd
 }
 
 // void rewind(FILE *stream);

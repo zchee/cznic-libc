@@ -415,40 +415,39 @@ func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
 
 // FILE *fopen64(const char *pathname, const char *mode);
 func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
-	panic(todo(""))
-	// 	m := strings.ReplaceAll(GoString(mode), "b", "")
-	// 	var flags int
-	// 	switch m {
-	// 	case "r":
-	// 		flags = os.O_RDONLY
-	// 	case "r+":
-	// 		flags = os.O_RDWR
-	// 	case "w":
-	// 		flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	// 	case "w+":
-	// 		flags = os.O_RDWR | os.O_CREATE | os.O_TRUNC
-	// 	case "a":
-	// 		flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
-	// 	case "a+":
-	// 		flags = os.O_RDWR | os.O_CREATE | os.O_APPEND
-	// 	default:
-	// 		panic(m)
-	// 	}
-	// 	//TODO- flags |= fcntl.O_LARGEFILE
-	// 	panic(todo(""))
-	// 	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
-	// 	if err != 0 {
-	// 		t.setErrno(err)
-	// 		return 0
-	// 	}
-	//
-	// 	if p := newFile(t, int32(fd)); p != 0 {
-	// 		return p
-	// 	}
-	//
-	// 	Xclose(t, int32(fd))
-	// 	t.setErrno(errno.ENOMEM)
-	// 	return 0
+
+	m := strings.ReplaceAll(GoString(mode), "b", "")
+	var flags int
+	switch m {
+	case "r":
+		flags = os.O_RDONLY
+	case "r+":
+		flags = os.O_RDWR
+	case "w":
+		flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	case "w+":
+		flags = os.O_RDWR | os.O_CREATE | os.O_TRUNC
+	case "a":
+		flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
+	case "a+":
+		flags = os.O_RDWR | os.O_CREATE | os.O_APPEND
+	default:
+		panic(m)
+	}
+	//TODO- flags |= fcntl.O_LARGEFILE
+	h, err := syscall.Open(GoString(pathname), int(flags), uint32(0666))
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+
+	p := wrapFdHandle(h)
+	if p != 0 {
+		return p
+	}
+	_ = syscall.Close(h)
+	t.setErrno(errno.ENOMEM)
+	return 0
 }
 
 func Xrecv(t *TLS, sockfd uint32, buf uintptr, len, flags int32) int32 {
