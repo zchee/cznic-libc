@@ -193,20 +193,26 @@ func Xftruncate64(t *TLS, fd int32, length types.Off_t) int32 {
 
 // off64_t lseek64(int fd, off64_t offset, int whence);
 func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
-	panic(todo(""))
-	// n, _, err := unix.Syscall(unix.SYS_LSEEK, uintptr(fd), uintptr(offset), uintptr(whence))
-	// if err != 0 {
-	// 	if dmesgs {
-	// 		dmesg("%v: fd %v, off %#x, whence %v: %v", origin(1), fd, offset, whenceStr(whence), err)
-	// 	}
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
 
-	// if dmesgs {
-	// 	dmesg("%v: fd %v, off %#x, whence %v: %#x", origin(1), fd, offset, whenceStr(whence), n)
-	// }
-	// return types.Off_t(n)
+	f, ok := fdToFile(fd)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+
+	n, err := syscall.Seek(f.Handle, offset, int(whence))
+	if  err != nil {
+		if dmesgs {
+			dmesg("%v: fd %v, off %#x, whence %v: %v", origin(1), f._fd, offset, whenceStr(whence), n)
+		}
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: fd %v, off %#x, whence %v: ok", origin(1), f._fd, offset, whenceStr(whence))
+	}
+	return n
 }
 
 // int utime(const char *filename, const struct utimbuf *times);

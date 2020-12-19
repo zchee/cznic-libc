@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"math"
 	"modernc.org/libc/fcntl"
 	"modernc.org/libc/unistd"
 	"os"
@@ -38,14 +39,28 @@ type (
 )
 
 var (
-	modkernel32       = syscall.NewLazyDLL("kernel32.dll")
-	procGetSystemInfo = modkernel32.NewProc("GetSystemInfo")
-	procSetConsoleCtrlHandler = modkernel32.NewProc("SetConsoleCtrlHandler")
-	procGetConsoleScreenBufferInfo = modkernel32.NewProc("GetConsoleScreenBufferInfo")
-	procSetConsoleTextAttribute = modkernel32.NewProc("SetConsoleTextAttribute")
-	procMultiByteToWideChar = modkernel32.NewProc("MultiByteToWideChar")
-	procWideCharToMultiByte = modkernel32.NewProc("WideCharToMultiByte")
-	procGetVersionExA = modkernel32.NewProc("GetVersionExA")
+	modkernel32       				= syscall.NewLazyDLL("kernel32.dll")
+	procGetLastError                = modkernel32.NewProc("GetLastError")
+	procGetSystemInfo 				= modkernel32.NewProc("GetSystemInfo")
+	procSetConsoleCtrlHandler 		= modkernel32.NewProc("SetConsoleCtrlHandler")
+	procGetConsoleScreenBufferInfo 	= modkernel32.NewProc("GetConsoleScreenBufferInfo")
+	procSetConsoleTextAttribute 	= modkernel32.NewProc("SetConsoleTextAttribute")
+	procMultiByteToWideChar 		= modkernel32.NewProc("MultiByteToWideChar")
+	procWideCharToMultiByte 		= modkernel32.NewProc("WideCharToMultiByte")
+	procGetVersionExA 				= modkernel32.NewProc("GetVersionExA")
+	procGetFullPathNameW 			= modkernel32.NewProc("GetFullPathNameW")
+	procGetFileAttributesExW		= modkernel32.NewProc("GetFileAttributesExW")
+	procCreateFileW                 = modkernel32.NewProc("CreateFileW")
+	procReadFile                    = modkernel32.NewProc("ReadFile")
+	procWriteFile                   = modkernel32.NewProc("WriteFile")
+	procFormatMessageW              = modkernel32.NewProc("FormatMessageW")
+	procLockFileEx               	= modkernel32.NewProc("LockFileEx")
+	procUnlockFileEx               	= modkernel32.NewProc("UnlockFileEx")
+	procGetFileSize					= modkernel32.NewProc("GetFileSize")
+	procGetSystemTime 				= modkernel32.NewProc("GetSystemTime")
+	procGetSystemTimeAsFileTime     = modkernel32.NewProc("GetSystemTimeAsFileTime")
+	procGetCurrentProcessId       	= modkernel32.NewProc("GetCurrentProcessId")
+	procGetTickCount		       	= modkernel32.NewProc("GetTickCount")
 )
 
 // ---------------------------------
@@ -1414,34 +1429,50 @@ func Xfflush(t *TLS, stream uintptr) int32 {
 
 // size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
-	panic(todo(""))
-	// 	m, _, err := unix.Syscall(unix.SYS_READ, uintptr(file(stream).fd()), ptr, uintptr(size*nmemb))
-	// 	if err != 0 {
-	// 		file(stream).setErr()
-	// 		return 0
-	// 	}
-	//
-	// 	if dmesgs {
-	// 		// dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
-	// 		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
-	// 	}
-	// 	return types.Size_t(m) / size
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return 0
+	}
+
+	var sz = size * nmemb
+	var obuf = ((*RawMem)(unsafe.Pointer(ptr)))[:sz]
+	n, err := syscall.Read(f.Handle, obuf)
+	if err != nil {
+		f.setErr()
+		return 0
+	}
+
+	if dmesgs {
+		// dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
+		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), f._fd, size, nmemb, types.Size_t(n)/size)
+	}
+
+	return types.Size_t(n) / size
+
 }
 
 // size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
 func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
-	panic(todo(""))
-	// 	m, _, err := unix.Syscall(unix.SYS_WRITE, uintptr(file(stream).fd()), ptr, uintptr(size*nmemb))
-	// 	if err != 0 {
-	// 		file(stream).setErr()
-	// 		return 0
-	// 	}
-	//
-	// 	if dmesgs {
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return 0
+	}
+
+	var sz = size * nmemb
+	var obuf = ((*RawMem)(unsafe.Pointer(ptr)))[:sz]
+	n, err := syscall.Write(f.Handle, obuf)
+	if err != nil {
+		f.setErr()
+		return 0
+	}
+
+	if dmesgs {
 	// 		// dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
-	// 		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
-	// 	}
-	// 	return types.Size_t(m) / size
+		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), f._fd, size, nmemb, types.Size_t(n)/size)
+	}
+	return types.Size_t(n) / size
 }
 
 // int fclose(FILE *stream);
@@ -1550,12 +1581,17 @@ func Xfdopen(t *TLS, fd int32, mode uintptr) uintptr {
 
 // int fputs(const char *s, FILE *stream);
 func Xfputs(t *TLS, s, stream uintptr) int32 {
-	panic(todo(""))
-	// 	if _, _, err := unix.Syscall(unix.SYS_WRITE, uintptr(file(stream).fd()), s, uintptr(Xstrlen(t, s))); err != 0 {
-	// 		return -1
-	// 	}
-	//
-	// 	return 0
+
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+	gS := GoString(s)
+	if _, err := fwrite(f._fd, []byte(gS) ); err != nil {
+		return -1
+	}
+	return 0
 }
 
 func Xexit(t *TLS, status int32) {
@@ -1873,12 +1909,21 @@ func XGetStdHandle(t *TLS, nStdHandle uint32) uintptr {
 //   HANDLE hObject
 // );
 func XCloseHandle(t *TLS, hObject uintptr) int32 {
-	panic(todo(""))
+	r := syscall.CloseHandle( syscall.Handle(hObject))
+	if r != nil {
+		return errno.EINVAL
+	}
+	return 1
 }
 
 // DWORD GetLastError();
 func XGetLastError(t *TLS) uint32 {
-	panic(todo(""))
+
+	var rv = *(*int32)(unsafe.Pointer(t.errnop))
+	return uint32(rv)
+
+	//r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
+	//return uint32(r1)
 }
 
 // DWORD SetFilePointer(
@@ -1906,7 +1951,18 @@ func XSetEndOfFile(t *TLS, hFile uintptr) int32 {
 //   LPOVERLAPPED lpOverlapped
 // );
 func XReadFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToRead uint32, lpNumberOfBytesRead, lpOverlapped uintptr) int32 {
-	panic(todo(""))
+
+	r1, _, e1 := syscall.Syscall6(procReadFile.Addr(), 5,
+		hFile, lpBuffer, uintptr(nNumberOfBytesToRead), uintptr(lpNumberOfBytesRead), uintptr(lpOverlapped), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return 0
+	}
+	return int32(r1)
 }
 
 // BOOL WriteFile(
@@ -1917,7 +1973,17 @@ func XReadFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToRead uint32, lpN
 //   LPOVERLAPPED lpOverlapped
 // );
 func XWriteFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToWrite uint32, lpNumberOfBytesWritten, lpOverlapped uintptr) int32 {
-	panic(todo(""))
+	r1, _, e1 := syscall.Syscall6(procWriteFile.Addr(), 5,
+		hFile, lpBuffer, uintptr(nNumberOfBytesToWrite), lpNumberOfBytesWritten, lpOverlapped, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return 0
+	}
+	return int32(r1)
 }
 
 // DWORD GetFileAttributesW(
@@ -1937,7 +2003,18 @@ func XGetFileAttributesW(t *TLS, lpFileName uintptr) uint32 {
 //   HANDLE                hTemplateFile
 // );
 func XCreateFileW(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
-	panic(todo(""))
+	r0, _, e1 := syscall.Syscall9(procCreateFileW.Addr(), 7, lpFileName, uintptr(dwDesiredAccess), uintptr(dwShareMode), lpSecurityAttributes,
+		 uintptr(dwCreationDisposition), uintptr(dwFlagsAndAttributes), hTemplateFile, 0, 0)
+	h := syscall.Handle(r0)
+	if h == syscall.InvalidHandle {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return 0
+	}
+	return uintptr(h)
 }
 
 // BOOL DuplicateHandle(
@@ -2179,7 +2256,16 @@ func XMoveFileW(t *TLS, lpExistingFileName, lpNewFileName uintptr) int32 {
 //   LPWSTR  *lpFilePart
 // );
 func XGetFullPathNameW(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffer, lpFilePart uintptr) uint32 {
-	panic(todo(""))
+	r0, _, e1 := syscall.Syscall6(procGetFullPathNameW.Addr(), 4, lpFileName, uintptr(nBufferLength), uintptr(lpBuffer), uintptr(lpFilePart), 0, 0)
+	n := uint32(r0)
+	if n == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return n
 }
 
 // LPWSTR CharLowerW(
@@ -2438,6 +2524,20 @@ func XFormatMessageA(t *TLS, dwFlagsAndAttributes uint32, lpSource uintptr, dwMe
 //   va_list *Arguments
 // );
 func XFormatMessageW(t *TLS, dwFlags uint32, lpSource uintptr, dwMessageId, dwLanguageId uint32, lpBuffer uintptr, nSize uint32, Arguments uintptr) uint32 {
+
+	r0, _, e1 := syscall.Syscall9(procFormatMessageW.Addr(), 7,
+		uintptr(dwFlags), lpSource, uintptr(dwMessageId), uintptr(dwLanguageId),
+		lpBuffer, uintptr(nSize), Arguments, 0, 0)
+	n := uint32(r0)
+	if n == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return n
+
 	panic(todo(""))
 }
 
@@ -2448,7 +2548,9 @@ func XFreeLibrary(t *TLS, hLibModule uintptr) int32 {
 
 // DWORD GetCurrentProcessId();
 func XGetCurrentProcessId(t *TLS) uint32 {
-	panic(todo(""))
+	r0, _, _ := syscall.Syscall(procGetCurrentProcessId.Addr(), 0, 0, 0, 0)
+	pid := uint32(r0)
+	return pid
 }
 
 // BOOL GetDiskFreeSpaceA(
@@ -2486,7 +2588,17 @@ func XGetFileAttributesA(t *TLS, lpFileName uintptr) uint32 {
 //   LPVOID                 lpFileInformation
 // );
 func XGetFileAttributesExW(t *TLS, lpFileName uintptr, fInfoLevelId uint32, lpFileInformation uintptr) int32 {
-	panic(todo(""))
+
+	r1, _, e1 := syscall.Syscall(procGetFileAttributesExW.Addr(), 3, lpFileName, uintptr(fInfoLevelId), lpFileInformation)
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return 0
+	}
+	return int32(r1)
 }
 
 // DWORD GetFileSize(
@@ -2494,7 +2606,27 @@ func XGetFileAttributesExW(t *TLS, lpFileName uintptr, fInfoLevelId uint32, lpFi
 //   LPDWORD lpFileSizeHigh
 // );
 func XGetFileSize(t *TLS, hFile, lpFileSizeHigh uintptr) uint32 {
-	panic(todo(""))
+
+	r1, _, _ := syscall.Syscall(procGetFileSize.Addr(), 2, hFile, lpFileSizeHigh, 0)
+	if r1 == math.MaxUint32 {
+		if lpFileSizeHigh == 0 {
+			// If the function fails and lpFileSizeHigh is NULL, the return value is INVALID_FILE_SIZE.
+			// Note that if the return value is INVALID_FILE_SIZE (0xffffffff),
+			// an application must call GetLastError to determine whether the function has succeeded or failed.
+
+			r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
+			t.setErrno(r1)
+			return math.MaxUint32
+		} else {
+			// If the function fails and lpFileSizeHigh is non-NULL, the return value is INVALID_FILE_SIZE
+			// and GetLastError will return a value other than NO_ERROR.
+
+			r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
+			t.setErrno(r1)
+			return math.MaxUint32
+		}
+	}
+	return uint32(r1)
 }
 
 // DWORD GetFullPathNameA(
@@ -2528,14 +2660,14 @@ func XGetSystemInfo(t *TLS, lpSystemInfo uintptr) {
 
 // void GetSystemTime(LPSYSTEMTIME lpSystemTime);
 func XGetSystemTime(t *TLS, lpSystemTime uintptr) {
-	panic(todo(""))
+	syscall.Syscall(procGetSystemTime.Addr(), 1, lpSystemTime, 0, 0)
 }
 
 // void GetSystemTimeAsFileTime(
 //   LPFILETIME lpSystemTimeAsFileTime
 // );
 func XGetSystemTimeAsFileTime(t *TLS, lpSystemTimeAsFileTime uintptr) {
-	panic(todo(""))
+	syscall.Syscall(procGetSystemTimeAsFileTime.Addr(), 1, lpSystemTimeAsFileTime, 0, 0)
 }
 
 // DWORD GetTempPathA(
@@ -2556,7 +2688,8 @@ func XGetTempPathW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
 
 // DWORD GetTickCount();
 func XGetTickCount(t *TLS) uint32 {
-	panic(todo(""))
+	r0 , _ , _ := syscall.Syscall(procGetTickCount.Addr(), 0, 0, 0, 0)
+	return uint32(r0)
 }
 
 // BOOL GetVersionExA(
@@ -2635,7 +2768,18 @@ func XLoadLibraryW(t *TLS, lpLibFileName uintptr) uintptr {
 //   HLOCAL hMem
 // );
 func XLocalFree(t *TLS, hMem uintptr) uintptr {
-	panic(todo(""))
+
+	h, err:= syscall.LocalFree( syscall.Handle(hMem))
+
+	if h != 0 {
+		if err !=nil {
+			t.setErrno(err)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return uintptr(h)
+	}
+	return 0
 }
 
 // BOOL LockFile(
@@ -2658,7 +2802,17 @@ func XLockFile(t *TLS, hFile uintptr, dwFileOffsetLow, dwFileOffsetHigh, nNumber
 //   LPOVERLAPPED lpOverlapped
 // );
 func XLockFileEx(t *TLS, hFile uintptr, dwFlags, dwReserved, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh uint32, lpOverlapped uintptr) int32 {
-	panic(todo(""))
+	r1, _, e1 := syscall.Syscall6(procLockFileEx.Addr(), 6,
+		hFile, uintptr(dwFlags), uintptr(dwReserved), uintptr(nNumberOfBytesToLockLow), uintptr(nNumberOfBytesToLockHigh), lpOverlapped)
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return 0
+	}
+	return int32(r1)
 }
 
 // LPVOID MapViewOfFile(
@@ -2710,7 +2864,17 @@ func XUnlockFile(t *TLS, hFile uintptr, dwFileOffsetLow, dwFileOffsetHigh, nNumb
 //   LPOVERLAPPED lpOverlapped
 // );
 func XUnlockFileEx(t *TLS, hFile uintptr, dwReserved, nNumberOfBytesToUnlockLow, nNumberOfBytesToUnlockHigh uint32, lpOverlapped uintptr) int32 {
-	panic(todo(""))
+	r1, _, e1 := syscall.Syscall6(procUnlockFileEx.Addr(), 5,
+		hFile, uintptr(dwReserved), uintptr(nNumberOfBytesToUnlockLow), uintptr(nNumberOfBytesToUnlockHigh), lpOverlapped, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return 0
+	}
+	return int32(r1)
 }
 
 // BOOL UnmapViewOfFile(
