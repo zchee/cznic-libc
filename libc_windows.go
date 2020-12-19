@@ -58,42 +58,34 @@ var (
 
 var EBADF = errors.New("EBADF")
 
-type file struct {
-	_fd int32
-	syscall.Handle
-	hadErr bool
-}
-
 var w_nextFd int32 = 42
 var w_fdLock sync.Mutex
 var w_fd_to_file = map[int32]*file{}
-var w_file_to_fd = map[*file]int32{}
 
-func addFile(hdl syscall.Handle, fd int32) *file {
-	var f file
-	f.Handle = hdl
-	f._fd = fd
+type file struct {
+	_fd int32
+	hadErr bool
+	t uintptr
+	syscall.Handle
+}
+
+func addFile(hdl syscall.Handle, fd int32) uintptr {
+	var f  = file {_fd: fd, Handle: hdl, }
 
 	w_fdLock.Lock()
 	defer w_fdLock.Unlock()
 	w_fd_to_file[fd] = &f
-	w_file_to_fd[&f] = fd
-
-	return &f
+	f.t = addObject(&f)
+	return f.t
 }
 
 func remFile(f *file) {
+
+	removeObject(f.t)
+
 	w_fdLock.Lock()
 	defer w_fdLock.Unlock()
 	delete(w_fd_to_file, f._fd)
-	delete(w_file_to_fd, f)
-}
-
-func fileToFd(f *file) (int32, bool) {
-	w_fdLock.Lock()
-	defer w_fdLock.Unlock()
-	fd, ok := w_file_to_fd[f]
-	return fd, ok
 }
 
 func fdToFile(fd int32) (*file, bool) {
@@ -104,13 +96,9 @@ func fdToFile(fd int32) (*file, bool) {
 }
 
 // Wrap the windows handle up tied to a unique fd
-func wrapFdHandle(hdl syscall.Handle) uintptr {
+func wrapFdHandle(hdl syscall.Handle) (uintptr, int32) {
 	var newFd = atomic.AddInt32(&w_nextFd, 1)
-	return uintptr(unsafe.Pointer(addFile(hdl, newFd)))
-}
-
-func (f *file) fd() int32 {
-	return f._fd
+	return addFile(hdl, newFd), newFd
 }
 
 func (f *file) err() bool {
@@ -197,7 +185,12 @@ func fwrite(fd int32, b []byte) (int, error) {
 
 // int fprintf(FILE *stream, const char *format, ...);
 func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
-	n, _ := fwrite((*file)(unsafe.Pointer(stream))._fd, printf(format, args))
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+	n, _ := fwrite(f._fd, printf(format, args))
 	return int32(n)
 }
 
@@ -221,7 +214,11 @@ func Xgetrusage(t *TLS, who int32, usage uintptr) int32 {
 // char *fgets(char *s, int size, FILE *stream);
 func Xfgets(t *TLS, s uintptr, size int32, stream uintptr) uintptr {
 
-	f := (*file)(unsafe.Pointer(stream))
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return 0
+	}
 
 	var b []byte
 	buf := [1]byte{}
@@ -377,9 +374,7 @@ func Xopen64(t *TLS, pathname uintptr, flags int32, cmode uintptr) int32 {
 		return 0
 	}
 
-	p := wrapFdHandle(h)
-	n := (*file)(unsafe.Pointer(p))._fd
-
+	_ , n := wrapFdHandle(h)
 	if dmesgs {
 		dmesg("%v: %q flags %#x mode %#o: fd %v", origin(1), GoString(pathname), flags, mode, n)
 	}
@@ -865,13 +860,12 @@ func Xfileno(t *TLS, stream uintptr) int32 {
 		return -1
 	}
 
-	f := (*file)(unsafe.Pointer(stream))
-	fd, ok := fileToFd(f)
+	f ,ok := getObject(stream).(*file)
 	if !ok {
 		t.setErrno(errno.EBADF)
 		return -1
 	}
-	return fd
+	return f._fd
 }
 
 // var staticGetpwnam pwd.Passwd
@@ -1404,7 +1398,18 @@ func Xabort(t *TLS) {
 
 // int fflush(FILE *stream);
 func Xfflush(t *TLS, stream uintptr) int32 {
-	return 0 //TODO
+
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+	err := syscall.FlushFileBuffers(f.Handle)
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
+	return 0
 }
 
 // size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
@@ -1441,19 +1446,24 @@ func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) type
 
 // int fclose(FILE *stream);
 func Xfclose(t *TLS, stream uintptr) int32 {
-	f := (*file)(unsafe.Pointer(stream))
+
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
 	return f.close(t)
 }
 
 // int fputc(int c, FILE *stream);
 func Xfputc(t *TLS, c int32, stream uintptr) int32 {
-	f := (*file)(unsafe.Pointer(stream))
 
-	fd, ok := fileToFd(f)
+	f,ok := getObject(stream).(*file)
 	if !ok {
 		t.setErrno(errno.EBADF)
+		return -1
 	}
-	if _, err := fwrite(fd, []byte{byte(c)}); err != nil {
+	if _, err := fwrite(f._fd, []byte{byte(c)}); err != nil {
 		return -1
 	}
 	return int32(byte(c))
@@ -1462,8 +1472,11 @@ func Xfputc(t *TLS, c int32, stream uintptr) int32 {
 // int fseek(FILE *stream, long offset, int whence);
 func Xfseek(t *TLS, stream uintptr, offset long, whence int32) int32 {
 
-	f := (*file)(unsafe.Pointer(stream))
-
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
 	if n := Xlseek(t, f._fd, types.Off_t(offset), whence); n < 0 {
 		if dmesgs {
 			dmesg("%v: fd %v, off %#x, whence %v: %v", origin(1), f._fd, offset, whenceStr(whence), n)
@@ -1481,7 +1494,11 @@ func Xfseek(t *TLS, stream uintptr, offset long, whence int32) int32 {
 // long ftell(FILE *stream);
 func Xftell(t *TLS, stream uintptr) long {
 
-	f := (*file)(unsafe.Pointer(stream))
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
 
 	n := Xlseek(t, f._fd, 0, syscall.FILE_CURRENT)
 	if n < 0 {
@@ -1490,14 +1507,19 @@ func Xftell(t *TLS, stream uintptr) long {
 	}
 
 	if dmesgs {
-		dmesg("%v: fd %v, n %#x: ok %#x", origin(1), f.fd(), n, long(n))
+		dmesg("%v: fd %v, n %#x: ok %#x", origin(1), f._fd, n, long(n))
 	}
 	return long(n)
 }
 
 // int ferror(FILE *stream);
 func Xferror(t *TLS, stream uintptr) int32 {
-	f := (*file)(unsafe.Pointer(stream))
+	f,ok := getObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EBADF)
+		return -1
+	}
+
 	return Bool32(f.err())
 }
 
@@ -1712,7 +1734,7 @@ func X__acrt_iob_func(t *TLS, fd uint32) uintptr {
 		t.setErrno(EBADF)
 		return 0
 	}
-	return uintptr(unsafe.Pointer(f))
+	return f.t
 }
 
 // unsigned long int strtoul(const char *nptr, char **endptr, int base);
@@ -2323,7 +2345,7 @@ func XMessageBeep(t *TLS, _ ...interface{}) int32 {
 // );
 func X_InterlockedCompareExchange(t *TLS, Destination uintptr, Exchange, Comparand long) long {
 
-	swapped := atomic.CompareAndSwapUintptr(&Destination, uintptr(Comparand), uintptr(Exchange) )
+	swapped := atomic.CompareAndSwapInt32 ( (*int32) (unsafe.Pointer(Destination)), Comparand, Exchange )
 	if swapped {
 		return Exchange
 	}
@@ -3837,14 +3859,12 @@ func X_chmod(t *TLS, filename uintptr, pmode int32) int32 {
 
 // int _fileno(FILE *stream);
 func X_fileno(t *TLS, stream uintptr) int32 {
-
-	f := (*file)(unsafe.Pointer(stream))
-	fd, ok := fileToFd(f)
+	f,ok := getObject(stream).(*file)
 	if !ok {
 		t.setErrno(errno.EBADF)
 		return -1
 	}
-	return fd
+	return f._fd
 }
 
 // void rewind(FILE *stream);

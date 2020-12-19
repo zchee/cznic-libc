@@ -441,7 +441,7 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 		return 0
 	}
 
-	p := wrapFdHandle(h)
+	p, _ := wrapFdHandle(h)
 	if p != 0 {
 		return p
 	}
