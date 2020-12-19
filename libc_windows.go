@@ -3220,15 +3220,6 @@ func XCreateWindowExW(t *TLS, dwExStyle uint32, lpClassName, lpWindowName uintpt
 	panic(todo(""))
 }
 
-// LRESULT LRESULT DefWindowProcW(
-//   HWND   hWnd,
-//   UINT   Msg,
-//   WPARAM wParam,
-//   LPARAM lParam
-// );
-func XDefWindowProcW(t *TLS, _ ...interface{}) int64 {
-	panic(todo(""))
-}
 
 // BOOL PeekMessageW(
 //   LPMSG lpMsg,
@@ -3488,10 +3479,6 @@ func XRegisterClassExW(t *TLS, _ ...interface{}) int32 {
 }
 
 func XGlobalGetAtomNameW(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
-}
-
-func XSendMessageTimeoutW(t *TLS, _ ...interface{}) int64 {
 	panic(todo(""))
 }
 
