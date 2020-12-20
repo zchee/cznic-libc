@@ -720,8 +720,6 @@ func Xuname(t *TLS, buf uintptr) int32 {
 	// 	return 0
 }
 
-
-
 // int getrlimit(int resource, struct rlimit *rlim);
 func Xgetrlimit(t *TLS, resource int32, rlim uintptr) int32 {
 	return Xgetrlimit64(t, resource, rlim)
@@ -3396,7 +3394,6 @@ func XCreateWindowExW(t *TLS, dwExStyle uint32, lpClassName, lpWindowName uintpt
 	panic(todo(""))
 }
 
-
 // BOOL PeekMessageW(
 //   LPMSG lpMsg,
 //   HWND  hWnd,
@@ -3767,6 +3764,7 @@ func X__mingw_vfscanf(t *TLS, stream, format, ap uintptr) int32 {
 func X__mingw_vsscanf(t *TLS, str, format, ap uintptr) int32 {
 	panic(todo(""))
 }
+
 // int vfprintf(FILE * restrict stream, const char * restrict format, va_list arg);
 func X__mingw_vfprintf(t *TLS, f uintptr, format, va uintptr) int32 {
 	return Xvfprintf(t, f, format, va)
