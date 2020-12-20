@@ -249,6 +249,8 @@ func makeMusl(goos, goarch string) {
 		"src/internal/floatscan.c",
 		"src/internal/intscan.c",
 		"src/internal/shgetc.c",
+		"src/math/__fpclassify.c",
+		"src/math/__fpclassifyf.c",
 		"src/math/__fpclassifyl.c",
 		"src/math/copysignl.c",
 		"src/math/fabsl.c",
@@ -290,6 +292,7 @@ func makeMusl(goos, goarch string) {
 		//TODO "src/time/asctime.c",
 		//TODO "src/time/asctime_r.c",
 		//TODO "src/locale/c_locale.c",
+
 	); err != nil {
 		fail(err)
 	}

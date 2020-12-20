@@ -201,7 +201,7 @@ func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
 	}
 
 	n, err := syscall.Seek(f.Handle, offset, int(whence))
-	if  err != nil {
+	if err != nil {
 		if dmesgs {
 			dmesg("%v: fd %v, off %#x, whence %v: %v", origin(1), f._fd, offset, whenceStr(whence), n)
 		}
@@ -450,7 +450,7 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 		return 0
 	}
 
-	p , _ := wrapFdHandle(h)
+	p, _ := wrapFdHandle(h)
 	if p != 0 {
 		return p
 	}

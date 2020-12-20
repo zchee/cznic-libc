@@ -15,3 +15,15 @@ func TestXfmod(t *testing.T) {
 		t.Fatal(g, e)
 	}
 }
+
+func TestSwap(t *testing.T) {
+	if g, e := X__builtin_bswap16(nil, 0x1234), uint16(0x3412); g != e {
+		t.Errorf("%#04x %#04x", g, e)
+	}
+	if g, e := X__builtin_bswap32(nil, 0x12345678), uint32(0x78563412); g != e {
+		t.Errorf("%#04x %#04x", g, e)
+	}
+	if g, e := X__builtin_bswap64(nil, 0x123456789abcdef0), uint64(0xf0debc9a78563412); g != e {
+		t.Errorf("%#04x %#04x", g, e)
+	}
+}

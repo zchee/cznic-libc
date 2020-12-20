@@ -5,6 +5,11 @@
 package libc // import "modernc.org/libc"
 
 import (
+	"os"
+	"strings"
+	"syscall"
+
+	"modernc.org/libc/errno"
 	"modernc.org/libc/sys/types"
 )
 

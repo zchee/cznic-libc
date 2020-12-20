@@ -33,6 +33,7 @@ import (
 	"modernc.org/libc/sys/types"
 	"modernc.org/libc/time"
 	"modernc.org/libc/unistd"
+	"modernc.org/mathutil"
 	"modernc.org/memory"
 )
 
@@ -250,20 +251,20 @@ func X__builtin_bswap32(t *TLS, x uint32) uint32 {
 // uint64_t __builtin_bswap64 (uint64_t x)
 func X__builtin_bswap64(t *TLS, x uint64) uint64 {
 	return x<<56 |
-		x&0xff000000000000>>40 |
-		x&0xff0000000000>>24 |
-		x&0xff00000000>>8 |
-		x&0xff000000<<8 |
-		x&0xff0000<<24 |
 		x&0xff00<<40 |
+		x&0xff0000<<24 |
+		x&0xff000000<<8 |
+		x&0xff00000000>>8 |
+		x&0xff0000000000>>24 |
+		x&0xff000000000000>>40 |
 		x>>56
 }
 
 // bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_add_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
-	r := a + b
+	r, ovf := mathutil.AddOverflowInt64(a, b)
 	*(*int64)(unsafe.Pointer(res)) = r
-	return Bool32(a > 0 && b > 0 && r < 0 || a < 0 && b < 0 && r >= 0)
+	return Bool32(ovf)
 }
 
 // bool __builtin_add_overflow (type1 a, type2 b, type3 *res)
@@ -282,21 +283,16 @@ func X__builtin_add_overflowUint64(t *TLS, a, b uint64, res uintptr) int32 {
 
 // bool __builtin_sub_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_sub_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
-	r := a - b
+	r, ovf := mathutil.SubOverflowInt64(a, b)
 	*(*int64)(unsafe.Pointer(res)) = r
-	return Bool32(a > 0 && b > 0 && r > a || a < 0 && b < 0 && r < a)
+	return Bool32(ovf)
 }
 
 // bool __builtin_mul_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_mul_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
-	if a == 0 || b == 0 {
-		*(*int64)(unsafe.Pointer(res)) = 0
-		return 0
-	}
-
-	r := a * b
+	r, ovf := mathutil.MulOverflowInt64(a, b)
 	*(*int64)(unsafe.Pointer(res)) = r
-	return Bool32(r/a != b)
+	return Bool32(ovf)
 }
 
 func X__builtin_unreachable(t *TLS) {
@@ -398,13 +394,20 @@ func Xvprintf(t *TLS, s, ap uintptr) int32 { return Xprintf(t, s, ap) }
 
 // int __isoc99_sscanf(const char *str, const char *format, ...);
 func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
-	return scanf(strings.NewReader(GoString(str)), format, va)
-
+	r := scanf(strings.NewReader(GoString(str)), format, va)
+	if dmesgs {
+		dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
+	}
+	return r
 }
 
 // int sscanf(const char *str, const char *format, ...);
 func Xsscanf(t *TLS, str, format, va uintptr) int32 {
-	panic(todo(""))
+	r := scanf(strings.NewReader(GoString(str)), format, va)
+	if dmesgs {
+		dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
+	}
+	return r
 }
 
 // int vsprintf(char *str, const char *format, va_list ap);

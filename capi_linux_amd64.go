@@ -58,6 +58,8 @@ var CAPI = map[string]struct{}{
 	"__ctype_b_loc":                {},
 	"__errno_location":             {},
 	"__floatscan":                  {},
+	"__fpclassify":                 {},
+	"__fpclassifyf":                {},
 	"__fpclassifyl":                {},
 	"__h_errno_location":           {},
 	"__inet_aton":                  {},

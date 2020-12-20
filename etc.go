@@ -313,6 +313,10 @@ func VaList(p uintptr, args ...interface{}) (r uintptr) {
 
 func VaInt32(app *uintptr) int32 {
 	ap := *(*uintptr)(unsafe.Pointer(app))
+	if ap == 0 {
+		return 0
+	}
+
 	ap = roundup(ap, 8)
 	v := *(*int32)(unsafe.Pointer(ap))
 	ap += 8
@@ -322,6 +326,10 @@ func VaInt32(app *uintptr) int32 {
 
 func VaUint32(app *uintptr) uint32 {
 	ap := *(*uintptr)(unsafe.Pointer(app))
+	if ap == 0 {
+		return 0
+	}
+
 	ap = roundup(ap, 8)
 	v := *(*uint32)(unsafe.Pointer(ap))
 	ap += 8
@@ -331,6 +339,10 @@ func VaUint32(app *uintptr) uint32 {
 
 func VaInt64(app *uintptr) int64 {
 	ap := *(*uintptr)(unsafe.Pointer(app))
+	if ap == 0 {
+		return 0
+	}
+
 	ap = roundup(ap, 8)
 	v := *(*int64)(unsafe.Pointer(ap))
 	ap += 8
@@ -340,6 +352,10 @@ func VaInt64(app *uintptr) int64 {
 
 func VaUint64(app *uintptr) uint64 {
 	ap := *(*uintptr)(unsafe.Pointer(app))
+	if ap == 0 {
+		return 0
+	}
+
 	ap = roundup(ap, 8)
 	v := *(*uint64)(unsafe.Pointer(ap))
 	ap += 8
@@ -349,6 +365,10 @@ func VaUint64(app *uintptr) uint64 {
 
 func VaFloat32(app *uintptr) float32 {
 	ap := *(*uintptr)(unsafe.Pointer(app))
+	if ap == 0 {
+		return 0
+	}
+
 	ap = roundup(ap, 8)
 	v := *(*float64)(unsafe.Pointer(ap))
 	ap += 8
@@ -358,6 +378,10 @@ func VaFloat32(app *uintptr) float32 {
 
 func VaFloat64(app *uintptr) float64 {
 	ap := *(*uintptr)(unsafe.Pointer(app))
+	if ap == 0 {
+		return 0
+	}
+
 	ap = roundup(ap, 8)
 	v := *(*float64)(unsafe.Pointer(ap))
 	ap += 8
@@ -367,6 +391,10 @@ func VaFloat64(app *uintptr) float64 {
 
 func VaUintptr(app *uintptr) uintptr {
 	ap := *(*uintptr)(unsafe.Pointer(app))
+	if ap == 0 {
+		return 0
+	}
+
 	ap = roundup(ap, 8)
 	v := *(*uintptr)(unsafe.Pointer(ap))
 	ap += 8
