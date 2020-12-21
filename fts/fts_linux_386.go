@@ -95,8 +95,8 @@ type Size_t = uint32 /* <builtin>:9:23 */
 
 type Wchar_t = int32 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:41:14 */
-type X__float128 = float64        /* <builtin>:42:21 */
+type X__builtin_va_list = uintptr /* <builtin>:42:14 */
+type X__float128 = float64        /* <builtin>:43:21 */
 // File tree traversal functions declarations.
 //    Copyright (C) 1994-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.

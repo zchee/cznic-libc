@@ -177,10 +177,10 @@ type Wchar_t = uint16 /* <builtin>:15:24 */
 type X__int128_t = [2]int64   /* <builtin>:21:24 */ //TODO
 type X__uint128_t = [2]uint64 /* <builtin>:22:25 */ //TODO
 
-type X__builtin_va_list = uintptr /* <builtin>:41:14 */
-type X__float128 = float64        /* <builtin>:42:21 */
+type X__builtin_va_list = uintptr /* <builtin>:42:14 */
+type X__float128 = float64        /* <builtin>:43:21 */
 
-type Va_list = X__builtin_va_list /* <builtin>:45:27 */
+type Va_list = X__builtin_va_list /* <builtin>:46:27 */
 // *
 // This file has no copyright assigned and is placed in the Public Domain.
 // This file is part of the mingw-w64 runtime package.

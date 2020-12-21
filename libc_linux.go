@@ -954,6 +954,11 @@ func Xgetgrgid(t *TLS, gid uint32) uintptr {
 }
 
 // int mkstemps(char *template, int suffixlen);
+func Xmkstemps(t *TLS, template uintptr, suffixlen int32) int32 {
+	return Xmkstemps64(t, template, suffixlen)
+}
+
+// int mkstemps(char *template, int suffixlen);
 func Xmkstemps64(t *TLS, template uintptr, suffixlen int32) int32 {
 	len := uintptr(Xstrlen(t, template))
 	x := template + uintptr(len-6) - uintptr(suffixlen)
@@ -971,6 +976,11 @@ func Xmkstemps64(t *TLS, template uintptr, suffixlen int32) int32 {
 	}
 
 	return int32(fd)
+}
+
+// int mkstemp(char *template);
+func Xmkstemp(t *TLS, template uintptr) int32 {
+	return Xmkstemp64(t, template)
 }
 
 // int mkstemp(char *template);
