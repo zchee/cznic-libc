@@ -26,6 +26,7 @@ import (
 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/sys/types"
 	"modernc.org/libc/time"
+	"modernc.org/memory"
 )
 
 // Keep these outside of the var block otherwise go generate will miss them.
@@ -508,9 +509,12 @@ func Xfcntl(t *TLS, fd, cmd int32, args uintptr) int32 {
 	return Xfcntl64(t, fd, cmd, args)
 }
 
-// ssize_t read(int fd, void *buf, size_t count);
-func Xread(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
-
+// int _read( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/read?view=msvc-160
+//    int const fd,
+//    void * const buffer,
+//    unsigned const buffer_size
+// );
+func Xread(t *TLS, fd int32, buf uintptr, count uint32) int32 {
 	f, ok := fdToFile(fd)
 	if !ok {
 		t.setErrno(errno.EBADF)
@@ -528,7 +532,7 @@ func Xread(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 		// dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
 		dmesg("%v: %d %#x: %#x", origin(1), fd, count, n)
 	}
-	return types.Ssize_t(n)
+	return int32(n)
 }
 
 // int _write( // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/write?view=msvc-160
@@ -537,7 +541,6 @@ func Xread(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 //    unsigned int count
 // );
 func Xwrite(t *TLS, fd int32, buf uintptr, count uint32) int32 {
-
 	f, ok := fdToFile(fd)
 	if !ok {
 		t.setErrno(errno.EBADF)
@@ -4261,5 +4264,61 @@ func X_set_abort_behavior(t *TLS, _ ...interface{}) uint32 {
 //   LPCSTR lpName
 // );
 func XOpenEventA(t *TLS, _ ...interface{}) uintptr {
+	panic(todo(""))
+}
+
+// size_t _msize(
+//    void *memblock
+// );
+func X_msize(t *TLS, memblock uintptr) types.Size_t {
+	return types.Size_t(memory.UintptrUsableSize(memblock))
+}
+
+// unsigned long _byteswap_ulong ( unsigned long val );
+func X_byteswap_ulong(t *TLS, val ulong) ulong {
+	return X__builtin_bswap32(t, val)
+}
+
+// unsigned __int64 _byteswap_uint64 ( unsigned __int64 val );
+func X_byteswap_uint64(t *TLS, val uint64) uint64 {
+	return X__builtin_bswap64(t, val)
+}
+
+// int _commit(
+//    int fd
+// );
+func X_commit(t *TLS, fd int32) int32 {
+	panic(todo(""))
+}
+
+// int _stati64(
+//    const char *path,
+//    struct _stati64 *buffer
+// );
+func X_stati64(t *TLS, path, buffer uintptr) int32 {
+	panic(todo(""))
+}
+
+// int _fstati64(
+//    int fd,
+//    struct _stati64 *buffer
+// );
+func X_fstati64(t *TLS, fd int32, buffer uintptr) int32 {
+	panic(todo(""))
+}
+
+// int _findnext32(
+//    intptr_t handle,
+//    struct _finddata32_t *fileinfo
+// );
+func X_findnext32(t *TLS, handle types.Intptr_t, buffer uintptr) int32 {
+	panic(todo(""))
+}
+
+// intptr_t _findfirst32(
+//    const char *filespec,
+//    struct _finddata32_t *fileinfo
+// );
+func X_findfirst32(t *TLS, filespec, fileinfo uintptr) types.Intptr_t {
 	panic(todo(""))
 }
