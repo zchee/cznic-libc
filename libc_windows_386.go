@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"unsafe"
 
 	"modernc.org/libc/errno"
 	"modernc.org/libc/sys/types"
@@ -307,7 +308,7 @@ func Xutimes(t *TLS, filename, times uintptr) int32 {
 
 // int unlink(const char *pathname);
 func Xunlink(t *TLS, pathname uintptr) int32 {
-	err := syscall.DeleteFile( (*uint16) (unsafe.Pointer(pathname))  )
+	err := syscall.DeleteFile((*uint16)(unsafe.Pointer(pathname)))
 	if err != nil {
 		t.setErrno(err)
 		return -1

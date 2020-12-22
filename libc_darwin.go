@@ -292,7 +292,7 @@ func Xopen64(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
 		mode = *(*types.Mode_t)(unsafe.Pointer(args))
 	}
 	fdcwd := fcntl.AT_FDCWD
-	n, _, err := unix.Syscall6(unix.SYS_OPENAT, uintptr(fdcwd), pathname, uintptr(flags|unix.O_LARGEFILE), uintptr(mode), 0, 0)
+	n, _, err := unix.Syscall6(unix.SYS_OPENAT, uintptr(fdcwd), pathname, uintptr(flags), uintptr(mode), 0, 0)
 	if err != 0 {
 		if dmesgs {
 			dmesg("%v: %q %#x: %v", origin(1), GoString(pathname), flags, err)

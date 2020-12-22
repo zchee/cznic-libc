@@ -173,7 +173,7 @@ type Wchar_t = uint32 /* <builtin>:15:24 */
 type X__int128_t = [2]int64   /* <builtin>:21:24 */ //TODO
 type X__uint128_t = [2]uint64 /* <builtin>:22:25 */ //TODO
 
-type X__builtin_va_list = uintptr /* <builtin>:42:14 */
-type X__float128 = float64        /* <builtin>:43:21 */
+type X__builtin_va_list = uintptr /* <builtin>:44:14 */
+type X__float128 = float64        /* <builtin>:45:21 */
 
 var _ int8 /* gen.c:2:13: */

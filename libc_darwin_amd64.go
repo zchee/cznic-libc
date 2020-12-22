@@ -68,9 +68,6 @@ func Xfcntl64(t *TLS, fd, cmd int32, args uintptr) int32 {
 	if args != 0 {
 		arg = *(*uintptr)(unsafe.Pointer(args))
 	}
-	if cmd == fcntl.F_SETFL {
-		arg |= unix.O_LARGEFILE
-	}
 	n, _, err := unix.Syscall(unix.SYS_FCNTL, uintptr(fd), uintptr(cmd), arg)
 	if err != 0 {
 		if dmesgs {
@@ -433,8 +430,7 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	default:
 		panic(m)
 	}
-	//TODO- flags |= fcntl.O_LARGEFILE
-	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags|unix.O_LARGEFILE), 0666)
+	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
 	if err != 0 {
 		t.setErrno(err)
 		return 0

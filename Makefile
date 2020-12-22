@@ -67,6 +67,9 @@ windows_386:
 	CCGO_CPP=i686-w64-mingw32-cpp TARGET_GOOS=windows TARGET_GOARCH=386 go generate
 	GOOS=windows GOARCH=386 go build -v ./...
 
+all_targets: linux_amd64 linux_386 linux_arm linux_arm64 windows_amd64 windows_386
+	echo done
+
 devbench:
 	date 2>&1 | tee log-devbench
 	go test -timeout 24h -dev -run @ -bench . 2>&1 | tee -a log-devbench
