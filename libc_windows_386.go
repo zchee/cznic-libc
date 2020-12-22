@@ -307,16 +307,18 @@ func Xutimes(t *TLS, filename, times uintptr) int32 {
 
 // int unlink(const char *pathname);
 func Xunlink(t *TLS, pathname uintptr) int32 {
-	panic(todo(""))
-	// 	if _, _, err := unix.Syscall(unix.SYS_UNLINK, pathname, 0, 0); err != 0 {
-	// 		t.setErrno(err)
-	// 		return -1
-	// 	}
-	//
-	// 	if dmesgs {
-	// 		dmesg("%v: %q: ok", origin(1), GoString(pathname))
-	// 	}
-	// 	return 0
+	err := syscall.DeleteFile( (*uint16) (unsafe.Pointer(pathname))  )
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: %q: ok", origin(1), GoString(pathname))
+	}
+
+	return 0
+
 }
 
 // int access(const char *pathname, int mode);

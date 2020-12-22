@@ -63,6 +63,9 @@ var (
 	procGetCurrentProcessId        = modkernel32.NewProc("GetCurrentProcessId")
 	procGetTickCount               = modkernel32.NewProc("GetTickCount")
 	procQueryPerformanceCounter    = modkernel32.NewProc("QueryPerformanceCounter")
+	procCreateFileMappingW         = modkernel32.NewProc("CreateFileMappingW")
+	procMapViewOfFile              = modkernel32.NewProc("MapViewOfFile")
+	procCreateProcessA             = modkernel32.NewProc("CreateProcessA")
 )
 
 // ---------------------------------
@@ -1720,7 +1723,7 @@ func X_exit(t *TLS, status int32) {
 
 // _CRTIMP extern int *__cdecl _errno(void); // /usr/share/mingw-w64/include/errno.h:17:
 func X_errno(t *TLS) uintptr {
-	panic(todo(""))
+	return t.errnop
 }
 
 // int vfscanf(FILE * restrict stream, const char * restrict format, va_list arg);
@@ -2505,7 +2508,17 @@ func XCreateFileMappingA(t *TLS, hFile, lpFileMappingAttributes uintptr, flProte
 //   LPCWSTR               lpName
 // );
 func XCreateFileMappingW(t *TLS, hFile, lpFileMappingAttributes uintptr, flProtect, dwMaximumSizeHigh, dwMaximumSizeLow uint32, lpName uintptr) uintptr {
-	panic(todo(""))
+
+	h, _, e1 := syscall.Syscall6(procCreateFileMappingW.Addr(), 6, hFile, lpFileMappingAttributes, uintptr(flProtect),
+		uintptr(dwMaximumSizeHigh), uintptr(dwMaximumSizeLow), lpName)
+	if h == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return h
 }
 
 // HANDLE CreateMutexW(
@@ -2846,7 +2859,18 @@ func XLockFileEx(t *TLS, hFile uintptr, dwFlags, dwReserved, nNumberOfBytesToLoc
 //   SIZE_T dwNumberOfBytesToMap
 // );
 func XMapViewOfFile(t *TLS, hFileMappingObject uintptr, dwDesiredAccess, dwFileOffsetHigh, dwFileOffsetLow uint32, dwNumberOfBytesToMap types.Size_t) uintptr {
-	panic(todo(""))
+
+	h, _, e1 := syscall.Syscall6(procMapViewOfFile.Addr(), 5, hFileMappingObject, uintptr(dwDesiredAccess),
+		uintptr(dwFileOffsetHigh), uintptr(dwFileOffsetLow), uintptr(dwNumberOfBytesToMap), 0)
+
+	if h == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return h
 }
 
 // BOOL QueryPerformanceCounter(
@@ -2861,7 +2885,7 @@ func XQueryPerformanceCounter(t *TLS, lpPerformanceCount uintptr) int32 {
 //   DWORD dwMilliseconds
 // );
 func XSleep(t *TLS, dwMilliseconds uint32) {
-	panic(todo(""))
+	gotime.Sleep(gotime.Duration(dwMilliseconds) * gotime.Millisecond)
 }
 
 // BOOL SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, LPFILETIME lpFileTime);
@@ -2905,7 +2929,13 @@ func XUnlockFileEx(t *TLS, hFile uintptr, dwReserved, nNumberOfBytesToUnlockLow,
 //   LPCVOID lpBaseAddress
 // );
 func XUnmapViewOfFile(t *TLS, lpBaseAddress uintptr) int32 {
-	panic(todo(""))
+
+	err := syscall.UnmapViewOfFile(lpBaseAddress)
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+	return 1
 }
 
 // int WideCharToMultiByte(
@@ -2939,7 +2969,13 @@ func XOutputDebugStringA(t *TLS, lpOutputString uintptr) {
 //   SIZE_T  dwNumberOfBytesToFlush
 // );
 func XFlushViewOfFile(t *TLS, lpBaseAddress uintptr, dwNumberOfBytesToFlush types.Size_t) int32 {
-	panic(todo(""))
+
+	err := syscall.FlushViewOfFile(lpBaseAddress, uintptr(dwNumberOfBytesToFlush))
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+	return 1
 }
 
 // int _stat64(const char *path, struct __stat64 *buffer);
@@ -4057,7 +4093,7 @@ func X_fileno(t *TLS, stream uintptr) int32 {
 
 // void rewind(FILE *stream);
 func Xrewind(t *TLS, stream uintptr) {
-	panic(todo(""))
+	Xfseek(t, stream, 0, unistd.SEEK_SET)
 }
 
 // __atomic_load_n
@@ -4246,8 +4282,18 @@ func XSetNamedSecurityInfoA(t *TLS, pObjectName uintptr, ObjectType, SecurityInf
 //   LPSTARTUPINFOA        lpStartupInfo,
 //   LPPROCESS_INFORMATION lpProcessInformation
 // );
-func XCreateProcessA(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes uintptr, bInheritHandles int32, dwCreationFlags uint32, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation uintptr) int32 {
-	panic(todo(""))
+func XCreateProcessA(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes uintptr, bInheritHandles int32,
+	dwCreationFlags uint32, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation uintptr) int32 {
+	r1, _, err := syscall.Syscall12(procCreateProcessA.Addr(), 10, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes,
+		uintptr(bInheritHandles), uintptr(dwCreationFlags), lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation, 0, 0)
+	if r1 == 0 {
+		if err != 0 {
+			t.setErrno(err)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return int32(r1)
 }
 
 // unsigned int _set_abort_behavior(
