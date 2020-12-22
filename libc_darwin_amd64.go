@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/sys/unix"
 	"modernc.org/libc/errno"
+	"modernc.org/libc/fcntl"
 	//TODO- "modernc.org/libc/signal"
 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/sys/types"
@@ -66,6 +67,9 @@ func Xfcntl64(t *TLS, fd, cmd int32, args uintptr) int32 {
 	var arg uintptr
 	if args != 0 {
 		arg = *(*uintptr)(unsafe.Pointer(args))
+	}
+	if cmd == fcntl.F_SETFL {
+		arg |= unix.O_LARGEFILE
 	}
 	n, _, err := unix.Syscall(unix.SYS_FCNTL, uintptr(fd), uintptr(cmd), arg)
 	if err != 0 {
@@ -430,7 +434,7 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 		panic(m)
 	}
 	//TODO- flags |= fcntl.O_LARGEFILE
-	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
+	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags|unix.O_LARGEFILE), 0666)
 	if err != 0 {
 		t.setErrno(err)
 		return 0

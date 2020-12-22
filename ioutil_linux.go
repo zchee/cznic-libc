@@ -49,7 +49,7 @@ func tempFile(s, x uintptr) (fd, err int) {
 	for i := 0; i < maxTry; i++ {
 		nextRandom(x)
 		fdcwd := fcntl.AT_FDCWD
-		n, _, err := unix.Syscall6(unix.SYS_OPENAT, uintptr(fdcwd), s, uintptr(os.O_RDWR|os.O_CREATE|os.O_EXCL), 0600, 0, 0)
+		n, _, err := unix.Syscall6(unix.SYS_OPENAT, uintptr(fdcwd), s, uintptr(os.O_RDWR|os.O_CREATE|os.O_EXCL|unix.O_LARGEFILE), 0600, 0, 0)
 		if err == 0 {
 			return int(n), 0
 		}
