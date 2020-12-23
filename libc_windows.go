@@ -40,7 +40,8 @@ type (
 )
 
 var (
-	modkernel32                    = syscall.NewLazyDLL("kernel32.dll")
+	modkernel32 = syscall.NewLazyDLL("kernel32.dll")
+	//--
 	procGetLastError               = modkernel32.NewProc("GetLastError")
 	procGetSystemInfo              = modkernel32.NewProc("GetSystemInfo")
 	procSetConsoleCtrlHandler      = modkernel32.NewProc("SetConsoleCtrlHandler")
@@ -66,6 +67,16 @@ var (
 	procCreateFileMappingW         = modkernel32.NewProc("CreateFileMappingW")
 	procMapViewOfFile              = modkernel32.NewProc("MapViewOfFile")
 	procCreateProcessA             = modkernel32.NewProc("CreateProcessA")
+	procInitializeCriticalSection  = modkernel32.NewProc("InitializeCriticalSection")
+	procEnterCriticalSection       = modkernel32.NewProc("EnterCriticalSection")
+	procLeaveCriticalSection       = modkernel32.NewProc("LeaveCriticalSection")
+	procSetFilePointer             = modkernel32.NewProc("SetFilePointer")
+	procGetModuleHandleW           = modkernel32.NewProc("GetModuleHandleW")
+	//--
+
+	modws2_32 = syscall.NewLazyDLL("ws2_32.dll")
+	//--
+	procWSAStartup = modws2_32.NewProc("WSAStartup")
 )
 
 // ---------------------------------
@@ -1937,14 +1948,29 @@ func XGetLastError(t *TLS) uint32 {
 //   DWORD  dwMoveMethod
 // );
 func XSetFilePointer(t *TLS, hFile uintptr, lDistanceToMove long, lpDistanceToMoveHigh uintptr, dwMoveMethod uint32) uint32 {
-	panic(todo(""))
+	r0, _, e1 := syscall.Syscall6(procSetFilePointer.Addr(), 4, hFile, uintptr(lDistanceToMove), lpDistanceToMoveHigh, uintptr(dwMoveMethod), 0, 0)
+	var uOff = uint32(r0)
+	if uOff == 0xffffffff {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return uint32(r0)
 }
 
 // BOOL SetEndOfFile(
 //   HANDLE hFile
 // );
 func XSetEndOfFile(t *TLS, hFile uintptr) int32 {
-	panic(todo(""))
+
+	err := syscall.SetEndOfFile(syscall.Handle(hFile))
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+	return 1
 }
 
 // BOOL ReadFile(
@@ -2216,14 +2242,14 @@ func XGetOverlappedResult(t *TLS, _ ...interface{}) int32 {
 //   LPCRITICAL_SECTION lpCriticalSection
 // );
 func XEnterCriticalSection(t *TLS, lpCriticalSection uintptr) {
-	panic(todo(""))
+	syscall.Syscall(procEnterCriticalSection.Addr(), 1, lpCriticalSection, 0, 0)
 }
 
 // void LeaveCriticalSection(
 //   LPCRITICAL_SECTION lpCriticalSection
 // );
 func XLeaveCriticalSection(t *TLS, lpCriticalSection uintptr) {
-	panic(todo(""))
+	syscall.Syscall(procLeaveCriticalSection.Addr(), 1, lpCriticalSection, 0, 0)
 }
 
 func XSetupComm(t *TLS, _ ...interface{}) int32 {
@@ -2238,7 +2264,9 @@ func XSetCommTimeouts(t *TLS, _ ...interface{}) int32 {
 //   LPCRITICAL_SECTION lpCriticalSection
 // );
 func XInitializeCriticalSection(t *TLS, lpCriticalSection uintptr) {
-	panic(todo(""))
+
+	// InitializeCriticalSection always succeeds, even in low memory situations.
+	syscall.Syscall(procInitializeCriticalSection.Addr(), 1, lpCriticalSection, 0, 0)
 }
 
 func XBuildCommDCBW(t *TLS, _ ...interface{}) int32 {
@@ -2719,7 +2747,11 @@ func XGetTempPathA(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
 //   LPWSTR lpBuffer
 // );
 func XGetTempPathW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
-	panic(todo(""))
+	rv, err := syscall.GetTempPath(nBufferLength, (*uint16)(unsafe.Pointer(lpBuffer)))
+	if err != nil {
+		t.setErrno(err)
+	}
+	return rv
 }
 
 // DWORD GetTickCount();
@@ -3356,14 +3388,24 @@ func XEqualSid(t *TLS, pSid1, pSid2 uintptr) int32 {
 //   LPWSADATA lpWSAData
 // );
 func XWSAStartup(t *TLS, wVersionRequired uint16, lpWSAData uintptr) int32 {
-	panic(todo(""))
+
+	r0, _, _ := syscall.Syscall(procWSAStartup.Addr(), 2, uintptr(wVersionRequired), lpWSAData, 0)
+	if r0 != 0 {
+		t.setErrno(r0)
+	}
+	return int32(r0)
 }
 
 // HMODULE GetModuleHandleW(
 //   LPCWSTR lpModuleName
 // );
 func XGetModuleHandleW(t *TLS, lpModuleName uintptr) uintptr {
-	panic(todo(""))
+	r0, _, _ := syscall.Syscall(procGetModuleHandleW.Addr(), 1, lpModuleName, 0, 0)
+	if r0 == 0 {
+		r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
+		t.setErrno(r1)
+	}
+	return r0
 }
 
 // DWORD GetEnvironmentVariableW(
