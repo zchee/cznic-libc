@@ -50,6 +50,7 @@ var (
 	procMultiByteToWideChar        = modkernel32.NewProc("MultiByteToWideChar")
 	procWideCharToMultiByte        = modkernel32.NewProc("WideCharToMultiByte")
 	procGetVersionExA              = modkernel32.NewProc("GetVersionExA")
+	procGetVersionExW              = modkernel32.NewProc("GetVersionExW")
 	procGetFullPathNameW           = modkernel32.NewProc("GetFullPathNameW")
 	procGetFileAttributesExW       = modkernel32.NewProc("GetFileAttributesExW")
 	procCreateFileW                = modkernel32.NewProc("CreateFileW")
@@ -72,11 +73,24 @@ var (
 	procLeaveCriticalSection       = modkernel32.NewProc("LeaveCriticalSection")
 	procSetFilePointer             = modkernel32.NewProc("SetFilePointer")
 	procGetModuleHandleW           = modkernel32.NewProc("GetModuleHandleW")
+	procGetProcAddress             = modkernel32.NewProc("GetProcAddress")
+	procGetCurrentThreadId         = modkernel32.NewProc("GetCurrentThreadId")
+	procCreateEventW               = modkernel32.NewProc("CreateEventW")
+	procGetACP                     = modkernel32.NewProc("GetACP")
+	procGetEnvironmentVariableW    = modkernel32.NewProc("GetEnvironmentVariableW")
+
 	//--
 
 	modws2_32 = syscall.NewLazyDLL("ws2_32.dll")
 	//--
 	procWSAStartup = modws2_32.NewProc("WSAStartup")
+	//--
+
+	moduser32 = syscall.NewLazyDLL("user32.dll")
+	//--
+	procRegisterClassW = moduser32.NewProc("RegisterClassW")
+	procWsprintfA      = moduser32.NewProc("wsprintfA")
+	//--
 )
 
 // ---------------------------------
@@ -1889,7 +1903,13 @@ func XExitProcess(t *TLS, _ ...interface{}) int32 {
 //   LPOSVERSIONINFOW lpVersionInformation
 // );
 func XGetVersionExW(t *TLS, lpVersionInformation uintptr) int32 {
-	panic(todo(""))
+
+	r0, _, err := syscall.Syscall(procGetVersionExW.Addr(), 1, lpVersionInformation, 0, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return int32(r0)
+
 }
 
 // BOOL GetVolumeNameForVolumeMountPointW(
@@ -2173,7 +2193,13 @@ func XPeekConsoleInputW(t *TLS, hConsoleInput, lpBuffer uintptr, nLength uint32,
 //   ...
 // );
 func XwsprintfA(t *TLS, a, b, va uintptr) int32 {
-	panic(todo(""))
+
+	r0, _, err := syscall.Syscall(procWsprintfA.Addr(), 3, a, b, va)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+
+	return int32(r0)
 }
 
 // UINT WINAPI GetConsoleCP(void);
@@ -2188,7 +2214,13 @@ func XGetConsoleCP(t *TLS) uint32 {
 //   LPCWSTR               lpName
 // );
 func XCreateEventW(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialState int32, lpName uintptr) uintptr {
-	panic(todo(""))
+
+	r0, _, err := syscall.Syscall6(procCreateEventW.Addr(), 4, lpEventAttributes, uintptr(bManualReset),
+		uintptr(bInitialState), lpName, 0, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return r0
 }
 
 // HANDLE CreateThread(
@@ -2705,7 +2737,12 @@ func XGetFullPathNameA(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffe
 
 // FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName);
 func XGetProcAddress(t *TLS, hModule, lpProcName uintptr) uintptr {
-	panic(todo(""))
+
+	r0, _, err := syscall.Syscall(procGetProcAddress.Addr(), 2, hModule, lpProcName, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return r0
 }
 
 // NTSYSAPI NTSTATUS RtlGetVersion( // ntdll.dll
@@ -2764,7 +2801,11 @@ func XGetTickCount(t *TLS) uint32 {
 //   LPOSVERSIONINFOA lpVersionInformation
 // );
 func XGetVersionExA(t *TLS, lpVersionInformation uintptr) int32 {
-	r0, _, _ := syscall.Syscall(procGetVersionExA.Addr(), 1, lpVersionInformation, 0, 0)
+	r0, _, err := syscall.Syscall(procGetVersionExA.Addr(), 1, lpVersionInformation, 0, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+
 	return int32(r0)
 }
 
@@ -3107,7 +3148,11 @@ func X_beginthreadex(t *TLS, _ ...interface{}) int32 {
 
 // DWORD GetCurrentThreadId();
 func XGetCurrentThreadId(t *TLS) uint32 {
-	panic(todo(""))
+
+	r0, _, _ := syscall.Syscall(procGetCurrentThreadId.Addr(), 0, 0, 0, 0)
+	tid := uint32(r0)
+	return tid
+
 }
 
 // BOOL GetExitCodeThread(
@@ -3414,7 +3459,16 @@ func XGetModuleHandleW(t *TLS, lpModuleName uintptr) uintptr {
 //   DWORD   nSize
 // );
 func XGetEnvironmentVariableW(t *TLS, lpName, lpBuffer uintptr, nSize uint32) uint32 {
-	panic(todo(""))
+	r0, _, e1 := syscall.Syscall(procGetEnvironmentVariableW.Addr(), 3, lpName, lpBuffer, uintptr(nSize))
+	n := uint32(r0)
+	if n == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return n
 }
 
 // int lstrcmpiA(
@@ -3431,7 +3485,8 @@ func XGetModuleFileNameA(t *TLS, _ ...interface{}) int32 {
 
 // UINT GetACP();
 func XGetACP(t *TLS) uint32 {
-	panic(todo(""))
+	r0, _, _ := syscall.Syscall(procGetACP.Addr(), 0, 0, 0, 0)
+	return uint32(r0)
 }
 
 // BOOL GetUserNameW(
@@ -3463,7 +3518,12 @@ func XwsprintfW(t *TLS, _ ...interface{}) int32 {
 //   const WNDCLASSW *lpWndClass
 // );
 func XRegisterClassW(t *TLS, lpWndClass uintptr) int32 {
-	panic(todo(""))
+	r0, _, _ := syscall.Syscall(procRegisterClassW.Addr(), 1, lpWndClass, 0, 0)
+	if r0 == 0 {
+		r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
+		t.setErrno(r1)
+	}
+	return int32(r0)
 }
 
 func XKillTimer(t *TLS, _ ...interface{}) int32 {
