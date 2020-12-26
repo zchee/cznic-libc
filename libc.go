@@ -200,6 +200,7 @@ func write(b []byte) (int, error) {
 func X__builtin_abort(t *TLS)                                        { Xabort(t) }
 func X__builtin_abs(t *TLS, j int32) int32                           { return Xabs(t, j) }
 func X__builtin_clzll(t *TLS, n uint64) int32                        { return int32(mbits.LeadingZeros64(n)) }
+func X__builtin_constant_p_impl()                                    { panic(todo("internal error: should never be called")) }
 func X__builtin_copysign(t *TLS, x, y float64) float64               { return Xcopysign(t, x, y) }
 func X__builtin_copysignf(t *TLS, x, y float32) float32              { return Xcopysignf(t, x, y) }
 func X__builtin_exit(t *TLS, status int32)                           { Xexit(t, status) }

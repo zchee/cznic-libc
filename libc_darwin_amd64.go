@@ -18,58 +18,65 @@ import (
 	"modernc.org/libc/sys/types"
 )
 
-// //TODO- // int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
-// //TODO- func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
-// //TODO- 	// 	musl/arch/x86_64/ksigaction.h
-// //TODO- 	//
-// //TODO- 	//	struct k_sigaction {
-// //TODO- 	//		void (*handler)(int);
-// //TODO- 	//		unsigned long flags;
-// //TODO- 	//		void (*restorer)(void);
-// //TODO- 	//		unsigned mask[2];
-// //TODO- 	//	};
-// //TODO- 	type k_sigaction struct {
-// //TODO- 		handler  uintptr
-// //TODO- 		flags    ulong
-// //TODO- 		restorer uintptr
-// //TODO- 		mask     [2]uint32
-// //TODO- 	}
-// //TODO-
-// //TODO- 	var kact, koldact uintptr
-// //TODO- 	if act != 0 {
-// //TODO- 		kact = t.Alloc(int(unsafe.Sizeof(k_sigaction{})))
-// //TODO- 		defer Xfree(t, kact)
-// //TODO- 		*(*k_sigaction)(unsafe.Pointer(kact)) = k_sigaction{
-// //TODO- 			handler:  (*signal.Sigaction)(unsafe.Pointer(act)).F__sigaction_handler.Fsa_handler,
-// //TODO- 			flags:    ulong((*signal.Sigaction)(unsafe.Pointer(act)).Fsa_flags),
-// //TODO- 			restorer: (*signal.Sigaction)(unsafe.Pointer(act)).Fsa_restorer,
-// //TODO- 		}
-// //TODO- 		Xmemcpy(t, kact+unsafe.Offsetof(k_sigaction{}.mask), act+unsafe.Offsetof(signal.Sigaction{}.Fsa_mask), types.Size_t(unsafe.Sizeof(k_sigaction{}.mask)))
-// //TODO- 	}
-// //TODO- 	if oldact != 0 {
-// //TODO- 		panic(todo(""))
-// //TODO- 	}
-// //TODO-
-// //TODO- 	if _, _, err := unix.Syscall6(unix.SYS_RT_SIGACTION, uintptr(signal.SIGABRT), kact, koldact, unsafe.Sizeof(k_sigaction{}.mask), 0, 0); err != 0 {
-// //TODO- 		t.setErrno(err)
-// //TODO- 		return -1
-// //TODO- 	}
-// //TODO-
-// //TODO- 	if oldact != 0 {
-// //TODO- 		panic(todo(""))
-// //TODO- 	}
-// //TODO-
-// //TODO- 	return 0
-// //TODO- }
+// int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
+func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
+	panic(todo(""))
+	// // 	musl/arch/x86_64/ksigaction.h
+	// //
+	// //	struct k_sigaction {
+	// //		void (*handler)(int);
+	// //		unsigned long flags;
+	// //		void (*restorer)(void);
+	// //		unsigned mask[2];
+	// //	};
+	// type k_sigaction struct {
+	// 	handler  uintptr
+	// 	flags    ulong
+	// 	restorer uintptr
+	// 	mask     [2]uint32
+	// }
+
+	// var kact, koldact uintptr
+	// if act != 0 {
+	// 	kact = t.Alloc(int(unsafe.Sizeof(k_sigaction{})))
+	// 	defer Xfree(t, kact)
+	// 	*(*k_sigaction)(unsafe.Pointer(kact)) = k_sigaction{
+	// 		handler:  (*signal.Sigaction)(unsafe.Pointer(act)).F__sigaction_handler.Fsa_handler,
+	// 		flags:    ulong((*signal.Sigaction)(unsafe.Pointer(act)).Fsa_flags),
+	// 		restorer: (*signal.Sigaction)(unsafe.Pointer(act)).Fsa_restorer,
+	// 	}
+	// 	Xmemcpy(t, kact+unsafe.Offsetof(k_sigaction{}.mask), act+unsafe.Offsetof(signal.Sigaction{}.Fsa_mask), types.Size_t(unsafe.Sizeof(k_sigaction{}.mask)))
+	// }
+	// if oldact != 0 {
+	// 	panic(todo(""))
+	// }
+
+	// if _, _, err := unix.Syscall6(unix.SYS_RT_SIGACTION, uintptr(signal.SIGABRT), kact, koldact, unsafe.Sizeof(k_sigaction{}.mask), 0, 0); err != 0 {
+	// 	t.setErrno(err)
+	// 	return -1
+	// }
+
+	// if oldact != 0 {
+	// 	panic(todo(""))
+	// }
+
+	// return 0
+}
 
 // int fcntl(int fd, int cmd, ... /* arg */ );
-func Xfcntl64(t *TLS, fd, cmd int32, args uintptr) int32 {
+func Xfcntl64(t *TLS, fd, cmd int32, args uintptr) (r int32) {
 	var err error
 	var p uintptr
+	var i int
 	switch cmd {
 	case fcntl.F_GETLK, fcntl.F_SETLK:
 		p = *(*uintptr)(unsafe.Pointer(args))
 		err = unix.FcntlFlock(uintptr(fd), int(cmd), (*unix.Flock_t)(unsafe.Pointer(p)))
+	case fcntl.F_GETFL:
+		i, err = unix.FcntlInt(uintptr(fd), int(cmd), 0)
+		r = int32(i)
+	case fcntl.F_SETFD:
+		_, err = unix.FcntlInt(uintptr(fd), int(cmd), int(*(*int32)(unsafe.Pointer(args))))
 	default:
 		panic(todo("%v: %v %v", origin(1), fd, cmd))
 	}
@@ -84,7 +91,7 @@ func Xfcntl64(t *TLS, fd, cmd int32, args uintptr) int32 {
 	if dmesgs {
 		dmesg("%v: %d %s %#x: ok", origin(1), fd, fcntlCmdStr(cmd), p)
 	}
-	return 0
+	return r
 
 	// var arg uintptr
 	// if args != 0 {
@@ -276,42 +283,44 @@ func Xftruncate64(t *TLS, fd int32, length types.Off_t) int32 {
 	// return 0
 }
 
-// // off64_t lseek64(int fd, off64_t offset, int whence);
-// func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
-// 	n, _, err := unix.Syscall(unix.SYS_LSEEK, uintptr(fd), uintptr(offset), uintptr(whence))
-// 	if err != 0 {
-// 		if dmesgs {
-// 			dmesg("%v: fd %v, off %#x, whence %v: %v", origin(1), fd, offset, whenceStr(whence), err)
-// 		}
-// 		t.setErrno(err)
-// 		return -1
-// 	}
-//
-// 	if dmesgs {
-// 		dmesg("%v: fd %v, off %#x, whence %v: %#x", origin(1), fd, offset, whenceStr(whence), n)
-// 	}
-// 	return types.Off_t(n)
-// }
-//
-// //TODO- // int utime(const char *filename, const struct utimbuf *times);
-// //TODO- func Xutime(t *TLS, filename, times uintptr) int32 {
-// //TODO- 	if _, _, err := unix.Syscall(unix.SYS_UTIME, filename, times, 0); err != 0 {
-// //TODO- 		t.setErrno(err)
-// //TODO- 		return -1
-// //TODO- 	}
-// //TODO-
-// //TODO- 	return 0
-// //TODO- }
-//
-// //TODO- // unsigned int alarm(unsigned int seconds);
-// //TODO- func Xalarm(t *TLS, seconds uint32) uint32 {
-// //TODO- 	n, _, err := unix.Syscall(unix.SYS_ALARM, uintptr(seconds), 0, 0)
-// //TODO- 	if err != 0 {
-// //TODO- 		panic(todo(""))
-// //TODO- 	}
-// //TODO-
-// //TODO- 	return uint32(n)
-// //TODO- }
+// off64_t lseek64(int fd, off64_t offset, int whence);
+func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
+	n, _, err := unix.Syscall(unix.SYS_LSEEK, uintptr(fd), uintptr(offset), uintptr(whence))
+	if err != 0 {
+		if dmesgs {
+			dmesg("%v: fd %v, off %#x, whence %v: %v", origin(1), fd, offset, whenceStr(whence), err)
+		}
+		t.setErrno(err)
+		return -1
+	}
+
+	if dmesgs {
+		dmesg("%v: fd %v, off %#x, whence %v: %#x", origin(1), fd, offset, whenceStr(whence), n)
+	}
+	return types.Off_t(n)
+}
+
+// int utime(const char *filename, const struct utimbuf *times);
+func Xutime(t *TLS, filename, times uintptr) int32 {
+	panic(todo(""))
+	// if _, _, err := unix.Syscall(unix.SYS_UTIME, filename, times, 0); err != 0 {
+	// 	t.setErrno(err)
+	// 	return -1
+	// }
+
+	// return 0
+}
+
+// unsigned int alarm(unsigned int seconds);
+func Xalarm(t *TLS, seconds uint32) uint32 {
+	panic(todo(""))
+	// n, _, err := unix.Syscall(unix.SYS_ALARM, uintptr(seconds), 0, 0)
+	// if err != 0 {
+	// 	panic(todo(""))
+	// }
+
+	// return uint32(n)
+}
 
 // time_t time(time_t *tloc);
 func Xtime(t *TLS, tloc uintptr) types.Time_t {
@@ -458,56 +467,61 @@ func Xrename(t *TLS, oldpath, newpath uintptr) int32 {
 	return 0
 }
 
-// // int mknod(const char *pathname, mode_t mode, dev_t dev);
-// func Xmknod(t *TLS, pathname uintptr, mode types.Mode_t, dev types.Dev_t) int32 {
-// 	if _, _, err := unix.Syscall(unix.SYS_MKNOD, pathname, uintptr(mode), uintptr(dev)); err != 0 {
-// 		t.setErrno(err)
-// 		return -1
-// 	}
-//
-// 	return 0
-// }
-//
-// // int chown(const char *pathname, uid_t owner, gid_t group);
-// func Xchown(t *TLS, pathname uintptr, owner types.Uid_t, group types.Gid_t) int32 {
-// 	if _, _, err := unix.Syscall(unix.SYS_CHOWN, pathname, uintptr(owner), uintptr(group)); err != 0 {
-// 		t.setErrno(err)
-// 		return -1
-// 	}
-//
-// 	return 0
-// }
-//
-// // int link(const char *oldpath, const char *newpath);
-// func Xlink(t *TLS, oldpath, newpath uintptr) int32 {
-// 	if _, _, err := unix.Syscall(unix.SYS_LINK, oldpath, newpath, 0); err != 0 {
-// 		t.setErrno(err)
-// 		return -1
-// 	}
-//
-// 	return 0
-// }
-//
-// // int pipe(int pipefd[2]);
-// func Xpipe(t *TLS, pipefd uintptr) int32 {
-// 	if _, _, err := unix.Syscall(unix.SYS_PIPE, pipefd, 0, 0); err != 0 {
-// 		t.setErrno(err)
-// 		return -1
-// 	}
-//
-// 	return 0
-// }
-//
-// // int dup2(int oldfd, int newfd);
-// func Xdup2(t *TLS, oldfd, newfd int32) int32 {
-// 	n, _, err := unix.Syscall(unix.SYS_DUP2, uintptr(oldfd), uintptr(newfd), 0)
-// 	if err != 0 {
-// 		t.setErrno(err)
-// 		return -1
-// 	}
-//
-// 	return int32(n)
-// }
+// int mknod(const char *pathname, mode_t mode, dev_t dev);
+func Xmknod(t *TLS, pathname uintptr, mode types.Mode_t, dev types.Dev_t) int32 {
+	panic(todo(""))
+	// if _, _, err := unix.Syscall(unix.SYS_MKNOD, pathname, uintptr(mode), uintptr(dev)); err != 0 {
+	// 	t.setErrno(err)
+	// 	return -1
+	// }
+
+	// return 0
+}
+
+// int chown(const char *pathname, uid_t owner, gid_t group);
+func Xchown(t *TLS, pathname uintptr, owner types.Uid_t, group types.Gid_t) int32 {
+	panic(todo(""))
+	// if _, _, err := unix.Syscall(unix.SYS_CHOWN, pathname, uintptr(owner), uintptr(group)); err != 0 {
+	// 	t.setErrno(err)
+	// 	return -1
+	// }
+
+	// return 0
+}
+
+// int link(const char *oldpath, const char *newpath);
+func Xlink(t *TLS, oldpath, newpath uintptr) int32 {
+	panic(todo(""))
+	// if _, _, err := unix.Syscall(unix.SYS_LINK, oldpath, newpath, 0); err != 0 {
+	// 	t.setErrno(err)
+	// 	return -1
+	// }
+
+	// return 0
+}
+
+// int pipe(int pipefd[2]);
+func Xpipe(t *TLS, pipefd uintptr) int32 {
+	panic(todo(""))
+	// if _, _, err := unix.Syscall(unix.SYS_PIPE, pipefd, 0, 0); err != 0 {
+	// 	t.setErrno(err)
+	// 	return -1
+	// }
+
+	// return 0
+}
+
+// int dup2(int oldfd, int newfd);
+func Xdup2(t *TLS, oldfd, newfd int32) int32 {
+	panic(todo(""))
+	// n, _, err := unix.Syscall(unix.SYS_DUP2, uintptr(oldfd), uintptr(newfd), 0)
+	// if err != 0 {
+	// 	t.setErrno(err)
+	// 	return -1
+	// }
+
+	// return int32(n)
+}
 
 // ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
 func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
