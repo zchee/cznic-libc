@@ -14,6 +14,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -30,9 +32,12 @@ import (
 )
 
 // Keep these outside of the var block otherwise go generate will miss them.
-var X__imp__environ uintptr //TODO must initialize
-var X_imp___environ uintptr //TODO must initialize
-var Xtimezone long          // extern long timezone;
+
+var X__imp__environ uintptr // <<---- These look to be unnecessary, as libc.Xenviron builds the
+var X_imp___environ uintptr // <<---- env correctly. I don't see any way to initialize them for
+// 									  use, as SetEnviron can't see them. The windows Tcl code references them.
+
+var Xtimezone long // extern long timezone;
 
 type (
 	long  = int32
@@ -73,12 +78,18 @@ var (
 	procLeaveCriticalSection       = modkernel32.NewProc("LeaveCriticalSection")
 	procSetFilePointer             = modkernel32.NewProc("SetFilePointer")
 	procGetModuleHandleW           = modkernel32.NewProc("GetModuleHandleW")
+	procGetModuleFileNameW         = modkernel32.NewProc("GetModuleFileNameW")
 	procGetProcAddress             = modkernel32.NewProc("GetProcAddress")
 	procGetCurrentThreadId         = modkernel32.NewProc("GetCurrentThreadId")
 	procCreateEventW               = modkernel32.NewProc("CreateEventW")
 	procGetACP                     = modkernel32.NewProc("GetACP")
 	procGetEnvironmentVariableW    = modkernel32.NewProc("GetEnvironmentVariableW")
-
+	procGetEnvironmentVariableA    = modkernel32.NewProc("GetEnvironmentVariableA")
+	procFindFirstFileW             = modkernel32.NewProc("FindFirstFileW")
+	procFindNextFileW              = modkernel32.NewProc("FindNextFileW")
+	procFindClose                  = modkernel32.NewProc("FindClose")
+	procLstrlenW                   = modkernel32.NewProc("lstrlenW")
+	procGetFileInformationByHandle = modkernel32.NewProc("GetFileInformationByHandle")
 	//--
 
 	modws2_32 = syscall.NewLazyDLL("ws2_32.dll")
@@ -89,7 +100,6 @@ var (
 	moduser32 = syscall.NewLazyDLL("user32.dll")
 	//--
 	procRegisterClassW = moduser32.NewProc("RegisterClassW")
-	procWsprintfA      = moduser32.NewProc("wsprintfA")
 	//--
 )
 
@@ -1816,7 +1826,16 @@ func XSetEvent(t *TLS, hEvent uintptr) int32 {
 
 // long int strtol(const char *nptr, char **endptr, int base);
 func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
-	panic(todo(""))
+	var s = GoString(nptr)
+	var out, err = strconv.ParseInt(s, int(base), 64)
+	if err != nil {
+		if err.(*strconv.NumError) == strconv.ErrRange {
+			t.setErrno(errno.ERANGE)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return long(out)
 }
 
 // int _stricmp(
@@ -1824,7 +1843,9 @@ func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
 //    const char *string2
 // );
 func X_stricmp(t *TLS, string1, string2 uintptr) int32 {
-	panic(todo(""))
+	var s1 = strings.ToLower(GoString(string1))
+	var s2 = strings.ToLower(GoString(string2))
+	return int32(strings.Compare(s1, s2))
 }
 
 // int putenv(
@@ -1925,7 +1946,8 @@ func XGetVolumeNameForVolumeMountPointW(t *TLS, _ ...interface{}) int32 {
 //    const wchar_t *str
 // );
 func Xwcslen(t *TLS, str uintptr) types.Size_t {
-	panic(todo(""))
+	r0, _, _ := syscall.Syscall(procLstrlenW.Addr(), 1, str, 0, 0)
+	return types.Size_t(r0)
 }
 
 // HANDLE WINAPI GetStdHandle(
@@ -2112,7 +2134,12 @@ func XFlushFileBuffers(t *TLS, hFile uintptr) int32 {
 //   HANDLE hFile
 // );
 func XGetFileType(t *TLS, hFile uintptr) uint32 {
-	panic(todo(""))
+
+	n, err := syscall.GetFileType(syscall.Handle(hFile))
+	if err != nil {
+		t.setErrno(err)
+	}
+	return n
 }
 
 // BOOL WINAPI GetConsoleMode(
@@ -2137,7 +2164,26 @@ func XGetCommState(t *TLS, hFile, lpDCB uintptr) int32 {
 //    size_t count
 // );
 func X_wcsnicmp(t *TLS, string1, string2 uintptr, count types.Size_t) int32 {
-	panic(todo(""))
+
+	var s1 = strings.ToLower(GoString(string1))
+	var l1 = len(s1)
+	var s2 = strings.ToLower(GoString(string2))
+	var l2 = len(s2)
+
+	// shorter is lesser
+	if l1 < l2 {
+		return -1
+	}
+	if l2 > l1 {
+		return 1
+	}
+
+	// compare at most count
+	var cmpLen = count
+	if types.Size_t(l1) < cmpLen {
+		cmpLen = types.Size_t(l1)
+	}
+	return int32(strings.Compare(s1[:cmpLen], s2[:cmpLen]))
 }
 
 // BOOL WINAPI ReadConsole(
@@ -2192,14 +2238,11 @@ func XPeekConsoleInputW(t *TLS, hConsoleInput, lpBuffer uintptr, nLength uint32,
 //   LPCSTR ,
 //   ...
 // );
-func XwsprintfA(t *TLS, a, b, va uintptr) int32 {
+func XwsprintfA(t *TLS, buf, format, args uintptr) int32 {
 
-	r0, _, err := syscall.Syscall(procWsprintfA.Addr(), 3, a, b, va)
-	if r0 == 0 {
-		t.setErrno(err)
-	}
-
-	return int32(r0)
+	var out = printf(format, args)
+	copy((*RawMem)(unsafe.Pointer(buf))[:], out)
+	return int32(len(out))
 }
 
 // UINT WINAPI GetConsoleCP(void);
@@ -2412,12 +2455,30 @@ func XRemoveDirectoryW(t *TLS, lpPathName uintptr) int32 {
 
 // HANDLE FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
 func XFindFirstFileW(t *TLS, lpFileName, lpFindFileData uintptr) uintptr {
-	panic(todo(""))
+
+	r0, _, e1 := syscall.Syscall(procFindFirstFileW.Addr(), 2, lpFileName, lpFindFileData, 0)
+	handle := syscall.Handle(r0)
+	if handle == syscall.InvalidHandle {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return r0
 }
 
 // BOOL FindClose(HANDLE hFindFile);
 func XFindClose(t *TLS, hFindFile uintptr) int32 {
-	panic(todo(""))
+	r0, _, e1 := syscall.Syscall(procFindClose.Addr(), 1, hFindFile, 0, 0)
+	if r0 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return int32(r0)
 }
 
 // BOOL FindNextFileW(
@@ -2425,7 +2486,16 @@ func XFindClose(t *TLS, hFindFile uintptr) int32 {
 //   LPWIN32_FIND_DATAW lpFindFileData
 // );
 func XFindNextFileW(t *TLS, hFindFile, lpFindFileData uintptr) int32 {
-	panic(todo(""))
+
+	r0, _, e1 := syscall.Syscall(procFindNextFileW.Addr(), 2, hFindFile, lpFindFileData, 0)
+	if r0 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return int32(r0)
 }
 
 // DWORD GetLogicalDriveStringsA(
@@ -2738,11 +2808,15 @@ func XGetFullPathNameA(t *TLS, lpFileName uintptr, nBufferLength uint32, lpBuffe
 // FARPROC GetProcAddress(HMODULE hModule, LPCSTR  lpProcName);
 func XGetProcAddress(t *TLS, hModule, lpProcName uintptr) uintptr {
 
-	r0, _, err := syscall.Syscall(procGetProcAddress.Addr(), 2, hModule, lpProcName, 0)
-	if r0 == 0 {
-		t.setErrno(err)
-	}
-	return r0
+	return 0
+
+	//panic(todo(GoString(lpProcName)))
+	//
+	//r0, _, err := syscall.Syscall(procGetProcAddress.Addr(), 2, hModule, lpProcName, 0)
+	//if r0 == 0 {
+	//	t.setErrno(err)
+	//}
+	//return r0
 }
 
 // NTSYSAPI NTSTATUS RtlGetVersion( // ntdll.dll
@@ -3098,7 +3172,16 @@ func X_findclose(t *TLS, handle types.Intptr_t) int32 {
 //   DWORD  nSize
 // );
 func XGetEnvironmentVariableA(t *TLS, lpName, lpBuffer uintptr, nSize uint32) uint32 {
-	panic(todo(""))
+	r0, _, e1 := syscall.Syscall(procGetEnvironmentVariableA.Addr(), 3, lpName, lpBuffer, uintptr(nSize))
+	n := uint32(r0)
+	if n == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return n
 }
 
 // int _fstat64(
@@ -3149,9 +3232,11 @@ func X_beginthreadex(t *TLS, _ ...interface{}) int32 {
 // DWORD GetCurrentThreadId();
 func XGetCurrentThreadId(t *TLS) uint32 {
 
-	r0, _, _ := syscall.Syscall(procGetCurrentThreadId.Addr(), 0, 0, 0, 0)
-	tid := uint32(r0)
-	return tid
+	return uint32(t.ID)
+
+	//r0, _, _ := syscall.Syscall(procGetCurrentThreadId.Addr(), 0, 0, 0, 0)
+	//tid := uint32(r0)
+	//return tid
 
 }
 
@@ -3193,7 +3278,13 @@ func XMessageBoxW(t *TLS, _ ...interface{}) int32 {
 //   DWORD   nSize
 // );
 func XGetModuleFileNameW(t *TLS, hModule, lpFileName uintptr, nSize uint32) uint32 {
-	panic(todo(""))
+
+	r0, _, _ := syscall.Syscall(procGetModuleFileNameW.Addr(), 3, hModule, lpFileName, uintptr(nSize))
+	if r0 == 0 {
+		r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
+		t.setErrno(r1)
+	}
+	return uint32(r0)
 }
 
 // HANDLE FindFirstFileExW(
@@ -3351,7 +3442,16 @@ func XGetCurrentDirectoryW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint3
 //   LPBY_HANDLE_FILE_INFORMATION lpFileInformation
 // );
 func XGetFileInformationByHandle(t *TLS, hFile, lpFileInformation uintptr) int32 {
-	panic(todo(""))
+
+	r1, _, e1 := syscall.Syscall(procGetFileInformationByHandle.Addr(), 2, hFile, lpFileInformation, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return int32(r1)
 }
 
 // BOOL GetVolumeInformationW(
@@ -3373,7 +3473,20 @@ func XGetVolumeInformationW(t *TLS, lpRootPathName, lpVolumeNameBuffer uintptr, 
 //    wchar_t c
 // );
 func Xwcschr(t *TLS, str uintptr, c wchar_t) uintptr {
-	panic(todo(""))
+
+	var source = str
+	for {
+		var buf = *(*uint16)(unsafe.Pointer(source))
+		if buf == 0 {
+			return 0
+		}
+		if buf == c {
+			return source
+		}
+		// wchar_t = 2 bytes
+		source++
+		source++
+	}
 }
 
 // BOOL SetFileTime(
@@ -3476,7 +3589,9 @@ func XGetEnvironmentVariableW(t *TLS, lpName, lpBuffer uintptr, nSize uint32) ui
 //   LPCSTR lpString2
 // );
 func XlstrcmpiA(t *TLS, lpString1, lpString2 uintptr) int32 {
-	panic(todo(""))
+	var s1 = strings.ToLower(GoString(lpString1))
+	var s2 = strings.ToLower(GoString(lpString2))
+	return int32(strings.Compare(s1, s2))
 }
 
 func XGetModuleFileNameA(t *TLS, _ ...interface{}) int32 {
