@@ -971,22 +971,23 @@ func Xraise(t *TLS, sig int32) int32 {
 // func Xbacktrace_symbols_fd(t *TLS, buffer uintptr, size, fd int32) {
 // 	panic(todo(""))
 // }
-//
-// // int fileno(FILE *stream);
-// func Xfileno(t *TLS, stream uintptr) int32 {
-// 	if stream == 0 {
-// 		t.setErrno(errno.EBADF)
-// 		return -1
-// 	}
-//
-// 	if fd := int32((*stdio.FILE)(unsafe.Pointer(stream)).F_file); fd >= 0 {
-// 		return fd
-// 	}
-//
-// 	t.setErrno(errno.EBADF)
-// 	return -1
-// }
-//
+
+// int fileno(FILE *stream);
+func Xfileno(t *TLS, stream uintptr) int32 {
+	panic(todo(""))
+	// if stream == 0 {
+	// 	t.setErrno(errno.EBADF)
+	// 	return -1
+	// }
+
+	// if fd := int32((*stdio.FILE)(unsafe.Pointer(stream)).F_file); fd >= 0 {
+	// 	return fd
+	// }
+
+	// t.setErrno(errno.EBADF)
+	// return -1
+}
+
 // var staticGetpwnam pwd.Passwd
 //
 // func init() {
@@ -1613,10 +1614,11 @@ func Xftell(t *TLS, stream uintptr) long {
 	// return long(n)
 }
 
-// // int ferror(FILE *stream);
-// func Xferror(t *TLS, stream uintptr) int32 {
-// 	return Bool32(file(stream).err())
-// }
+// int ferror(FILE *stream);
+func Xferror(t *TLS, stream uintptr) int32 {
+	panic(todo(""))
+	// return Bool32(file(stream).err())
+}
 
 // int fgetc(FILE *stream);
 func Xfgetc(t *TLS, stream uintptr) int32 {
@@ -1883,10 +1885,6 @@ func Xgetattrlist(...interface{}) int32 {
 }
 
 func Xsetattrlist(...interface{}) int32 {
-	panic(todo(""))
-}
-
-func X(...interface{}) {
 	panic(todo(""))
 }
 

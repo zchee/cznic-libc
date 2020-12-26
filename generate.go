@@ -64,6 +64,7 @@ func main() {
 		sc := bufio.NewScanner(f)
 		for sc.Scan() {
 			s := sc.Text()
+			s0 := s
 			switch {
 			case strings.HasPrefix(s, "func X"):
 				s = s[len("func X"):]
@@ -77,6 +78,9 @@ func main() {
 				continue
 			}
 
+			if s == "" {
+				panic(fmt.Sprintf("internal error %q", s0))
+			}
 			m[s] = struct{}{}
 		}
 		if err := sc.Err(); err != nil {
@@ -244,6 +248,7 @@ func makeMusl(goos, goarch string) {
 		"src/ctype/isdigit.c",
 		"src/ctype/islower.c",
 		"src/ctype/isprint.c",
+		"src/ctype/isupper.c",
 		"src/ctype/isxdigit.c",
 		"src/dirent/closedir.c",
 		"src/dirent/opendir.c",
