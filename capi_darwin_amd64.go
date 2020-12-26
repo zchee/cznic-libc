@@ -3,7 +3,6 @@
 package libc // import "modernc.org/libc"
 
 var CAPI = map[string]struct{}{
-	"":                             {},
 	"_IO_putc":                     {},
 	"_NSGetEnviron":                {},
 	"___errno_location":            {},

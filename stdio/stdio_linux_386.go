@@ -66,8 +66,8 @@ type Size_t = uint32 /* <builtin>:9:23 */
 
 type Wchar_t = int32 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:44:14 */
-type X__float128 = float64        /* <builtin>:45:21 */
+type X__builtin_va_list = uintptr /* <builtin>:47:14 */
+type X__float128 = float64        /* <builtin>:48:21 */
 
 // Wide character type.
 //    Locale-writers should change this as necessary to

@@ -269,6 +269,7 @@ var CAPI = map[string]struct{}{
 	"__builtin_bswap32":                 {},
 	"__builtin_bswap64":                 {},
 	"__builtin_clzll":                   {},
+	"__builtin_constant_p_impl":         {},
 	"__builtin_copysign":                {},
 	"__builtin_copysignf":               {},
 	"__builtin_exit":                    {},
