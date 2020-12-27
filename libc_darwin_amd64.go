@@ -5,7 +5,6 @@
 package libc // import "modernc.org/libc"
 
 import (
-	"os"
 	"strings"
 	// 	"time"
 	"unsafe"
@@ -72,7 +71,7 @@ func Xfcntl64(t *TLS, fd, cmd int32, args uintptr) (r int32) {
 	case fcntl.F_GETLK, fcntl.F_SETLK:
 		p = *(*uintptr)(unsafe.Pointer(args))
 		err = unix.FcntlFlock(uintptr(fd), int(cmd), (*unix.Flock_t)(unsafe.Pointer(p)))
-	case fcntl.F_GETFL:
+	case fcntl.F_GETFL, fcntl.F_FULLFSYNC:
 		i, err = unix.FcntlInt(uintptr(fd), int(cmd), 0)
 		r = int32(i)
 	case fcntl.F_SETFD:
@@ -266,23 +265,6 @@ func Xmmap64(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, o
 	return data
 }
 
-// int ftruncate(int fd, off_t length);
-func Xftruncate64(t *TLS, fd int32, length types.Off_t) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_FTRUNCATE, uintptr(fd), uintptr(length), 0); err != 0 {
-	// 	if dmesgs {
-	// 		dmesg("%v: fd %d: %v", origin(1), fd, err)
-	// 	}
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
-
-	// if dmesgs {
-	// 	dmesg("%v: %d %#x: ok", origin(1), fd, length)
-	// }
-	// return 0
-}
-
 // off64_t lseek64(int fd, off64_t offset, int whence);
 func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
 	n, _, err := unix.Syscall(unix.SYS_LSEEK, uintptr(fd), uintptr(offset), uintptr(whence))
@@ -344,16 +326,18 @@ func Xtime(t *TLS, tloc uintptr) types.Time_t {
 
 // int mkdir(const char *path, mode_t mode);
 func Xmkdir(t *TLS, path uintptr, mode types.Mode_t) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_MKDIR, path, uintptr(mode), 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+	if err := unix.Mkdir(GoString(path), uint32(mode)); err != nil {
+		if dmesgs {
+			dmesg("%v: %q: %v", origin(1), GoString(path), err)
+		}
+		t.setErrno(err)
+		return -1
+	}
 
-	// if dmesgs {
-	// 	dmesg("%v: %q: ok", origin(1), GoString(path))
-	// }
-	// return 0
+	if dmesgs {
+		dmesg("%v: %q: ok", origin(1), GoString(path))
+	}
+	return 0
 }
 
 // int symlink(const char *target, const char *linkpath);
@@ -372,16 +356,18 @@ func Xsymlink(t *TLS, target, linkpath uintptr) int32 {
 
 // int chmod(const char *pathname, mode_t mode)
 func Xchmod(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_CHMOD, pathname, uintptr(mode), 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+	if err := unix.Chmod(GoString(pathname), uint32(mode)); err != nil {
+		if dmesgs {
+			dmesg("%v: %q %#o: %v", origin(1), GoString(pathname), mode, err)
+		}
+		t.setErrno(err)
+		return -1
+	}
 
-	// if dmesgs {
-	// 	dmesg("%v: %q %#o: ok", origin(1), GoString(pathname), mode)
-	// }
-	// return 0
+	if dmesgs {
+		dmesg("%v: %q %#o: ok", origin(1), GoString(pathname), mode)
+	}
+	return 0
 }
 
 // int utimes(const char *filename, const struct timeval times[2]);
@@ -502,13 +488,18 @@ func Xlink(t *TLS, oldpath, newpath uintptr) int32 {
 
 // int pipe(int pipefd[2]);
 func Xpipe(t *TLS, pipefd uintptr) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_PIPE, pipefd, 0, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+	if _, _, err := unix.Syscall(unix.SYS_PIPE, pipefd, 0, 0); err != 0 {
+		if dmesgs {
+			dmesg("%v: %v", origin(1), err)
+		}
+		t.setErrno(err)
+		return -1
+	}
 
-	// return 0
+	if dmesgs {
+		dmesg("%v: ok", origin(1))
+	}
+	return 0
 }
 
 // int dup2(int oldfd, int newfd);
@@ -541,17 +532,17 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	var flags int
 	switch m {
 	case "r":
-		flags = os.O_RDONLY
+		flags = fcntl.O_RDONLY
 	case "r+":
-		flags = os.O_RDWR
+		flags = fcntl.O_RDWR
 	case "w":
-		flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+		flags = fcntl.O_WRONLY | fcntl.O_CREAT | fcntl.O_TRUNC
 	case "w+":
-		flags = os.O_RDWR | os.O_CREATE | os.O_TRUNC
+		flags = fcntl.O_RDWR | fcntl.O_CREAT | fcntl.O_TRUNC
 	case "a":
-		flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
+		flags = fcntl.O_WRONLY | fcntl.O_CREAT | fcntl.O_APPEND
 	case "a+":
-		flags = os.O_RDWR | os.O_CREATE | os.O_APPEND
+		flags = fcntl.O_RDWR | fcntl.O_CREAT | fcntl.O_APPEND
 	default:
 		panic(m)
 	}
@@ -569,36 +560,4 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	}
 
 	panic("OOM")
-
-	// m := strings.ReplaceAll(GoString(mode), "b", "")
-	// var flags int
-	// switch m {
-	// case "r":
-	// 	flags = os.O_RDONLY
-	// case "r+":
-	// 	flags = os.O_RDWR
-	// case "w":
-	// 	flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	// case "w+":
-	// 	flags = os.O_RDWR | os.O_CREATE | os.O_TRUNC
-	// case "a":
-	// 	flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
-	// case "a+":
-	// 	flags = os.O_RDWR | os.O_CREATE | os.O_APPEND
-	// default:
-	// 	panic(m)
-	// }
-	// fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags), 0666)
-	// if err != 0 {
-	// 	t.setErrno(err)
-	// 	return 0
-	// }
-
-	// if p := newFile(t, int32(fd)); p != 0 {
-	// 	return p
-	// }
-
-	// Xclose(t, int32(fd))
-	// t.setErrno(errno.ENOMEM)
-	// return 0
 }
