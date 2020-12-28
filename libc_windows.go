@@ -2239,10 +2239,7 @@ func XPeekConsoleInputW(t *TLS, hConsoleInput, lpBuffer uintptr, nLength uint32,
 //   ...
 // );
 func XwsprintfA(t *TLS, buf, format, args uintptr) int32 {
-
-	var out = printf(format, args)
-	copy((*RawMem)(unsafe.Pointer(buf))[:], out)
-	return int32(len(out))
+	return Xsprintf(t, buf, format, args)
 }
 
 // UINT WINAPI GetConsoleCP(void);
