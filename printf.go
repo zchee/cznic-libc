@@ -225,6 +225,7 @@ flags:
 		default:
 			panic(todo("%#U", c))
 		}
+		fallthrough
 	case 'X':
 		fallthrough
 	case 'x':
