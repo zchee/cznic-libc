@@ -206,6 +206,25 @@ flags:
 
 		f := spec + "o"
 		str = fmt.Sprintf(f, arg)
+	case 'I':
+		if !isWindows {
+			panic(todo("%#U", c))
+		}
+
+		// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-wsprintfa
+		//
+		// Ix, IX
+		//
+		// 64-bit unsigned hexadecimal integer in lowercase or uppercase on 64-bit
+		// platforms, 32-bit unsigned hexadecimal integer in lowercase or uppercase on
+		// 32-bit platforms.
+		format++
+		switch c = *(*byte)(unsafe.Pointer(format)); c {
+		case 'x', 'X':
+			// ok
+		default:
+			panic(todo("%#U", c))
+		}
 	case 'X':
 		fallthrough
 	case 'x':

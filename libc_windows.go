@@ -33,9 +33,8 @@ import (
 
 // Keep these outside of the var block otherwise go generate will miss them.
 
-var X__imp__environ uintptr // <<---- These look to be unnecessary, as libc.Xenviron builds the
-var X_imp___environ uintptr // <<---- env correctly. I don't see any way to initialize them for
-// 									  use, as SetEnviron can't see them. The windows Tcl code references them.
+var X__imp__environ = uintptr(unsafe.Pointer(&Xenviron))
+var X_imp___environ = uintptr(unsafe.Pointer(&Xenviron))
 
 var Xtimezone long // extern long timezone;
 
@@ -102,6 +101,10 @@ var (
 	procRegisterClassW = moduser32.NewProc("RegisterClassW")
 	//--
 )
+
+func init() {
+	isWindows = true
+}
 
 // ---------------------------------
 // Windows filehandle-to-fd mapping
@@ -1846,13 +1849,6 @@ func X_stricmp(t *TLS, string1, string2 uintptr) int32 {
 	var s1 = strings.ToLower(GoString(string1))
 	var s2 = strings.ToLower(GoString(string2))
 	return int32(strings.Compare(s1, s2))
-}
-
-// int putenv(
-//    const char *envstring
-// );
-func Xputenv(t *TLS, envstring uintptr) int32 {
-	panic(todo(""))
 }
 
 // BOOL HeapFree(

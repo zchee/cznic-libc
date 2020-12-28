@@ -16,7 +16,8 @@ int unsetenv(const char *name)
 	if (__environ) {
 		char **e = __environ, **eo = e;
 		for (; *e; e++)
-			if (!strncmp(name, *e, l) && l[*e] == '=')
+			//TODO if (!strncmp(name, *e, l) && l[*e] == '=')
+			if (!strncmp(name, *e, l) && (*e)[l] == '=')
 				__env_rm_add(*e, 0);
 			else if (eo != e)
 				*eo++ = *e;

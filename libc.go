@@ -40,6 +40,7 @@ import (
 var (
 	allocMu   sync.Mutex
 	allocator memory.Allocator
+	isWindows bool
 )
 
 // Keep these outside of the var block otherwise go generate will miss them.

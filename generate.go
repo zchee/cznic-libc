@@ -153,6 +153,7 @@ func makeMuslWin(goos, goarch string) {
 	run("sh", "-c", fmt.Sprintf("cp arch/%s/bits/syscall.h.in obj/include/bits/syscall.h", arch))
 	run("sh", "-c", fmt.Sprintf("sed -n -e s/__NR_/SYS_/p < arch/%s/bits/syscall.h.in >> obj/include/bits/syscall.h", arch))
 	if _, err := runcc(
+		"-D__environ=environ",
 		"-export-externs", "X",
 		"-hide", "__syscall0,__syscall1,__syscall2,__syscall3,__syscall4,__syscall5,__syscall6",
 		"-nostdinc",
@@ -180,6 +181,10 @@ func makeMuslWin(goos, goarch string) {
 		"src/ctype/isprint.c",
 		"src/ctype/isspace.c",
 		"src/ctype/isxdigit.c",
+		"src/env/putenv.c",
+		"src/env/setenv.c",
+		"src/env/unsetenv.c",
+		"src/string/strchrnul.c",
 
 		// FAILS b/c Windows long is 32 bits
 		// "src/internal/intscan.c",

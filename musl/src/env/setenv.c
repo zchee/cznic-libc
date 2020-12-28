@@ -6,7 +6,9 @@ void __env_rm_add(char *old, char *new)
 {
 	static char **env_alloced;
 	static size_t env_alloced_n;
-	for (size_t i=0; i < env_alloced_n; i++)
+	//TODO for (size_t i=0; i < env_alloced_n; i++)
+	size_t i=0;
+	for (; i < env_alloced_n; i++)
 		if (env_alloced[i] == old) {
 			env_alloced[i] = new;
 			free(old);

@@ -9,7 +9,9 @@ int __putenv(char *s, size_t l, char *r)
 {
 	size_t i=0;
 	if (__environ) {
-		for (char **e = __environ; *e; e++, i++)
+		//TODO for (char **e = __environ; *e; e++, i++)
+		char **e = __environ;
+		for (; *e; e++, i++)
 			if (!strncmp(s, *e, l+1)) {
 				char *tmp = *e;
 				*e = s;
