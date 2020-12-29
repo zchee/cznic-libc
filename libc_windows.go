@@ -89,6 +89,15 @@ var (
 	procFindClose                  = modkernel32.NewProc("FindClose")
 	procLstrlenW                   = modkernel32.NewProc("lstrlenW")
 	procGetFileInformationByHandle = modkernel32.NewProc("GetFileInformationByHandle")
+	procQueryPerformanceFrequency  = modkernel32.NewProc("QueryPerformanceFrequency")
+	procGetCommState               = modkernel32.NewProc("GetCommState")
+	procGetConsoleCP               = modkernel32.NewProc("GetConsoleCP")
+	//	procSetConsoleCP               = modkernel32.NewProc("SetConsoleCP")
+	procSetConsoleMode = modkernel32.NewProc("SetConsoleMode")
+	//	procCreateThread               = modkernel32.NewProc("CreateThread")
+	//	procSetThreadPriority          = modkernel32.NewProc("SetThreadPriority")
+	procWriteConsoleW = modkernel32.NewProc("WriteConsoleW")
+	procWriteConsoleA = modkernel32.NewProc("WriteConsoleA")
 	//--
 
 	modws2_32 = syscall.NewLazyDLL("ws2_32.dll")
@@ -1817,7 +1826,16 @@ func X__acrt_iob_func(t *TLS, fd uint32) uintptr {
 
 // unsigned long int strtoul(const char *nptr, char **endptr, int base);
 func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
-	panic(todo(""))
+	var s = GoString(nptr)
+	var out, err = strconv.ParseUint(s, int(base), 64)
+	if err != nil {
+		if err.(*strconv.NumError) == strconv.ErrRange {
+			t.setErrno(errno.ERANGE)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return ulong(out)
 }
 
 // BOOL SetEvent(
@@ -1904,7 +1922,10 @@ func XWspiapiGetAddrInfo(t *TLS, _ ...interface{}) int32 {
 //    const wchar_t *string2
 // );
 func Xwcscmp(t *TLS, string1, string2 uintptr) int32 {
-	panic(todo(""))
+
+	var s1 = GoString(string1)
+	var s2 = GoString(string1)
+	return int32(strings.Compare(s1, s2))
 }
 
 // BOOL IsDebuggerPresent();
@@ -2143,7 +2164,12 @@ func XGetFileType(t *TLS, hFile uintptr) uint32 {
 //   _Out_ LPDWORD lpMode
 // );
 func XGetConsoleMode(t *TLS, hConsoleHandle, lpMode uintptr) int32 {
-	panic(todo(""))
+	err := syscall.GetConsoleMode(syscall.Handle(hConsoleHandle), (*uint32)(unsafe.Pointer(lpMode)))
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+	return 1
 }
 
 // BOOL GetCommState(
@@ -2151,7 +2177,13 @@ func XGetConsoleMode(t *TLS, hConsoleHandle, lpMode uintptr) int32 {
 //   LPDCB  lpDCB
 // );
 func XGetCommState(t *TLS, hFile, lpDCB uintptr) int32 {
-	panic(todo(""))
+
+	r1, _, err := syscall.Syscall(procGetCommState.Addr(), 2, hFile, lpDCB, 0)
+	if r1 == 0 {
+		t.setErrno(err)
+		return 0
+	}
+	return int32(r1)
 }
 
 // int _wcsnicmp(
@@ -2201,7 +2233,12 @@ func XReadConsoleW(t *TLS, hConsoleInput, lpBuffer uintptr, nNumberOfCharsToRead
 //   _Reserved_       LPVOID  lpReserved
 // );
 func XWriteConsoleW(t *TLS, hConsoleOutput, lpBuffer uintptr, nNumberOfCharsToWrite uint32, lpNumberOfCharsWritten, lpReserved uintptr) int32 {
-	panic(todo(""))
+	rv, _, err := syscall.Syscall6(procWriteConsoleW.Addr(), 5, hConsoleOutput,
+		lpBuffer, uintptr(nNumberOfCharsToWrite), lpNumberOfCharsWritten, lpReserved, 0)
+	if rv == 0 {
+		t.setErrno(err)
+	}
+	return int32(rv)
 }
 
 // DWORD WaitForSingleObject(
@@ -2209,7 +2246,12 @@ func XWriteConsoleW(t *TLS, hConsoleOutput, lpBuffer uintptr, nNumberOfCharsToWr
 //   DWORD  dwMilliseconds
 // );
 func XWaitForSingleObject(t *TLS, hHandle uintptr, dwMilliseconds uint32) uint32 {
-	panic(todo(""))
+
+	rv, err := syscall.WaitForSingleObject(syscall.Handle(hHandle), dwMilliseconds)
+	if err != nil {
+		t.setErrno(err)
+	}
+	return rv
 }
 
 // BOOL ResetEvent(
@@ -2240,8 +2282,22 @@ func XwsprintfA(t *TLS, buf, format, args uintptr) int32 {
 
 // UINT WINAPI GetConsoleCP(void);
 func XGetConsoleCP(t *TLS) uint32 {
-	panic(todo(""))
+	r0, _, err := syscall.Syscall(procGetConsoleCP.Addr(), 0, 0, 0, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return uint32(r0)
 }
+
+// UINT WINAPI SetConsoleCP(UNIT);
+//func setConsoleCP(cp uint32) uint32 {
+//
+//	r0, _, _ := syscall.Syscall(procSetConsoleCP.Addr(), 1, uintptr(cp), 0, 0)
+//	if r0 == 0 {
+//		panic("setcp failed")
+//	}
+//	return uint32(r0)
+//}
 
 // HANDLE CreateEventW(
 //   LPSECURITY_ATTRIBUTES lpEventAttributes,
@@ -2268,7 +2324,9 @@ func XCreateEventW(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialStat
 //   LPDWORD                 lpThreadId
 // );
 func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t, lpStartAddress, lpParameter uintptr, dwCreationFlags uint32, lpThreadId uintptr) uintptr {
-	panic(todo(""))
+
+	// fyi native thread --> this is not interoperable with go.
+	return 1
 }
 
 // BOOL SetThreadPriority(
@@ -2276,7 +2334,13 @@ func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t,
 //   int    nPriority
 // );
 func XSetThreadPriority(t *TLS, hThread uintptr, nPriority int32) int32 {
-	panic(todo(""))
+
+	//r0, _, err := syscall.Syscall(procSetThreadPriority.Addr(), 2, hThread, uintptr(nPriority), 0)
+	//if r0 == 0 {
+	//	t.setErrno(err)
+	//}
+	//return int32(r0)
+	return 1
 }
 
 // BOOL WINAPI SetConsoleMode(
@@ -2284,7 +2348,13 @@ func XSetThreadPriority(t *TLS, hThread uintptr, nPriority int32) int32 {
 //   _In_ DWORD  dwMode
 // );
 func XSetConsoleMode(t *TLS, hConsoleHandle uintptr, dwMode uint32) int32 {
-	panic(todo(""))
+
+	rv, _, err := syscall.Syscall(procSetConsoleMode.Addr(), 2, hConsoleHandle, uintptr(dwMode), 0)
+	if rv == 0 {
+		t.setErrno(err)
+	}
+	return int32(rv)
+
 }
 
 func XPurgeComm(t *TLS, _ ...interface{}) int32 {
@@ -2396,7 +2466,14 @@ func XCharLowerW(t *TLS, lpsz uintptr) uintptr {
 //   LPSECURITY_ATTRIBUTES lpSecurityAttributes
 // );
 func XCreateDirectoryW(t *TLS, lpPathName, lpSecurityAttributes uintptr) int32 {
-	panic(todo(""))
+
+	err := syscall.CreateDirectory((*uint16)(unsafe.Pointer(lpPathName)),
+		(*syscall.SecurityAttributes)(unsafe.Pointer(lpSecurityAttributes)))
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+	return 1
 }
 
 // BOOL SetFileAttributesW(
@@ -3412,14 +3489,21 @@ func XAccessCheck(t *TLS, pSecurityDescriptor, ClientToken uintptr, DesiredAcces
 //    const wchar_t *string2
 // );
 func Xwcsicmp(t *TLS, string1, string2 uintptr) int32 {
-	panic(todo(""))
+	var s1 = strings.ToLower(GoString(string1))
+	var s2 = strings.ToLower(GoString(string1))
+	return int32(strings.Compare(s1, s2))
 }
 
 // BOOL SetCurrentDirectoryW(
 //   LPCTSTR lpPathName
 // );
 func XSetCurrentDirectoryW(t *TLS, lpPathName uintptr) int32 {
-	panic(todo(""))
+	err := syscall.SetCurrentDirectory((*uint16)(unsafe.Pointer(lpPathName)))
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+	return 1
 }
 
 // DWORD GetCurrentDirectory(
@@ -3427,7 +3511,12 @@ func XSetCurrentDirectoryW(t *TLS, lpPathName uintptr) int32 {
 //   LPWTSTR lpBuffer
 // );
 func XGetCurrentDirectoryW(t *TLS, nBufferLength uint32, lpBuffer uintptr) uint32 {
-	panic(todo(""))
+
+	n, err := syscall.GetCurrentDirectory(nBufferLength, (*uint16)(unsafe.Pointer(lpBuffer)))
+	if err != nil {
+		t.setErrno(err)
+	}
+	return n
 }
 
 // BOOL GetFileInformationByHandle(
@@ -3869,7 +3958,13 @@ func X_controlfp(t *TLS, _ ...interface{}) uint32 {
 //   LARGE_INTEGER *lpFrequency
 // );
 func XQueryPerformanceFrequency(t *TLS, lpFrequency uintptr) int32 {
-	panic(todo(""))
+
+	r1, _, err := syscall.Syscall(procQueryPerformanceFrequency.Addr(), 1, lpFrequency, 0, 0)
+	if r1 == 0 {
+		t.setErrno(err)
+		return 0
+	}
+	return int32(r1)
 }
 
 // void _ftime( struct _timeb *timeptr );
