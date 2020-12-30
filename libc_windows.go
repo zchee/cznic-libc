@@ -22,6 +22,7 @@ import (
 	gotime "time"
 	"unicode/utf16"
 	"unsafe"
+	"unicode"
 
 	"modernc.org/libc/errno"
 	"modernc.org/libc/limits"
@@ -1824,10 +1825,77 @@ func X__acrt_iob_func(t *TLS, fd uint32) uintptr {
 	return f.t
 }
 
+func extractDigits(s string, base int32) (string, int) {
+	// grab digits, sign
+	//[whitespace] [{+ | -}] [0 [{ x | X }]] [alphanumerics]
+	var sbldr strings.Builder
+	var ct = 0
+	var lastRune rune
+	for _, r := range s {
+		ct++
+		// space, remove on front
+		// or end of num
+		if unicode.IsSpace(r) {
+			lastRune = r
+			if sbldr.Len() > 0 {
+				break
+			}
+			continue
+		}
+		if r == '+' {
+			sbldr.WriteRune(r)
+			lastRune = r
+			continue
+		}
+		if r == '-' {
+			sbldr.WriteRune(r)
+			lastRune = r
+			continue
+		}
+		if r == '0' {
+			sbldr.WriteRune(r)
+			lastRune = r
+			continue
+		}
+		if r == 'x' || r == 'X' {
+			if lastRune != '0' {
+				return "", 0
+			}
+			sbldr.WriteRune(r)
+			continue
+		}
+		if unicode.IsDigit(r){
+			sbldr.WriteRune(r)
+			continue
+		}
+		if base != 10 {
+			if unicode.IsLetter(r) {
+				sbldr.WriteRune(r)
+				continue
+			} else {
+				break
+			}
+		} else {
+			break
+		}
+	}
+
+	var numStr = sbldr.String()
+	return numStr, ct
+}
+
+
 // unsigned long int strtoul(const char *nptr, char **endptr, int base);
 func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
 	var s = GoString(nptr)
-	var out, err = strconv.ParseUint(s, int(base), 64)
+
+	var numStr, ct = extractDigits(s, base)
+	if ct == 0 {
+		t.setErrno(errno.EINVAL)
+		return 0
+	}
+
+	var out, err = strconv.ParseUint(numStr, int(base), 64)
 	if err != nil {
 		if err.(*strconv.NumError) == strconv.ErrRange {
 			t.setErrno(errno.ERANGE)
@@ -1835,6 +1903,16 @@ func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
 			t.setErrno(errno.EINVAL)
 		}
 	}
+
+	if endptr != 0 {
+		var off = ct -1
+		var end = &(*RawMem)(unsafe.Pointer(nptr))[off]
+		*(*uintptr)(unsafe.Pointer(endptr)) = (uintptr)(unsafe.Pointer(end))
+
+		//var rem = GoString((uintptr)(unsafe.Pointer(end)))
+		//fmt.Printf("remainder: |%s|\n", rem)
+	}
+
 	return ulong(out)
 }
 
@@ -1848,7 +1926,13 @@ func XSetEvent(t *TLS, hEvent uintptr) int32 {
 // long int strtol(const char *nptr, char **endptr, int base);
 func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
 	var s = GoString(nptr)
-	var out, err = strconv.ParseInt(s, int(base), 64)
+	var numStr, ct = extractDigits(s, base)
+	if ct == 0 {
+		t.setErrno(errno.EINVAL)
+		return 0
+	}
+
+	var out, err = strconv.ParseInt(numStr, int(base), 64)
 	if err != nil {
 		if err.(*strconv.NumError) == strconv.ErrRange {
 			t.setErrno(errno.ERANGE)
@@ -1856,6 +1940,16 @@ func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
 			t.setErrno(errno.EINVAL)
 		}
 	}
+
+	if endptr != 0 {
+		var off = ct -1
+		var end = &(*RawMem)(unsafe.Pointer(nptr))[off]
+		*(*uintptr)(unsafe.Pointer(endptr)) = (uintptr)(unsafe.Pointer(end))
+
+		//var rem = GoString((uintptr)(unsafe.Pointer(end)))
+		//fmt.Printf("remainder: |%s|\n", rem)
+	}
+
 	return long(out)
 }
 
