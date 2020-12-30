@@ -225,6 +225,7 @@ func makeMuslDarwin(goos, goarch string) {
 	run("sh", "-c", fmt.Sprintf("cp arch/%s/bits/syscall.h.in obj/include/bits/syscall.h", arch))
 	run("sh", "-c", fmt.Sprintf("sed -n -e s/__NR_/SYS_/p < arch/%s/bits/syscall.h.in >> obj/include/bits/syscall.h", arch))
 	if _, err := runcc(
+		"-D__environ=environ",
 		"-export-externs", "X",
 		"-hide", "__syscall0,__syscall1,__syscall2,__syscall3,__syscall4,__syscall5,__syscall6",
 		"-nostdinc",
@@ -252,6 +253,9 @@ func makeMuslDarwin(goos, goarch string) {
 		"src/ctype/isprint.c",
 		"src/ctype/isupper.c",
 		"src/ctype/isxdigit.c",
+		"src/env/putenv.c",
+		"src/env/setenv.c",
+		"src/env/unsetenv.c",
 		"src/internal/floatscan.c",
 		"src/internal/intscan.c",
 		"src/internal/shgetc.c",
@@ -284,6 +288,7 @@ func makeMuslDarwin(goos, goarch string) {
 		"src/stdio/__uflow.c",
 		"src/stdlib/strtod.c",
 		"src/stdlib/strtol.c",
+		"src/string/strchrnul.c",
 		"src/string/strlcat.c",
 		"src/string/strlcpy.c",
 		"src/string/strncat.c",

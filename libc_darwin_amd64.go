@@ -15,6 +15,7 @@ import (
 	// 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/fcntl"
 	"modernc.org/libc/sys/types"
+	"modernc.org/libc/utime"
 )
 
 // int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
@@ -74,7 +75,7 @@ func Xfcntl64(t *TLS, fd, cmd int32, args uintptr) (r int32) {
 	case fcntl.F_GETFL, fcntl.F_FULLFSYNC:
 		i, err = unix.FcntlInt(uintptr(fd), int(cmd), 0)
 		r = int32(i)
-	case fcntl.F_SETFD:
+	case fcntl.F_SETFD, fcntl.F_SETFL:
 		_, err = unix.FcntlInt(uintptr(fd), int(cmd), int(*(*int32)(unsafe.Pointer(args))))
 	default:
 		panic(todo("%v: %v %v", origin(1), fd, cmd))
@@ -284,13 +285,24 @@ func Xlseek64(t *TLS, fd int32, offset types.Off_t, whence int32) types.Off_t {
 
 // int utime(const char *filename, const struct utimbuf *times);
 func Xutime(t *TLS, filename, times uintptr) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_UTIME, filename, times, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+	var a []unix.Timeval
+	if times != 0 {
+		a = make([]unix.Timeval, 2)
+		a[0].Sec = (*utime.Utimbuf)(unsafe.Pointer(times)).Factime
+		a[1].Sec = (*utime.Utimbuf)(unsafe.Pointer(times)).Fmodtime
+	}
+	if err := unix.Utimes(GoString(filename), a); err != nil {
+		if dmesgs {
+			dmesg("%v: %v", origin(1), err)
+		}
+		t.setErrno(err)
+		return -1
+	}
 
-	// return 0
+	if dmesgs {
+		dmesg("%v: ok", origin(1))
+	}
+	return 0
 }
 
 // unsigned int alarm(unsigned int seconds);
@@ -342,16 +354,18 @@ func Xmkdir(t *TLS, path uintptr, mode types.Mode_t) int32 {
 
 // int symlink(const char *target, const char *linkpath);
 func Xsymlink(t *TLS, target, linkpath uintptr) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_SYMLINK, target, linkpath, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+	if err := unix.Symlink(GoString(target), GoString(linkpath)); err != nil {
+		if dmesgs {
+			dmesg("%v: %v", origin(1), err)
+		}
+		t.setErrno(err)
+		return -1
+	}
 
-	// if dmesgs {
-	// 	dmesg("%v: %q %q: ok", origin(1), GoString(target), GoString(linkpath))
-	// }
-	// return 0
+	if dmesgs {
+		dmesg("%v: ok", origin(1))
+	}
+	return 0
 }
 
 // int chmod(const char *pathname, mode_t mode)
@@ -372,16 +386,24 @@ func Xchmod(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
 
 // int utimes(const char *filename, const struct timeval times[2]);
 func Xutimes(t *TLS, filename, times uintptr) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_UTIMES, filename, times, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+	var a []unix.Timeval
+	if times != 0 {
+		a = make([]unix.Timeval, 2)
+		a[0] = *(*unix.Timeval)(unsafe.Pointer(times))
+		a[1] = *(*unix.Timeval)(unsafe.Pointer(times + unsafe.Sizeof(unix.Timeval{})))
+	}
+	if err := unix.Utimes(GoString(filename), a); err != nil {
+		if dmesgs {
+			dmesg("%v: %v", err)
+		}
+		t.setErrno(err)
+		return -1
+	}
 
-	// if dmesgs {
-	// 	dmesg("%v: %q: ok", origin(1), GoString(filename))
-	// }
-	// return 0
+	if dmesgs {
+		dmesg("%v: ok")
+	}
+	return 0
 }
 
 // int unlink(const char *pathname);
@@ -429,27 +451,19 @@ func Xaccess(t *TLS, pathname uintptr, mode int32) int32 {
 	// return 0
 }
 
-// int rmdir(const char *pathname);
-func Xrmdir(t *TLS, pathname uintptr) int32 {
-	panic(todo(""))
-	// if _, _, err := unix.Syscall(unix.SYS_RMDIR, pathname, 0, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
-
-	// if dmesgs {
-	// 	dmesg("%v: %q: ok", origin(1), GoString(pathname))
-	// }
-	// return 0
-}
-
 // int rename(const char *oldpath, const char *newpath);
 func Xrename(t *TLS, oldpath, newpath uintptr) int32 {
 	if _, _, err := unix.Syscall(unix.SYS_RENAME, oldpath, newpath, 0); err != 0 {
+		if dmesgs {
+			dmesg("%v: %v", err)
+		}
 		t.setErrno(err)
 		return -1
 	}
 
+	if dmesgs {
+		dmesg("%v: ok")
+	}
 	return 0
 }
 
@@ -516,14 +530,19 @@ func Xdup2(t *TLS, oldfd, newfd int32) int32 {
 
 // ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
 func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
-	panic(todo(""))
-	// n, _, err := unix.Syscall(unix.SYS_READLINK, path, buf, uintptr(bufsize))
-	// if err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+	n, _, err := unix.Syscall(unix.SYS_READLINK, path, buf, uintptr(bufsize))
+	if err != 0 {
+		if dmesgs {
+			dmesg("%v: %v", err)
+		}
+		t.setErrno(err)
+		return -1
+	}
 
-	// return types.Ssize_t(n)
+	if dmesgs {
+		dmesg("%v: ok")
+	}
+	return types.Ssize_t(n)
 }
 
 // FILE *fopen64(const char *pathname, const char *mode);
