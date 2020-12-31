@@ -24,6 +24,8 @@ const (
 	modZ
 	modCapitalZ
 	modT
+	mod32
+	mod64
 )
 
 // Format of the format string
@@ -114,6 +116,7 @@ flags:
 
 	var str string
 
+more:
 	// Conversion specifiers
 	//
 	// A character that specifies the type of conversion to be applied.  The
@@ -128,12 +131,14 @@ flags:
 		format++
 		var arg int64
 		switch mod {
-		case modNone, modL, modLL:
+		case modNone, modL, modLL, mod64:
 			arg = VaInt64(args)
 		case modH:
 			arg = int64(int16(VaInt32(args)))
 		case modHH:
 			arg = int64(int8(VaInt32(args)))
+		case mod32:
+			arg = int64(VaInt32(args))
 		default:
 			panic(todo("", mod))
 		}
@@ -157,12 +162,14 @@ flags:
 		format++
 		var arg uint64
 		switch mod {
-		case modNone, modL, modLL:
+		case modNone, modL, modLL, mod64:
 			arg = VaUint64(args)
 		case modH:
 			arg = uint64(uint16(VaInt32(args)))
 		case modHH:
 			arg = uint64(uint8(VaInt32(args)))
+		case mod32:
+			arg = uint64(VaInt32(args))
 		default:
 			panic(todo("", mod))
 		}
@@ -186,12 +193,14 @@ flags:
 		format++
 		var arg uint64
 		switch mod {
-		case modNone, modL, modLL:
+		case modNone, modL, modLL, mod64:
 			arg = VaUint64(args)
 		case modH:
 			arg = uint64(uint16(VaInt32(args)))
 		case modHH:
 			arg = uint64(uint8(VaInt32(args)))
+		case mod32:
+			arg = uint64(VaInt32(args))
 		default:
 			panic(todo("", mod))
 		}
@@ -211,17 +220,45 @@ flags:
 			panic(todo("%#U", c))
 		}
 
-		// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-wsprintfa
-		//
-		// Ix, IX
-		//
-		// 64-bit unsigned hexadecimal integer in lowercase or uppercase on 64-bit
-		// platforms, 32-bit unsigned hexadecimal integer in lowercase or uppercase on
-		// 32-bit platforms.
 		format++
 		switch c = *(*byte)(unsafe.Pointer(format)); c {
 		case 'x', 'X':
-			// ok
+			// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-wsprintfa
+			//
+			// Ix, IX
+			//
+			// 64-bit unsigned hexadecimal integer in lowercase or uppercase on 64-bit
+			// platforms, 32-bit unsigned hexadecimal integer in lowercase or uppercase on
+			// 32-bit platforms.
+			if unsafe.Sizeof(int(0)) == 4 {
+				mod = mod32
+			}
+		case '3':
+			// https://en.wikipedia.org/wiki/Printf_format_string#Length_field
+			//
+			// I32	For integer types, causes printf to expect a 32-bit (double word) integer argument.
+			format++
+			switch c = *(*byte)(unsafe.Pointer(format)); c {
+			case '2':
+				format++
+				mod = mod32
+				goto more
+			default:
+				panic(todo("%#U", c))
+			}
+		case '6':
+			// https://en.wikipedia.org/wiki/Printf_format_string#Length_field
+			//
+			// I64	For integer types, causes printf to expect a 64-bit (quad word) integer argument.
+			format++
+			switch c = *(*byte)(unsafe.Pointer(format)); c {
+			case '4':
+				format++
+				mod = mod64
+				goto more
+			default:
+				panic(todo("%#U", c))
+			}
 		default:
 			panic(todo("%#U", c))
 		}
@@ -238,12 +275,14 @@ flags:
 		format++
 		var arg uint64
 		switch mod {
-		case modNone, modL, modLL:
+		case modNone, modL, modLL, mod64:
 			arg = VaUint64(args)
 		case modH:
 			arg = uint64(uint16(VaInt32(args)))
 		case modHH:
 			arg = uint64(uint8(VaInt32(args)))
+		case mod32:
+			arg = uint64(VaInt32(args))
 		default:
 			panic(todo("", mod))
 		}
