@@ -20,9 +20,9 @@ import (
 	"sync/atomic"
 	"syscall"
 	gotime "time"
+	"unicode"
 	"unicode/utf16"
 	"unsafe"
-	"unicode"
 
 	"modernc.org/libc/errno"
 	"modernc.org/libc/limits"
@@ -97,8 +97,16 @@ var (
 	procSetConsoleMode = modkernel32.NewProc("SetConsoleMode")
 	//	procCreateThread               = modkernel32.NewProc("CreateThread")
 	//	procSetThreadPriority          = modkernel32.NewProc("SetThreadPriority")
-	procWriteConsoleW = modkernel32.NewProc("WriteConsoleW")
-	procWriteConsoleA = modkernel32.NewProc("WriteConsoleA")
+	procWriteConsoleW    = modkernel32.NewProc("WriteConsoleW")
+	procWriteConsoleA    = modkernel32.NewProc("WriteConsoleA")
+	procCreatePipe       = modkernel32.NewProc("CreatePipe")
+	procGetTempFileNameW = modkernel32.NewProc("GetTempFileNameW")
+	procSearchPathW      = modkernel32.NewProc("SearchPathW")
+	procDuplicateHandle  = modkernel32.NewProc("DuplicateHandle")
+	procCreateProcessW   = modkernel32.NewProc("CreateProcessW")
+	procPeekNamedPipe    = modkernel32.NewProc("PeekNamedPipe")
+	procResetEvent       = modkernel32.NewProc("ResetEvent")
+	procSetEvent         = modkernel32.NewProc("SetEvent")
 	//--
 
 	modws2_32 = syscall.NewLazyDLL("ws2_32.dll")
@@ -108,7 +116,8 @@ var (
 
 	moduser32 = syscall.NewLazyDLL("user32.dll")
 	//--
-	procRegisterClassW = moduser32.NewProc("RegisterClassW")
+	procRegisterClassW   = moduser32.NewProc("RegisterClassW")
+	procWaitForInputIdle = moduser32.NewProc("WaitForInputIdle")
 	//--
 )
 
@@ -1864,7 +1873,7 @@ func extractDigits(s string, base int32) (string, int) {
 			sbldr.WriteRune(r)
 			continue
 		}
-		if unicode.IsDigit(r){
+		if unicode.IsDigit(r) {
 			sbldr.WriteRune(r)
 			continue
 		}
@@ -1883,7 +1892,6 @@ func extractDigits(s string, base int32) (string, int) {
 	var numStr = sbldr.String()
 	return numStr, ct
 }
-
 
 // unsigned long int strtoul(const char *nptr, char **endptr, int base);
 func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
@@ -1905,7 +1913,7 @@ func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
 	}
 
 	if endptr != 0 {
-		var off = ct -1
+		var off = ct - 1
 		var end = &(*RawMem)(unsafe.Pointer(nptr))[off]
 		*(*uintptr)(unsafe.Pointer(endptr)) = (uintptr)(unsafe.Pointer(end))
 
@@ -1920,7 +1928,11 @@ func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
 //   HANDLE hEvent
 // );
 func XSetEvent(t *TLS, hEvent uintptr) int32 {
-	panic(todo(""))
+	r0, _, err := syscall.Syscall(procSetEvent.Addr(), 1, hEvent, 0, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return int32(r0)
 }
 
 // long int strtol(const char *nptr, char **endptr, int base);
@@ -1942,7 +1954,7 @@ func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
 	}
 
 	if endptr != 0 {
-		var off = ct -1
+		var off = ct - 1
 		var end = &(*RawMem)(unsafe.Pointer(nptr))[off]
 		*(*uintptr)(unsafe.Pointer(endptr)) = (uintptr)(unsafe.Pointer(end))
 
@@ -2219,12 +2231,23 @@ func XCreateFileW(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint3
 //   DWORD    dwOptions
 // );
 func XDuplicateHandle(t *TLS, hSourceProcessHandle, hSourceHandle, hTargetProcessHandle, lpTargetHandle uintptr, dwDesiredAccess uint32, bInheritHandle int32, dwOptions uint32) int32 {
-	panic(todo(""))
+
+	r0, _, err := syscall.Syscall9(procDuplicateHandle.Addr(), 7, hSourceProcessHandle, hSourceHandle, hTargetProcessHandle,
+		lpTargetHandle, uintptr(dwDesiredAccess), uintptr(bInheritHandle), uintptr(dwOptions), 0, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return int32(r0)
 }
 
 // HANDLE GetCurrentProcess();
 func XGetCurrentProcess(t *TLS) uintptr {
-	panic(todo(""))
+
+	h, err := syscall.GetCurrentProcess()
+	if err != nil {
+		t.setErrno(err)
+	}
+	return uintptr(h)
 }
 
 // BOOL FlushFileBuffers(
@@ -2352,7 +2375,12 @@ func XWaitForSingleObject(t *TLS, hHandle uintptr, dwMilliseconds uint32) uint32
 //   HANDLE hEvent
 // );
 func XResetEvent(t *TLS, hEvent uintptr) int32 {
-	panic(todo(""))
+
+	rv, _, err := syscall.Syscall(procResetEvent.Addr(), 1, hEvent, 0, 0)
+	if rv == 0 {
+		t.setErrno(err)
+	}
+	return int32(rv)
 }
 
 // BOOL WINAPI PeekConsoleInput(
@@ -2585,7 +2613,11 @@ func XSetFileAttributesW(t *TLS, lpFileName uintptr, dwFileAttributes uint32) in
 //   LPWSTR  lpTempFileName
 // );
 func XGetTempFileNameW(t *TLS, lpPathName, lpPrefixString uintptr, uUnique uint32, lpTempFileName uintptr) uint32 {
-	panic(todo(""))
+	r0, _, e1 := syscall.Syscall6(procGetTempFileNameW.Addr(), 4, lpPathName, lpPrefixString, uintptr(uUnique), lpTempFileName, 0, 0)
+	if r0 == 0 {
+		t.setErrno(e1)
+	}
+	return uint32(r0)
 }
 
 // BOOL CopyFileW(
@@ -3901,7 +3933,12 @@ func XSleepEx(t *TLS, dwMilliseconds uint32, bAlertable int32) uint32 {
 //   DWORD                 nSize
 // );
 func XCreatePipe(t *TLS, hReadPipe, hWritePipe, lpPipeAttributes uintptr, nSize uint32) int32 {
-	panic(todo(""))
+
+	r0, _, err := syscall.Syscall6(procCreatePipe.Addr(), 5, hReadPipe, hWritePipe, lpPipeAttributes, uintptr(nSize), 0, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return int32(r0)
 }
 
 // BOOL CreateProcessW(
@@ -3917,7 +3954,16 @@ func XCreatePipe(t *TLS, hReadPipe, hWritePipe, lpPipeAttributes uintptr, nSize 
 //   LPPROCESS_INFORMATION lpProcessInformation
 // );
 func XCreateProcessW(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes uintptr, bInheritHandles int32, dwCreationFlags uint32, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation uintptr) int32 {
-	panic(todo(""))
+	r1, _, e1 := syscall.Syscall12(procCreateProcessW.Addr(), 10, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes,
+		uintptr(bInheritHandles), uintptr(dwCreationFlags), lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation, 0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return int32(r1)
 }
 
 // DWORD WaitForInputIdle(
@@ -3925,7 +3971,8 @@ func XCreateProcessW(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttribut
 //   DWORD  dwMilliseconds
 // );
 func XWaitForInputIdle(t *TLS, hProcess uintptr, dwMilliseconds uint32) int32 {
-	panic(todo(""))
+	r0, _, _ := syscall.Syscall(procWaitForInputIdle.Addr(), 2, hProcess, uintptr(dwMilliseconds), 0)
+	return int32(r0)
 }
 
 // DWORD SearchPathW(
@@ -3937,7 +3984,12 @@ func XWaitForInputIdle(t *TLS, hProcess uintptr, dwMilliseconds uint32) int32 {
 //   LPWSTR  *lpFilePart
 // );
 func XSearchPathW(t *TLS, lpPath, lpFileName, lpExtension uintptr, nBufferLength uint32, lpBuffer, lpFilePart uintptr) int32 {
-	panic(todo(""))
+
+	r0, _, err := syscall.Syscall6(procSearchPathW.Addr(), 6, lpPath, lpFileName, lpExtension, uintptr(nBufferLength), lpBuffer, lpFilePart)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return int32(r0)
 }
 
 func XGetShortPathNameW(t *TLS, _ ...interface{}) int32 {
@@ -3961,7 +4013,11 @@ func XGetExitCodeProcess(t *TLS, hProcess, lpExitCode uintptr) int32 {
 //   LPDWORD lpBytesLeftThisMessage
 // );
 func XPeekNamedPipe(t *TLS, hNamedPipe, lpBuffer uintptr, nBufferSize uint32, lpBytesRead, lpTotalBytesAvail, lpBytesLeftThisMessage uintptr) int32 {
-	panic(todo(""))
+	r0, _, err := syscall.Syscall6(procPeekNamedPipe.Addr(), 6, hNamedPipe, lpBuffer, uintptr(nBufferSize), lpBytesRead, lpTotalBytesAvail, lpBytesLeftThisMessage)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return int32(r0)
 }
 
 // long _InterlockedExchange(
