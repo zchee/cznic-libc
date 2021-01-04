@@ -233,7 +233,7 @@ func X__builtin___strcpy_chk(t *TLS, dest, src uintptr, os types.Size_t) uintptr
 }
 
 func X__builtin_mmap(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
-	return Xmmap64(t, addr, length, prot, flags, fd, offset)
+	return Xmmap(t, addr, length, prot, flags, fd, offset)
 }
 
 // uint16_t __builtin_bswap16 (uint32_t x)

@@ -12,26 +12,25 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	// 	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
 	gotime "time"
 	"unsafe"
-	//
+
 	"golang.org/x/sys/unix"
 	"modernc.org/libc/errno"
 	"modernc.org/libc/fcntl"
 	"modernc.org/libc/fts"
-	// 	"modernc.org/libc/grp"
+
 	gonetdb "modernc.org/libc/honnef.co/go/netdb"
 	"modernc.org/libc/langinfo"
 	"modernc.org/libc/limits"
 	"modernc.org/libc/netdb"
 	"modernc.org/libc/netinet/in"
 	"modernc.org/libc/pwd"
-	//
-	// 	//TODO- "modernc.org/libc/signal"
+
+	"modernc.org/libc/signal"
 	"modernc.org/libc/stdio"
 	"modernc.org/libc/sys/socket"
 	"modernc.org/libc/sys/stat"
@@ -148,7 +147,7 @@ func Xsrandomdev(t *TLS) {
 
 // int gethostuuid(uuid_t id, const struct timespec *wait);
 func Xgethostuuid(t *TLS, id uintptr, wait uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_GETHOSTUUID, id, wait, 0); err != 0 {
+	if _, _, err := unix.Syscall(unix.SYS_GETHOSTUUID, id, wait, 0); err != 0 { // Cannot avoid the syscall here.
 		if dmesgs {
 			dmesg("%v: %v FAIL", origin(1), err)
 		}
@@ -571,9 +570,27 @@ func Xgeteuid(t *TLS) types.Uid_t {
 	return r
 }
 
+// void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+func Xmmap(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
+	// Cannot avoid the syscall here, addr sometimes matter.
+	data, _, err := unix.Syscall6(unix.SYS_MMAP, addr, uintptr(length), uintptr(prot), uintptr(flags), uintptr(fd), uintptr(offset))
+	if err != 0 {
+		if dmesgs {
+			dmesg("%v: %v FAIL", origin(1), err)
+		}
+		t.setErrno(err)
+		return ^uintptr(0) // (void*)-1
+	}
+
+	if dmesgs {
+		dmesg("%v: %#x", origin(1), data)
+	}
+	return data
+}
+
 // int munmap(void *addr, size_t length);
 func Xmunmap(t *TLS, addr uintptr, length types.Size_t) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_MUNMAP, addr, uintptr(length), 0); err != 0 {
+	if _, _, err := unix.Syscall(unix.SYS_MUNMAP, addr, uintptr(length), 0); err != 0 { // Cannot avoid the syscall here, must pair with mmap.
 		if dmesgs {
 			dmesg("%v: %v FAIL", origin(1), err)
 		}
@@ -644,7 +661,7 @@ func Xioctl(t *TLS, fd int32, request ulong, va uintptr) int32 {
 
 // int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 func Xgetsockname(t *TLS, sockfd int32, addr, addrlen uintptr) int32 {
-	if _, _, err := unix.Syscall(unix.SYS_GETSOCKNAME, uintptr(sockfd), addr, addrlen); err != 0 {
+	if _, _, err := unix.Syscall(unix.SYS_GETSOCKNAME, uintptr(sockfd), addr, addrlen); err != 0 { // Cannot avoid the syscall here.
 		if dmesgs {
 			dmesg("%v: fd %v: %v FAIL", origin(1), sockfd, err)
 		}
@@ -1213,9 +1230,9 @@ func Xmkstemps64(t *TLS, template uintptr, suffixlen int32) int32 {
 	}
 
 	fd, err := tempFile(template, x)
-	if err != 0 {
+	if err != nil {
 		if dmesgs {
-			dmesg("%v: FAIL", origin(1))
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -1548,19 +1565,15 @@ func X__ccgo_in6addr_anyp(t *TLS) uintptr {
 }
 
 func Xabort(t *TLS) {
-	panic(todo(""))
-	// if dmesgs {
-	// 	dmesg("%v:\n%s", origin(1), debug.Stack())
-	// }
-	// panic(todo(""))
-	//TODO p := mustMalloc(t, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
-	//TODO *(*signal.Sigaction)(unsafe.Pointer(p)) = signal.Sigaction{
-	//TODO 	F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: signal.SIG_DFL},
-	//TODO }
-	//TODO Xsigaction(t, signal.SIGABRT, p, 0)
-	//TODO Xfree(t, p)
-	//TODO unix.Kill(unix.Getpid(), syscall.Signal(signal.SIGABRT))
-	//TODO panic(todo("unrechable"))
+	if dmesgs {
+		dmesg("%v:", origin(1))
+	}
+	p := mustCalloc(t, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
+	(*signal.Sigaction)(unsafe.Pointer(p)).F__sigaction_u.F__sa_handler = signal.SIG_DFL
+	Xsigaction(t, signal.SIGABRT, p, 0)
+	Xfree(t, p)
+	unix.Kill(unix.Getpid(), syscall.Signal(signal.SIGABRT))
+	panic(todo("unrechable"))
 }
 
 // int fflush(FILE *stream);
@@ -1998,7 +2011,7 @@ func Xmach_timebase_info(t *TLS, info uintptr) int32 {
 
 // int getattrlist(const char* path, struct attrlist * attrList, void * attrBuf, size_t attrBufSize, unsigned long options);
 func Xgetattrlist(t *TLS, path, attrList, attrBuf uintptr, attrBufSize types.Size_t, options uint32) int32 {
-	if _, _, err := unix.Syscall6(unix.SYS_GETATTRLIST, path, attrList, attrBuf, uintptr(attrBufSize), uintptr(options), 0); err != 0 {
+	if _, _, err := unix.Syscall6(unix.SYS_GETATTRLIST, path, attrList, attrBuf, uintptr(attrBufSize), uintptr(options), 0); err != 0 { // Cannot avoid the syscall here.
 		if dmesgs {
 			dmesg("%v: %v FAIL", origin(1), err)
 		}
@@ -2014,7 +2027,7 @@ func Xgetattrlist(t *TLS, path, attrList, attrBuf uintptr, attrBufSize types.Siz
 
 // int setattrlist(const char* path, struct attrlist * attrList, void * attrBuf, size_t attrBufSize, unsigned long options);
 func Xsetattrlist(t *TLS, path, attrList, attrBuf uintptr, attrBufSize types.Size_t, options uint32) int32 {
-	if _, _, err := unix.Syscall6(unix.SYS_SETATTRLIST, path, attrList, attrBuf, uintptr(attrBufSize), uintptr(options), 0); err != 0 {
+	if _, _, err := unix.Syscall6(unix.SYS_SETATTRLIST, path, attrList, attrBuf, uintptr(attrBufSize), uintptr(options), 0); err != 0 { // Cannot avoid the syscall here.
 		if dmesgs {
 			dmesg("%v: %v FAIL", origin(1), err)
 		}

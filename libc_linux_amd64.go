@@ -36,8 +36,9 @@ func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
 
 	var kact, koldact uintptr
 	if act != 0 {
-		kact = t.Alloc(int(unsafe.Sizeof(k_sigaction{})))
-		defer Xfree(t, kact)
+		sz := int(unsafe.Sizeof(k_sigaction{}))
+		kact = t.Alloc(sz)
+		defer t.Free(sz)
 		*(*k_sigaction)(unsafe.Pointer(kact)) = k_sigaction{
 			handler:  (*signal.Sigaction)(unsafe.Pointer(act)).F__sigaction_handler.Fsa_handler,
 			flags:    ulong((*signal.Sigaction)(unsafe.Pointer(act)).Fsa_flags),
@@ -49,7 +50,7 @@ func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
 		panic(todo(""))
 	}
 
-	if _, _, err := unix.Syscall6(unix.SYS_RT_SIGACTION, uintptr(signal.SIGABRT), kact, koldact, unsafe.Sizeof(k_sigaction{}.mask), 0, 0); err != 0 {
+	if _, _, err := unix.Syscall6(unix.SYS_RT_SIGACTION, uintptr(signum), kact, koldact, unsafe.Sizeof(k_sigaction{}.mask), 0, 0); err != 0 {
 		t.setErrno(err)
 		return -1
 	}

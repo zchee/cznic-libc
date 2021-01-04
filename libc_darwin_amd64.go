@@ -6,61 +6,40 @@ package libc // import "modernc.org/libc"
 
 import (
 	"strings"
-	// 	"time"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
-	// 	"modernc.org/libc/errno"
-	// 	//TODO- "modernc.org/libc/signal"
-	// 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/fcntl"
+	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/types"
 	"modernc.org/libc/utime"
 )
 
 // int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
 func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
-	panic(todo(""))
-	// // 	musl/arch/x86_64/ksigaction.h
-	// //
-	// //	struct k_sigaction {
-	// //		void (*handler)(int);
-	// //		unsigned long flags;
-	// //		void (*restorer)(void);
-	// //		unsigned mask[2];
-	// //	};
-	// type k_sigaction struct {
-	// 	handler  uintptr
-	// 	flags    ulong
-	// 	restorer uintptr
-	// 	mask     [2]uint32
-	// }
+	var kact, koldact uintptr
+	if act != 0 {
+		sz := int(unsafe.Sizeof(signal.X__sigaction{}))
+		kact = t.Alloc(sz)
+		defer t.Free(sz)
+		(*signal.X__sigaction)(unsafe.Pointer(kact)).F__sigaction_u.F__sa_handler = (*signal.Sigaction)(unsafe.Pointer(act)).F__sigaction_u.F__sa_handler
+		(*signal.X__sigaction)(unsafe.Pointer(kact)).Fsa_flags = (*signal.Sigaction)(unsafe.Pointer(act)).Fsa_flags
+		Xmemcpy(t, kact+unsafe.Offsetof(signal.X__sigaction{}.Fsa_mask), act+unsafe.Offsetof(signal.Sigaction{}.Fsa_mask), types.Size_t(unsafe.Sizeof(signal.Sigset_t(0))))
+	}
+	if oldact != 0 {
+		panic(todo(""))
+	}
 
-	// var kact, koldact uintptr
-	// if act != 0 {
-	// 	kact = t.Alloc(int(unsafe.Sizeof(k_sigaction{})))
-	// 	defer Xfree(t, kact)
-	// 	*(*k_sigaction)(unsafe.Pointer(kact)) = k_sigaction{
-	// 		handler:  (*signal.Sigaction)(unsafe.Pointer(act)).F__sigaction_handler.Fsa_handler,
-	// 		flags:    ulong((*signal.Sigaction)(unsafe.Pointer(act)).Fsa_flags),
-	// 		restorer: (*signal.Sigaction)(unsafe.Pointer(act)).Fsa_restorer,
-	// 	}
-	// 	Xmemcpy(t, kact+unsafe.Offsetof(k_sigaction{}.mask), act+unsafe.Offsetof(signal.Sigaction{}.Fsa_mask), types.Size_t(unsafe.Sizeof(k_sigaction{}.mask)))
-	// }
-	// if oldact != 0 {
-	// 	panic(todo(""))
-	// }
+	if _, _, err := unix.Syscall6(unix.SYS_SIGACTION, uintptr(signum), kact, koldact, unsafe.Sizeof(signal.Sigset_t(0)), 0, 0); err != 0 {
+		t.setErrno(err)
+		return -1
+	}
 
-	// if _, _, err := unix.Syscall6(unix.SYS_RT_SIGACTION, uintptr(signal.SIGABRT), kact, koldact, unsafe.Sizeof(k_sigaction{}.mask), 0, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
+	if oldact != 0 {
+		panic(todo(""))
+	}
 
-	// if oldact != 0 {
-	// 	panic(todo(""))
-	// }
-
-	// return 0
+	return 0
 }
 
 // int fcntl(int fd, int cmd, ... /* arg */ );
@@ -173,27 +152,6 @@ func Xfstat64(t *TLS, fd int32, statbuf uintptr) int32 {
 		dmesg("%v: fd %d: ok", origin(1), fd)
 	}
 	return 0
-}
-
-// void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
-func Xmmap(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
-	return Xmmap64(t, addr, length, prot, flags, fd, offset)
-}
-
-func Xmmap64(t *TLS, addr uintptr, length types.Size_t, prot, flags, fd int32, offset types.Off_t) uintptr {
-	data, _, err := unix.Syscall6(unix.SYS_MMAP, addr, uintptr(length), uintptr(prot), uintptr(flags), uintptr(fd), uintptr(offset))
-	if err != 0 {
-		if dmesgs {
-			dmesg("%v: %v FAIL", origin(1), err)
-		}
-		t.setErrno(err)
-		return ^uintptr(0) // (void*)-1
-	}
-
-	if dmesgs {
-		dmesg("%v: %#x", origin(1), data)
-	}
-	return data
 }
 
 // off64_t lseek64(int fd, off64_t offset, int whence);
@@ -431,39 +389,24 @@ func Xdup2(t *TLS, oldfd, newfd int32) int32 {
 
 // ssize_t readlink(const char *restrict path, char *restrict buf, size_t bufsize);
 func Xreadlink(t *TLS, path, buf uintptr, bufsize types.Size_t) types.Ssize_t {
-	//TODO fails
-	// var n int
-	// var err error
-	// switch {
-	// case bufsize == 0:
-	// 	n, err = unix.Readlink(GoString(path), nil)
-	// default:
-	// 	n, err = unix.Readlink(GoString(path), (*RawMem)(unsafe.Pointer(buf))[:bufsize:bufsize])
-	// }
-	// if err != nil {
-	// 	if dmesgs {
-	// 		dmesg("%v: %v FAIL", err)
-	// 	}
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
-
-	// if dmesgs {
-	// 	dmesg("%v: ok")
-	// }
-	// return types.Ssize_t(n)
-
-	n, _, err := unix.Syscall(unix.SYS_READLINK, path, buf, uintptr(bufsize))
-	if err != 0 {
+	var n int
+	var err error
+	switch {
+	case buf == 0 || bufsize == 0:
+		n, err = unix.Readlink(GoString(path), nil)
+	default:
+		n, err = unix.Readlink(GoString(path), (*RawMem)(unsafe.Pointer(buf))[:bufsize:bufsize])
+	}
+	if err != nil {
 		if dmesgs {
-			dmesg("%v: %v FAIL", origin(1), err)
+			dmesg("%v: %v FAIL", err)
 		}
 		t.setErrno(err)
 		return -1
 	}
 
 	if dmesgs {
-		dmesg("%v: ok", origin(1))
+		dmesg("%v: ok")
 	}
 	return types.Ssize_t(n)
 }
