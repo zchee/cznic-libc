@@ -129,14 +129,14 @@ func Xfutimes(t *TLS, fd int32, tv uintptr) int32 {
 	}
 	if err := unix.Futimes(int(fd), a); err != nil {
 		if dmesgs {
-			dmesg("%v: %v", err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
 	}
 
 	if dmesgs {
-		dmesg("%v: ok")
+		dmesg("%v: ok", origin(1))
 	}
 	return 0
 }
@@ -150,14 +150,14 @@ func Xsrandomdev(t *TLS) {
 func Xgethostuuid(t *TLS, id uintptr, wait uintptr) int32 {
 	if _, _, err := unix.Syscall(unix.SYS_GETHOSTUUID, id, wait, 0); err != 0 {
 		if dmesgs {
-			dmesg("%v: %v", err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
 	}
 
 	if dmesgs {
-		dmesg("%v: ok")
+		dmesg("%v: ok", origin(1))
 	}
 	return 0
 }
@@ -166,14 +166,14 @@ func Xgethostuuid(t *TLS, id uintptr, wait uintptr) int32 {
 func Xflock(t *TLS, fd, operation int32) int32 {
 	if err := unix.Flock(int(fd), int(operation)); err != nil {
 		if dmesgs {
-			dmesg("%v: %v", err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
 	}
 
 	if dmesgs {
-		dmesg("%v: ok")
+		dmesg("%v: ok", origin(1))
 	}
 	return 0
 }
@@ -272,7 +272,7 @@ func Xstat(t *TLS, pathname, statbuf uintptr) int32 {
 func Xchdir(t *TLS, path uintptr) int32 {
 	if err := unix.Chdir(GoString(path)); err != nil {
 		if dmesgs {
-			dmesg("%v: %q: %v", origin(1), GoString(path), err)
+			dmesg("%v: %q: %v FAIL", origin(1), GoString(path), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -331,11 +331,6 @@ func Xlocaltime_r(_ *TLS, timep, result uintptr) uintptr {
 
 // int open(const char *pathname, int flags, ...);
 func Xopen(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
-	return Xopen64(t, pathname, flags, args)
-}
-
-// int open(const char *pathname, int flags, ...);
-func Xopen64(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
 	var mode types.Mode_t
 	if args != 0 {
 		mode = *(*types.Mode_t)(unsafe.Pointer(args))
@@ -343,7 +338,7 @@ func Xopen64(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
 	fd, err := unix.Open(GoString(pathname), int(flags), uint32(mode))
 	if err != nil {
 		if dmesgs {
-			dmesg("%v: %q %#x %#o: %v", origin(1), GoString(pathname), flags, mode, err)
+			dmesg("%v: %q %#x %#o: %v FAIL", origin(1), GoString(pathname), flags, mode, err)
 		}
 		t.setErrno(err)
 		return -1
@@ -353,26 +348,6 @@ func Xopen64(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
 		dmesg("%v: %q flags %#x mode %#o: fd %v", origin(1), GoString(pathname), flags, mode, fd)
 	}
 	return int32(fd)
-
-	// var mode types.Mode_t
-	// if args != 0 {
-	// 	mode = *(*types.Mode_t)(unsafe.Pointer(args))
-	// }
-	// fdcwd := fcntl.AT_FDCWD
-	// n, _, err := unix.Syscall6(unix.SYS_OPENAT, uintptr(fdcwd), pathname, uintptr(flags), uintptr(mode), 0, 0)
-	// if err != 0 {
-	// 	if dmesgs {
-	// 		dmesg("%v: %q %#x: %v", origin(1), GoString(pathname), flags, err)
-	// 	}
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
-
-	// if dmesgs {
-	// 	dmesg("%v: %q flags %#x mode %#o: fd %v", origin(1), GoString(pathname), flags, mode, n)
-	// 	dmesg("%v: %v:", origin(2), origin(3))
-	// }
-	// return int32(n)
 }
 
 // off_t lseek(int fd, off_t offset, int whence);
@@ -402,9 +377,9 @@ func Xfsync(t *TLS, fd int32) int32 {
 		return Xfstat(t, fd, uintptr(unsafe.Pointer(&fsyncStatbuf)))
 	}
 
-	if _, _, err := unix.Syscall(unix.SYS_FSYNC, uintptr(fd), 0, 0); err != 0 {
+	if err := unix.Fsync(int(fd)); err != nil {
 		if dmesgs {
-			dmesg("%v: %v: %v", origin(1), fd, err)
+			dmesg("%v: %v: %v FAIL", origin(1), fd, err)
 		}
 		t.setErrno(err)
 		return -1
@@ -430,7 +405,7 @@ func Xsysconf(t *TLS, name int32) long {
 func Xclose(t *TLS, fd int32) int32 {
 	if err := unix.Close(int(fd)); err != nil {
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -440,16 +415,6 @@ func Xclose(t *TLS, fd int32) int32 {
 		dmesg("%v: %d: ok", origin(1), fd)
 	}
 	return 0
-
-	// if _, _, err := unix.Syscall(unix.SYS_CLOSE, uintptr(fd), 0, 0); err != 0 {
-	// 	t.setErrno(err)
-	// 	return -1
-	// }
-
-	// if dmesgs {
-	// 	dmesg("%v: %d: ok", origin(1), fd)
-	// }
-	// return 0
 }
 
 // char *getcwd(char *buf, size_t size);
@@ -458,7 +423,7 @@ func Xgetcwd(t *TLS, buf uintptr, size types.Size_t) uintptr {
 	_, err := unix.Getcwd(s)
 	if err != nil {
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return 0
@@ -475,7 +440,7 @@ func Xgetcwd(t *TLS, buf uintptr, size types.Size_t) uintptr {
 	if n > int(size) {
 		err := errno.ERANGE
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return 0
@@ -499,7 +464,7 @@ func Xfstat(t *TLS, fd int32, statbuf uintptr) int32 {
 func Xftruncate(t *TLS, fd int32, length types.Off_t) int32 {
 	if err := unix.Ftruncate(int(fd), int64(length)); err != nil {
 		if dmesgs {
-			dmesg("%v: fd %d: %v", origin(1), fd, err)
+			dmesg("%v: fd %d: %v FAIL", origin(1), fd, err)
 		}
 		t.setErrno(err)
 		return -1
@@ -518,34 +483,54 @@ func Xfcntl(t *TLS, fd, cmd int32, args uintptr) int32 {
 
 // ssize_t read(int fd, void *buf, size_t count);
 func Xread(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
-	n, _, err := unix.Syscall(unix.SYS_READ, uintptr(fd), buf, uintptr(count))
-	if err != 0 {
+	var n int
+	var err error
+	switch {
+	case count == 0:
+		n, err = unix.Read(int(fd), nil)
+	default:
+		n, err = unix.Read(int(fd), (*RawMem)(unsafe.Pointer(buf))[:count:count])
+		if dmesgs && err == nil {
+			dmesg("%v: fd %v, count %#x, n %#x\n%s", origin(1), fd, count, n, hex.Dump((*RawMem)(unsafe.Pointer(buf))[:n:n]))
+		}
+	}
+	if err != nil {
 		if dmesgs {
-			dmesg("%v: %d %#x: %v, %v", origin(1), fd, count, n, err)
+			dmesg("%v: fd %v, %v FAIL", origin(1), fd, err)
 		}
 		t.setErrno(err)
 		return -1
 	}
 
 	if dmesgs {
-		dmesg("%v: %d %#x: %v\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
+		dmesg("%v: ok", origin(1))
 	}
 	return types.Ssize_t(n)
 }
 
 // ssize_t write(int fd, const void *buf, size_t count);
 func Xwrite(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
-	n, _, err := unix.Syscall(unix.SYS_WRITE, uintptr(fd), buf, uintptr(count))
-	if err != 0 {
+	var n int
+	var err error
+	switch {
+	case count == 0:
+		n, err = unix.Write(int(fd), nil)
+	default:
+		n, err = unix.Write(int(fd), (*RawMem)(unsafe.Pointer(buf))[:count:count])
 		if dmesgs {
-			dmesg("%v: fd %v, count %#x: %v", origin(1), fd, count, err)
+			dmesg("%v: fd %v, count %#x\n%s", origin(1), fd, count, hex.Dump((*RawMem)(unsafe.Pointer(buf))[:count:count]))
+		}
+	}
+	if err != nil {
+		if dmesgs {
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
 	}
 
 	if dmesgs {
-		dmesg("%v: %d %#x: %#x\n%s", origin(1), fd, count, n, hex.Dump(GoBytes(buf, int(n))))
+		dmesg("%v: ok", origin(1))
 	}
 	return types.Ssize_t(n)
 }
@@ -554,7 +539,7 @@ func Xwrite(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 func Xfchmod(t *TLS, fd int32, mode types.Mode_t) int32 {
 	if err := unix.Fchmod(int(fd), uint32(mode)); err != nil {
 		if dmesgs {
-			dmesg("%v: %d %#o: %v", origin(1), fd, mode, err)
+			dmesg("%v: %d %#o: %v FAIL", origin(1), fd, mode, err)
 		}
 		t.setErrno(err)
 		return -1
@@ -584,14 +569,14 @@ func Xgeteuid(t *TLS) types.Uid_t {
 		dmesg("%v: %v", origin(1), r)
 	}
 	return r
-
-	// n, _, _ := unix.Syscall(unix.SYS_GETEUID, 0, 0, 0)
-	// return types.Uid_t(n)
 }
 
 // int munmap(void *addr, size_t length);
 func Xmunmap(t *TLS, addr uintptr, length types.Size_t) int32 {
 	if _, _, err := unix.Syscall(unix.SYS_MUNMAP, addr, uintptr(length), 0); err != 0 {
+		if dmesgs {
+			dmesg("%v: %v FAIL", origin(1), err)
+		}
 		t.setErrno(err)
 		return -1
 	}
@@ -608,6 +593,9 @@ func Xgettimeofday(t *TLS, tv, tz uintptr) int32 {
 	var tvs unix.Timeval
 	err := unix.Gettimeofday(&tvs)
 	if err != nil {
+		if dmesgs {
+			dmesg("%v: %v FAIL", origin(1), err)
+		}
 		t.setErrno(err)
 		return -1
 	}
@@ -658,7 +646,7 @@ func Xioctl(t *TLS, fd int32, request ulong, va uintptr) int32 {
 func Xgetsockname(t *TLS, sockfd int32, addr, addrlen uintptr) int32 {
 	if _, _, err := unix.Syscall(unix.SYS_GETSOCKNAME, uintptr(sockfd), addr, addrlen); err != 0 {
 		if dmesgs {
-			dmesg("%v: fd %v: %v", origin(1), sockfd, err)
+			dmesg("%v: fd %v: %v FAIL", origin(1), sockfd, err)
 		}
 		t.setErrno(err)
 		return -1
@@ -681,7 +669,7 @@ func Xselect(t *TLS, nfds int32, readfds, writefds, exceptfds, timeout uintptr) 
 	)
 	if err != nil {
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -724,7 +712,7 @@ func Xwaitpid(t *TLS, pid types.Pid_t, wstatus uintptr, optname int32) types.Pid
 	n, err := unix.Wait4(int(pid), (*unix.WaitStatus)(unsafe.Pointer(wstatus)), int(optname), nil)
 	if err != nil {
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -740,7 +728,7 @@ func Xwaitpid(t *TLS, pid types.Pid_t, wstatus uintptr, optname int32) types.Pid
 func Xuname(t *TLS, buf uintptr) int32 {
 	if err := unix.Uname((*unix.Utsname)(unsafe.Pointer(buf))); err != nil {
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -1022,6 +1010,9 @@ func Xraise(t *TLS, sig int32) int32 {
 // int fileno(FILE *stream);
 func Xfileno(t *TLS, stream uintptr) int32 {
 	if stream == 0 {
+		if dmesgs {
+			dmesg("%v: FAIL", origin(1))
+		}
 		t.setErrno(errno.EBADF)
 		return -1
 	}
@@ -1030,6 +1021,9 @@ func Xfileno(t *TLS, stream uintptr) int32 {
 		return fd
 	}
 
+	if dmesgs {
+		dmesg("%v: FAIL", origin(1))
+	}
 	t.setErrno(errno.EBADF)
 	return -1
 }
@@ -1210,6 +1204,9 @@ func Xmkstemps64(t *TLS, template uintptr, suffixlen int32) int32 {
 	x := template + uintptr(len-6) - uintptr(suffixlen)
 	for i := uintptr(0); i < 6; i++ {
 		if *(*byte)(unsafe.Pointer(x + i)) != 'X' {
+			if dmesgs {
+				dmesg("%v: FAIL", origin(1))
+			}
 			t.setErrno(errno.EINVAL)
 			return -1
 		}
@@ -1217,6 +1214,9 @@ func Xmkstemps64(t *TLS, template uintptr, suffixlen int32) int32 {
 
 	fd, err := tempFile(template, x)
 	if err != 0 {
+		if dmesgs {
+			dmesg("%v: FAIL", origin(1))
+		}
 		t.setErrno(err)
 		return -1
 	}
@@ -1376,12 +1376,18 @@ func Xfts_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintptr
 func Xfts_read(t *TLS, ftsp uintptr) uintptr {
 	f := getObject(ftsp).(*ftstream)
 	if f.x == len(f.s) {
+		if dmesgs {
+			dmesg("%v: FAIL", origin(1))
+		}
 		t.setErrno(0)
 		return 0
 	}
 
 	r := f.s[f.x]
 	if e := (*fts.FTSENT)(unsafe.Pointer(r)).Ffts_errno; e != 0 {
+		if dmesgs {
+			dmesg("%v: FAIL", origin(1))
+		}
 		t.setErrno(e)
 	}
 	f.x++
@@ -1473,6 +1479,9 @@ func Xcfsetispeed(...interface{}) int32 {
 
 // pid_t fork(void);
 func Xfork(t *TLS) int32 {
+	if dmesgs {
+		dmesg("%v: FAIL", origin(1))
+	}
 	t.setErrno(errno.ENOSYS)
 	return -1
 }
@@ -1498,7 +1507,7 @@ func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
 	if err != nil {
 		if os.IsNotExist(err) {
 			if dmesgs {
-				dmesg("%v: %q: %v", origin(1), GoString(path), err)
+				dmesg("%v: %q: %v FAIL", origin(1), GoString(path), err)
 			}
 			t.setErrno(errno.ENOENT)
 			return 0
@@ -1561,43 +1570,77 @@ func Xfflush(t *TLS, stream uintptr) int32 {
 
 // size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
-	m, _, err := unix.Syscall(unix.SYS_READ, uintptr(file(stream).fd()), ptr, uintptr(size*nmemb))
-	if err != 0 {
+	fd := uintptr(file(stream).fd())
+	count := size * nmemb
+	var n int
+	var err error
+	switch {
+	case count == 0:
+		n, err = unix.Read(int(fd), nil)
+	default:
+		n, err = unix.Read(int(fd), (*RawMem)(unsafe.Pointer(ptr))[:count:count])
+		if dmesgs && err == nil {
+			dmesg("%v: fd %v, n %#x\n%s", origin(1), fd, n, hex.Dump((*RawMem)(unsafe.Pointer(ptr))[:n:n]))
+		}
+	}
+	if err != nil {
 		if dmesgs {
-			dmesg("%v: %d %#x x %#x: %v", origin(1), file(stream).fd(), size, nmemb, err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		file(stream).setErr()
-		return 0
+		return types.Size_t(n) / size
 	}
 
 	if dmesgs {
-		// dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
-		dmesg("%v: %d %#x x %#x: %#x", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
+		dmesg("%v: ok", origin(1))
 	}
-	return types.Size_t(m) / size
+	return types.Size_t(n) / size
 }
 
 // size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
 func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
-	m, _, err := unix.Syscall(unix.SYS_WRITE, uintptr(file(stream).fd()), ptr, uintptr(size*nmemb))
-	if err != 0 {
+	fd := uintptr(file(stream).fd())
+	count := size * nmemb
+	var n int
+	var err error
+	switch {
+	case count == 0:
+		n, err = unix.Write(int(fd), nil)
+	default:
+		n, err = unix.Write(int(fd), (*RawMem)(unsafe.Pointer(ptr))[:count:count])
 		if dmesgs {
-			dmesg("%v: %d %#x x: %v", origin(1), file(stream).fd(), size, nmemb, err)
+			dmesg("%v: fd %v, count %#x\n%s", origin(1), fd, count, hex.Dump((*RawMem)(unsafe.Pointer(ptr))[:count:count]))
+		}
+	}
+	if err != nil {
+		if dmesgs {
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		file(stream).setErr()
-		return 0
+		return types.Size_t(n) / size
 	}
 
 	if dmesgs {
-		// dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
-		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
+		dmesg("%v: ok", origin(1))
 	}
-	return types.Size_t(m) / size
+	return types.Size_t(n) / size
 }
 
 // int fclose(FILE *stream);
 func Xfclose(t *TLS, stream uintptr) int32 {
-	return file(stream).close(t)
+	r := file(stream).close(t)
+	if r != 0 {
+		if dmesgs {
+			dmesg("%v: %v FAIL", origin(1), r)
+		}
+		t.setErrno(r)
+		return stdio.EOF
+	}
+
+	if dmesgs {
+		dmesg("%v: ok", origin(1))
+	}
+	return 0
 }
 
 // int fputc(int c, FILE *stream);
@@ -1670,6 +1713,9 @@ func Xfputs(t *TLS, s, stream uintptr) int32 {
 }
 
 func Xexit(t *TLS, status int32) {
+	if dmesgs {
+		dmesg("%v: exit status %v", origin(1), status)
+	}
 	if len(Covered) != 0 {
 		buf := bufio.NewWriter(os.Stdout)
 		CoverReport(buf)
@@ -1688,6 +1734,9 @@ func Xexit(t *TLS, status int32) {
 
 // void _exit(int status);
 func X_exit(t *TLS, status int32) {
+	if dmesgs {
+		dmesg("%v: exit status %v", origin(1), status)
+	}
 	os.Exit(int(status))
 }
 
@@ -1829,36 +1878,56 @@ func fcntlCmdStr(cmd int32) string {
 
 // ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 func Xpread(t *TLS, fd int32, buf uintptr, count types.Size_t, offset types.Off_t) types.Ssize_t {
-	r, _, err := unix.Syscall6(unix.SYS_PREAD, uintptr(fd), buf, uintptr(count), uintptr(offset), 0, 0)
-	if err != 0 {
+	var n int
+	var err error
+	switch {
+	case count == 0:
+		n, err = unix.Pread(int(fd), nil, int64(offset))
+	default:
+		n, err = unix.Pread(int(fd), (*RawMem)(unsafe.Pointer(buf))[:count:count], int64(offset))
+		if dmesgs && err == nil {
+			dmesg("%v: fd %v, off %#x, count %#x, n %#x\n%s", origin(1), fd, offset, count, n, hex.Dump((*RawMem)(unsafe.Pointer(buf))[:n:n]))
+		}
+	}
+	if err != nil {
 		if dmesgs {
-			dmesg("%v: %v %#x %v %v: %v", origin(1), fd, buf, count, offset, err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
 	}
 
 	if dmesgs {
-		dmesg("%v: %v %#x %v %v: %v", origin(1), fd, buf, count, offset, r)
+		dmesg("%v: ok", origin(1))
 	}
-	return types.Ssize_t(r)
+	return types.Ssize_t(n)
 }
 
 // ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 func Xpwrite(t *TLS, fd int32, buf uintptr, count types.Size_t, offset types.Off_t) types.Ssize_t {
-	r, _, err := unix.Syscall6(unix.SYS_PWRITE, uintptr(fd), buf, uintptr(count), uintptr(offset), 0, 0)
-	if err != 0 {
+	var n int
+	var err error
+	switch {
+	case count == 0:
+		n, err = unix.Pwrite(int(fd), nil, int64(offset))
+	default:
+		n, err = unix.Pwrite(int(fd), (*RawMem)(unsafe.Pointer(buf))[:count:count], int64(offset))
 		if dmesgs {
-			dmesg("%v: %v %#x %v %v: %v", origin(1), fd, buf, count, offset, err)
+			dmesg("%v: fd %v, off %#x, count %#x\n%s", origin(1), fd, offset, count, hex.Dump((*RawMem)(unsafe.Pointer(buf))[:count:count]))
+		}
+	}
+	if err != nil {
+		if dmesgs {
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
 	}
 
 	if dmesgs {
-		dmesg("%v: %v %#x %v %v: %v", origin(1), fd, buf, count, offset, r)
+		dmesg("%v: ok", origin(1))
 	}
-	return types.Ssize_t(r)
+	return types.Ssize_t(n)
 }
 
 // char***_NSGetEnviron()
@@ -1870,7 +1939,7 @@ func X_NSGetEnviron(t *TLS) uintptr {
 func Xchflags(t *TLS, path uintptr, flags uint32) int32 {
 	if err := unix.Chflags(GoString(path), int(flags)); err != nil {
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -1886,7 +1955,7 @@ func Xchflags(t *TLS, path uintptr, flags uint32) int32 {
 func Xrmdir(t *TLS, pathname uintptr) int32 {
 	if err := unix.Rmdir(GoString(pathname)); err != nil {
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -1931,7 +2000,7 @@ func Xmach_timebase_info(t *TLS, info uintptr) int32 {
 func Xgetattrlist(t *TLS, path, attrList, attrBuf uintptr, attrBufSize types.Size_t, options uint32) int32 {
 	if _, _, err := unix.Syscall6(unix.SYS_GETATTRLIST, path, attrList, attrBuf, uintptr(attrBufSize), uintptr(options), 0); err != 0 {
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -1947,7 +2016,7 @@ func Xgetattrlist(t *TLS, path, attrList, attrBuf uintptr, attrBufSize types.Siz
 func Xsetattrlist(t *TLS, path, attrList, attrBuf uintptr, attrBufSize types.Size_t, options uint32) int32 {
 	if _, _, err := unix.Syscall6(unix.SYS_SETATTRLIST, path, attrList, attrBuf, uintptr(attrBufSize), uintptr(options), 0); err != 0 {
 		if dmesgs {
-			dmesg("%v: %v", origin(1), err)
+			dmesg("%v: %v FAIL", origin(1), err)
 		}
 		t.setErrno(err)
 		return -1
@@ -2014,6 +2083,9 @@ func Xreaddir(t *TLS, dir uintptr) uintptr {
 		// trc("must read: %v %v", n, err)
 		if n == 0 {
 			if err != nil && err != io.EOF {
+				if dmesgs {
+					dmesg("%v: %v FAIL", origin(1), err)
+				}
 				t.setErrno(err)
 			}
 			(*darwinDir)(unsafe.Pointer(dir)).eof = true
@@ -2036,4 +2108,22 @@ func Xclosedir(t *TLS, dir uintptr) int32 {
 	r := Xclose(t, int32((*darwinDir)(unsafe.Pointer(dir)).fd))
 	Xfree(t, dir)
 	return r
+}
+
+// int pipe(int pipefd[2]);
+func Xpipe(t *TLS, pipefd uintptr) int32 {
+	var a [2]int
+	if err := syscall.Pipe(a[:]); err != nil {
+		if dmesgs {
+			dmesg("%v: %v FAIL", origin(1), err)
+		}
+		t.setErrno(err)
+		return -1
+	}
+
+	*(*[2]int32)(unsafe.Pointer(pipefd)) = [2]int32{int32(a[0]), int32(a[1])}
+	if dmesgs {
+		dmesg("%v: %v ok", origin(1), a)
+	}
+	return 0
 }
