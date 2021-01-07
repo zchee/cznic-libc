@@ -418,26 +418,7 @@ func Xclose(t *TLS, fd int32) int32 {
 
 // char *getcwd(char *buf, size_t size);
 func Xgetcwd(t *TLS, buf uintptr, size types.Size_t) uintptr {
-	s := make([]byte, maxPathLen)
-	_, err := unix.Getcwd(s)
-	if err != nil {
-		if dmesgs {
-			dmesg("%v: %v FAIL", origin(1), err)
-		}
-		t.setErrno(err)
-		return 0
-	}
-
-	n := len(s)
-	for i, v := range s {
-		if v == 0 {
-			n = i + 1
-			s = s[:n]
-			break
-		}
-	}
-	if n > int(size) {
-		err := errno.ERANGE
+	if _, err := unix.Getcwd((*RawMem)(unsafe.Pointer(buf))[:size:size]); err != nil {
 		if dmesgs {
 			dmesg("%v: %v FAIL", origin(1), err)
 		}
@@ -446,10 +427,7 @@ func Xgetcwd(t *TLS, buf uintptr, size types.Size_t) uintptr {
 	}
 
 	if dmesgs {
-		dmesg("%v: %q", origin(1), s)
-	}
-	if buf != 0 {
-		copy((*RawMem)(unsafe.Pointer(buf))[:n:n], s)
+		dmesg("%v: ok", origin(1))
 	}
 	return buf
 }

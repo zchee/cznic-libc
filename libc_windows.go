@@ -2448,14 +2448,14 @@ type ThreadAdapter struct {
 	token      uintptr
 	tls        *TLS
 	param      uintptr
-	threadFunc func(*TLS, uintptr)
+	threadFunc func(*TLS, uintptr) uint32
 }
 
 func (ta *ThreadAdapter) ThreadProc(p uintptr) uintptr {
-
-	ta.threadFunc(ta.tls, ta.param)
+	r := ta.threadFunc(ta.tls, ta.param)
+	ta.tls.Close()
 	removeObject(ta.token)
-	return 0
+	return uintptr(r)
 }
 
 // HANDLE CreateThread(
@@ -2468,8 +2468,8 @@ func (ta *ThreadAdapter) ThreadProc(p uintptr) uintptr {
 // );
 func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t, lpStartAddress, lpParameter uintptr, dwCreationFlags uint32, lpThreadId uintptr) uintptr {
 
-	f := (*struct{ f func(*TLS, uintptr) })(unsafe.Pointer(&struct{ uintptr }{lpStartAddress})).f
-	var tAdp = ThreadAdapter{threadFunc: f, tls: t, param: lpParameter}
+	f := (*struct{ f func(*TLS, uintptr) uint32 })(unsafe.Pointer(&struct{ uintptr }{lpStartAddress})).f
+	var tAdp = ThreadAdapter{threadFunc: f, tls: NewTLS(), param: lpParameter}
 	tAdp.token = addObject(tAdp)
 
 	r0, _, err := syscall.Syscall6(procCreateThread.Addr(), 6, lpThreadAttributes, uintptr(dwStackSize),
