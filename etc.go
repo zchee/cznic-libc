@@ -28,7 +28,7 @@ import (
 const (
 	allocatorPageOverhead = 4 * unsafe.Sizeof(int(0))
 	stackHeaderSize       = unsafe.Sizeof(stackHeader{})
-	stackSegmentSize      = 1<<12 - allocatorPageOverhead
+	stackSegmentSize      = 1<<11 - allocatorPageOverhead
 	uintptrSize           = unsafe.Sizeof(uintptr(0))
 )
 
