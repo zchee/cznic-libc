@@ -112,6 +112,8 @@ var (
 	procSleepEx                    = modkernel32.NewProc("SleepEx")
 	procPeekConsoleInputW          = modkernel32.NewProc("PeekConsoleInputW")
 	procReadConsoleW               = modkernel32.NewProc("ReadConsoleW")
+	procGetExitCodeProcess         = modkernel32.NewProc("GetExitCodeProcess")
+	procWaitForSingleObjectEx      = modkernel32.NewProc("WaitForSingleObjectEx")
 	//	procSetConsoleCP               = modkernel32.NewProc("SetConsoleCP")
 	//	procSetThreadPriority          = modkernel32.NewProc("SetThreadPriority")
 	//--
@@ -3463,7 +3465,8 @@ func XGetExitCodeThread(t *TLS, hThread, lpExitCode uintptr) int32 {
 //   BOOL   bAlertable
 // );
 func XWaitForSingleObjectEx(t *TLS, hHandle uintptr, dwMilliseconds uint32, bAlertable int32) uint32 {
-	panic(todo(""))
+	rv, _, _ := syscall.Syscall(procWaitForSingleObjectEx.Addr(), 3, hHandle, uintptr(dwMilliseconds), uintptr(bAlertable))
+	return uint32(rv)
 }
 
 // DWORD MsgWaitForMultipleObjectsEx(
@@ -4023,7 +4026,11 @@ func XGetShortPathNameW(t *TLS, _ ...interface{}) int32 {
 //   LPDWORD lpExitCode
 // );
 func XGetExitCodeProcess(t *TLS, hProcess, lpExitCode uintptr) int32 {
-	panic(todo(""))
+	r0, _, err := syscall.Syscall(procGetExitCodeProcess.Addr(), 2, hProcess, lpExitCode, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return int32(r0)
 }
 
 // BOOL PeekNamedPipe(
