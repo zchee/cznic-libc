@@ -1850,7 +1850,7 @@ func extractDigits(s string, base int32) (string, int) {
 	var sbldr strings.Builder
 	var ct = 0
 	var lastRune rune
-	for _, r := range s {
+	for i, r := range s {
 		ct++
 		// space, remove on front
 		// or end of num
@@ -1877,7 +1877,8 @@ func extractDigits(s string, base int32) (string, int) {
 			continue
 		}
 		if r == 'x' || r == 'X' {
-			if lastRune != '0' {
+			// 'x' afer 0, or last (hex)
+			if lastRune != '0' && i != len(s)-1 {
 				return "", 0
 			}
 			sbldr.WriteRune(r)
@@ -1911,6 +1912,11 @@ func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
 	if ct == 0 {
 		t.setErrno(errno.EINVAL)
 		return 0
+	}
+
+	if strings.HasSuffix(numStr, "x") {
+		numStr = numStr[0 : len(numStr)-1]
+		base = 16
 	}
 
 	var out, err = strconv.ParseUint(numStr, int(base), 64)
@@ -1952,6 +1958,11 @@ func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
 	if ct == 0 {
 		t.setErrno(errno.EINVAL)
 		return 0
+	}
+
+	if strings.HasSuffix(numStr, "x") {
+		numStr = numStr[0 : len(numStr)-1]
+		base = 16
 	}
 
 	var out, err = strconv.ParseInt(numStr, int(base), 64)
