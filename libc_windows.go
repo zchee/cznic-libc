@@ -1850,7 +1850,7 @@ func extractDigits(s string, base int32) (string, int) {
 	var sbldr strings.Builder
 	var ct = 0
 	var lastRune rune
-	for i, r := range s {
+	for _, r := range s {
 		ct++
 		// space, remove on front
 		// or end of num
@@ -1877,11 +1877,13 @@ func extractDigits(s string, base int32) (string, int) {
 			continue
 		}
 		if r == 'x' || r == 'X' {
-			// 'x' afer 0, or last (hex)
-			if lastRune != '0' && i != len(s)-1 {
-				return "", 0
-			}
 			sbldr.WriteRune(r)
+
+			if lastRune != '0' {
+				// not at end, x terminator
+				break
+			}
+			// 'x' after 0, ok to continue
 			continue
 		}
 		if unicode.IsDigit(r) {
@@ -1914,7 +1916,7 @@ func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
 		return 0
 	}
 
-	if strings.HasSuffix(numStr, "x") {
+	if strings.HasSuffix(strings.ToLower(numStr), "x") {
 		numStr = numStr[0 : len(numStr)-1]
 		base = 16
 	}
@@ -1954,13 +1956,14 @@ func XSetEvent(t *TLS, hEvent uintptr) int32 {
 // long int strtol(const char *nptr, char **endptr, int base);
 func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
 	var s = GoString(nptr)
+
 	var numStr, ct = extractDigits(s, base)
 	if ct == 0 {
 		t.setErrno(errno.EINVAL)
 		return 0
 	}
 
-	if strings.HasSuffix(numStr, "x") {
+	if strings.HasSuffix(strings.ToLower(numStr), "x") {
 		numStr = numStr[0 : len(numStr)-1]
 		base = 16
 	}
