@@ -739,6 +739,10 @@ func Xmemset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
 
 // void *memcpy(void *dest, const void *src, size_t n);
 func Xmemcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
+	if n == 0 {
+		return dest
+	}
+
 	s := (*RawMem)(unsafe.Pointer(src))[:n:n]
 	d := (*RawMem)(unsafe.Pointer(dest))[:n:n]
 	copy(d, s)
@@ -777,6 +781,10 @@ func Xmemchr(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
 
 // void *memmove(void *dest, const void *src, size_t n);
 func Xmemmove(t *TLS, dest, src uintptr, n types.Size_t) uintptr {
+	if n == 0 {
+		return dest
+	}
+
 	copy((*RawMem)(unsafe.Pointer(uintptr(dest)))[:n:n], (*RawMem)(unsafe.Pointer(uintptr(src)))[:n:n])
 	return dest
 }
