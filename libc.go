@@ -709,9 +709,29 @@ func Xstrrchr(t *TLS, s uintptr, c int32) (r uintptr) {
 // void *memset(void *s, int c, size_t n)
 func Xmemset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
 	if n != 0 {
-		b := (*RawMem)(unsafe.Pointer(s))[:n:n]
+		c := byte(c & 0xff)
+
+		//this will make sure that on platforms where they are not equally alligned
+		//we clear out the first few bytes until allignment
+		bytesBeforeAllignment := s % unsafe.Alignof(uint64(0))
+		if bytesBeforeAllignment > uintptr(n) {
+			bytesBeforeAllignment = uintptr(n)
+		}
+		b := (*RawMem)(unsafe.Pointer(s))[:bytesBeforeAllignment:bytesBeforeAllignment]
+		n -= types.Size_t(bytesBeforeAllignment)
 		for i := range b {
-			b[i] = byte(c)
+			b[i] = c
+		}
+		i64 := uint64(c) + uint64(c)<<8 + uint64(c)<<16 + uint64(c)<<24 + uint64(c)<<32 + uint64(c)<<40 + uint64(c)<<48 + uint64(c)<<56
+		b8 := (*RawMem64)(unsafe.Pointer(s + bytesBeforeAllignment))[: n/8 : n/8]
+		for i := range b8 {
+			b8[i] = i64
+		}
+		if n%8 != 0 {
+			b = (*RawMem)(unsafe.Pointer(s + bytesBeforeAllignment + uintptr(n-n%8)))[: n%8 : n%8]
+			for i := range b {
+				b[i] = c
+			}
 		}
 	}
 	return s
@@ -719,13 +739,10 @@ func Xmemset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
 
 // void *memcpy(void *dest, const void *src, size_t n);
 func Xmemcpy(t *TLS, dest, src uintptr, n types.Size_t) (r uintptr) {
-	r = dest
-	for ; n != 0; n-- {
-		*(*byte)(unsafe.Pointer(dest)) = *(*byte)(unsafe.Pointer(src))
-		src++
-		dest++
-	}
-	return r
+	s := (*RawMem)(unsafe.Pointer(src))[:n:n]
+	d := (*RawMem)(unsafe.Pointer(dest))[:n:n]
+	copy(d, s)
+	return dest
 }
 
 // int memcmp(const void *s1, const void *s2, size_t n);
