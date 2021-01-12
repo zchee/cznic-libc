@@ -317,7 +317,7 @@ func cString(t *TLS, s string) uintptr {
 }
 
 func mustMalloc(t *TLS, n types.Size_t) uintptr {
-	if p := Xmalloc(t, n); p != 0 {
+	if p := Xmalloc(t, n); p != 0 || n == 0 {
 		return p
 	}
 
@@ -491,7 +491,7 @@ func GoBytes(s uintptr, len int) []byte {
 }
 
 func mustCalloc(t *TLS, n types.Size_t) uintptr {
-	if p := Xcalloc(t, 1, n); p != 0 {
+	if p := Xcalloc(t, 1, n); p != 0 || n == 0 {
 		return p
 	}
 
@@ -555,6 +555,7 @@ func mustCString(s string) uintptr {
 	if err != nil {
 		panic(todo("", err))
 	}
+
 	return p
 }
 
