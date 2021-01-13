@@ -131,8 +131,13 @@ var (
 	//--
 )
 
+var (
+	threadCallback uintptr
+)
+
 func init() {
 	isWindows = true
+	threadCallback = syscall.NewCallback(ThreadProc)
 }
 
 // ---------------------------------
@@ -372,24 +377,24 @@ var localtime time.Tm
 
 // struct tm *localtime(const time_t *timep);
 func Xlocaltime(_ *TLS, timep uintptr) uintptr {
-	panic(todo(""))
-	// loc := gotime.Local
-	// if r := getenv(Environ(), "TZ"); r != 0 {
-	// 	zone, off := parseZone(GoString(r))
-	// 	loc = gotime.FixedZone(zone, -off)
-	// }
-	// ut := *(*unix.Time_t)(unsafe.Pointer(timep))
-	// t := gotime.Unix(int64(ut), 0).In(loc)
-	// localtime.Ftm_sec = int32(t.Second())
-	// localtime.Ftm_min = int32(t.Minute())
-	// localtime.Ftm_hour = int32(t.Hour())
-	// localtime.Ftm_mday = int32(t.Day())
-	// localtime.Ftm_mon = int32(t.Month() - 1)
-	// localtime.Ftm_year = int32(t.Year() - 1900)
-	// localtime.Ftm_wday = int32(t.Weekday())
-	// localtime.Ftm_yday = int32(t.YearDay())
-	// localtime.Ftm_isdst = Bool32(isTimeDST(t))
-	// return uintptr(unsafe.Pointer(&localtime))
+
+	loc := gotime.Local
+	if r := getenv(Environ(), "TZ"); r != 0 {
+		zone, off := parseZone(GoString(r))
+		loc = gotime.FixedZone(zone, -off)
+	}
+	ut := *(*time.Time_t)(unsafe.Pointer(timep))
+	t := gotime.Unix(int64(ut), 0).In(loc)
+	localtime.Ftm_sec = int32(t.Second())
+	localtime.Ftm_min = int32(t.Minute())
+	localtime.Ftm_hour = int32(t.Hour())
+	localtime.Ftm_mday = int32(t.Day())
+	localtime.Ftm_mon = int32(t.Month() - 1)
+	localtime.Ftm_year = int32(t.Year() - 1900)
+	localtime.Ftm_wday = int32(t.Weekday())
+	localtime.Ftm_yday = int32(t.YearDay())
+	localtime.Ftm_isdst = Bool32(isTimeDST(t))
+	return uintptr(unsafe.Pointer(&localtime))
 }
 
 // struct tm *localtime(const time_t *timep);
@@ -2467,11 +2472,16 @@ type ThreadAdapter struct {
 	threadFunc func(*TLS, uintptr) uint32
 }
 
-func (ta *ThreadAdapter) ThreadProc(p uintptr) uintptr {
+func (ta *ThreadAdapter) run() uintptr {
 	r := ta.threadFunc(ta.tls, ta.param)
 	ta.tls.Close()
 	removeObject(ta.token)
 	return uintptr(r)
+}
+
+func ThreadProc(p uintptr) uintptr {
+	adp := getObject(p).(*ThreadAdapter)
+	return adp.run()
 }
 
 // HANDLE CreateThread(
@@ -2486,10 +2496,10 @@ func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t,
 
 	f := (*struct{ f func(*TLS, uintptr) uint32 })(unsafe.Pointer(&struct{ uintptr }{lpStartAddress})).f
 	var tAdp = ThreadAdapter{threadFunc: f, tls: NewTLS(), param: lpParameter}
-	tAdp.token = addObject(tAdp)
+	tAdp.token = addObject(&tAdp)
 
 	r0, _, err := syscall.Syscall6(procCreateThread.Addr(), 6, lpThreadAttributes, uintptr(dwStackSize),
-		syscall.NewCallback(tAdp.ThreadProc), 0, uintptr(dwCreationFlags), lpThreadId)
+		threadCallback, tAdp.token, uintptr(dwCreationFlags), lpThreadId)
 	if r0 == 0 {
 		t.setErrno(err)
 	}
@@ -2695,7 +2705,12 @@ func XDeleteFileW(t *TLS, lpFileName uintptr) int32 {
 //   LPCWSTR lpPathName
 // );
 func XRemoveDirectoryW(t *TLS, lpPathName uintptr) int32 {
-	panic(todo(""))
+	err := syscall.RemoveDirectory((*uint16)(unsafe.Pointer(lpPathName)))
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+	return 1
 }
 
 // HANDLE FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
