@@ -49,6 +49,12 @@ var (
 	_ = trc
 )
 
+func init() {
+	if n := stackHeaderSize; n%16 != 0 {
+		panic(fmt.Errorf("internal error: stackHeaderSize %v == %v (mod 16)", n, n%16))
+	}
+}
+
 func origin(skip int) string {
 	pc, fn, fl, _ := runtime.Caller(skip)
 	f := runtime.FuncForPC(pc)
@@ -208,16 +214,31 @@ func (t *TLS) Alloc(n int) (r uintptr) {
 		t.stack.sp += uintptr(n)
 		return r
 	}
-
+	//if we have a next stack
+	if nstack := t.stack.next; nstack != 0 {
+		if (*stackHeader)(unsafe.Pointer(nstack)).free >= n {
+			*(*stackHeader)(unsafe.Pointer(t.stack.page)) = t.stack
+			t.stack = *(*stackHeader)(unsafe.Pointer(nstack))
+			r = t.stack.sp
+			t.stack.free -= n
+			t.stack.sp += uintptr(n)
+			return r
+		}
+		Xfree(t, nstack)
+		t.stack.next = 0
+	}
 	if t.stack.page != 0 {
 		*(*stackHeader)(unsafe.Pointer(t.stack.page)) = t.stack
 	}
+
 	rq := n + int(stackHeaderSize)
-	if rq < int(stackSegmentSize) {
-		rq = int(stackSegmentSize)
+	if rq%int(stackSegmentSize) != 0 {
+		rq -= rq % int(stackSegmentSize)
+		rq += int(stackSegmentSize)
 	}
 	t.stack.free = rq - int(stackHeaderSize)
 	t.stack.prev = t.stack.page
+
 	rq += 15
 	rq &^= 15
 	t.stack.page = mustMalloc(t, types.Size_t(rq))
@@ -226,8 +247,15 @@ func (t *TLS) Alloc(n int) (r uintptr) {
 	r = t.stack.sp
 	t.stack.free -= n
 	t.stack.sp += uintptr(n)
+	if t.stack.prev != 0 {
+		(*stackHeader)(unsafe.Pointer(t.stack.prev)).next = t.stack.page
+	}
+
 	return r
 }
+
+//this declares how many stack frames are kept alive before being freed
+const stackFrameKeepalive = 2
 
 func (t *TLS) Free(n int) {
 	n += 15
@@ -237,21 +265,47 @@ func (t *TLS) Free(n int) {
 	if t.stack.sp != t.stack.page+stackHeaderSize {
 		return
 	}
+	isFirst := t.stack.prev == 0
+	nstack := t.stack
 
-	Xfree(t, t.stack.page)
-	if t.stack.prev != 0 {
-		t.stack = *(*stackHeader)(unsafe.Pointer(t.stack.prev))
+	//look if we are in the last n stackframes (n=stackFrameKeepalive)
+	//if we find something just return and set the current stack pointer to the previous one
+	for i := 0; i < stackFrameKeepalive; i++ {
+		if nstack.next == 0 {
+			if !isFirst {
+				*((*stackHeader)(unsafe.Pointer(t.stack.page))) = t.stack
+				t.stack = *(*stackHeader)(unsafe.Pointer(t.stack.prev))
+			}
+			return
+		}
+		nstack = *(*stackHeader)(unsafe.Pointer(nstack.next))
+	}
+
+	//if we are the first one, just free all of them
+	if isFirst {
+		for nstack = t.stack; nstack.next != 0; nstack = *(*stackHeader)(unsafe.Pointer(nstack.next)) {
+			if isFirst {
+				Xfree(t, nstack.page)
+			}
+		}
+		t.stack = stackHeader{}
 		return
 	}
 
-	t.stack = stackHeader{}
+	//else only free the last
+	Xfree(t, nstack.page)
+	(*stackHeader)(unsafe.Pointer(nstack.prev)).next = 0
+	*(*stackHeader)(unsafe.Pointer(t.stack.page)) = t.stack
+	t.stack = *(*stackHeader)(unsafe.Pointer(t.stack.prev))
 }
 
 type stackHeader struct {
 	free int     // bytes left in page
 	page uintptr // stack page
 	prev uintptr // prev stack page = prev stack header
+	next uintptr // next stack page = next stack header
 	sp   uintptr // next allocation address
+	_    stackHeaderPadding
 }
 
 func cString(t *TLS, s string) uintptr {
@@ -263,7 +317,7 @@ func cString(t *TLS, s string) uintptr {
 }
 
 func mustMalloc(t *TLS, n types.Size_t) uintptr {
-	if p := Xmalloc(t, n); p != 0 {
+	if p := Xmalloc(t, n); p != 0 || n == 0 {
 		return p
 	}
 
@@ -437,7 +491,7 @@ func GoBytes(s uintptr, len int) []byte {
 }
 
 func mustCalloc(t *TLS, n types.Size_t) uintptr {
-	if p := Xcalloc(t, 1, n); p != 0 {
+	if p := Xcalloc(t, 1, n); p != 0 || n == 0 {
 		return p
 	}
 
@@ -501,6 +555,7 @@ func mustCString(s string) uintptr {
 	if err != nil {
 		panic(todo("", err))
 	}
+
 	return p
 }
 

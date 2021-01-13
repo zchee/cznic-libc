@@ -7,7 +7,15 @@
 package libc // import "modernc.org/libc"
 
 type (
-	RawMem [1<<31 - 1]byte
+	RawMem   [1<<31 - 1]byte
+	RawMem64 [1<<27 - 1]uint64
+
+	// 32-5*4 = 12 bytes left to pad
+	stackHeaderPadding struct {
+		a uintptr
+		b uintptr
+		c uintptr
+	}
 )
 
 type bits []int
