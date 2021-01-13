@@ -2480,7 +2480,10 @@ func (ta *ThreadAdapter) run() uintptr {
 }
 
 func ThreadProc(p uintptr) uintptr {
-	adp := getObject(p).(*ThreadAdapter)
+	adp, ok := getObject(p).(*ThreadAdapter)
+	if !ok {
+		panic("invalid thread")
+	}
 	return adp.run()
 }
 
@@ -2493,7 +2496,6 @@ func ThreadProc(p uintptr) uintptr {
 //   LPDWORD                 lpThreadId
 // );
 func XCreateThread(t *TLS, lpThreadAttributes uintptr, dwStackSize types.Size_t, lpStartAddress, lpParameter uintptr, dwCreationFlags uint32, lpThreadId uintptr) uintptr {
-
 	f := (*struct{ f func(*TLS, uintptr) uint32 })(unsafe.Pointer(&struct{ uintptr }{lpStartAddress})).f
 	var tAdp = ThreadAdapter{threadFunc: f, tls: NewTLS(), param: lpParameter}
 	tAdp.token = addObject(&tAdp)
