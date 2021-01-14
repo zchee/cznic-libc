@@ -410,6 +410,11 @@ more:
 		default:
 			panic(todo(""))
 		}
+	case '%':
+		// A '%' is written.  No argument is converted.  The complete conversion
+		// specification is '%%'.
+		format++
+		buf.WriteByte('%')
 	default:
 		panic(todo("%#U", c))
 	}

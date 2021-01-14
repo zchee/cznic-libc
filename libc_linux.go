@@ -1050,7 +1050,7 @@ func Xfts64_open(t *TLS, path_argv uintptr, options int32, compar uintptr) uintp
 		}
 
 		if err != nil {
-			panic(todo(""))
+			return
 		}
 
 		var statp *unix.Stat_t
