@@ -1227,12 +1227,21 @@ func Xmkstemp(t *TLS, template uintptr) int32 {
 func newFtsent(t *TLS, info int, path string, stat *unix.Stat_t, err syscall.Errno) (r *fts.FTSENT) {
 	var statp uintptr
 	if stat != nil {
-		statp = mustMalloc(t, types.Size_t(unsafe.Sizeof(unix.Stat_t{})))
+		statp = Xmalloc(t, types.Size_t(unsafe.Sizeof(unix.Stat_t{})))
+		if statp == 0 {
+			panic("OOM")
+		}
+
 		*(*unix.Stat_t)(unsafe.Pointer(statp)) = *stat
 	}
+	csp, errx := CString(path)
+	if errx != nil {
+		panic("OOM")
+	}
+
 	return &fts.FTSENT{
 		Ffts_info:    uint16(info),
-		Ffts_path:    mustCString(path),
+		Ffts_path:    csp,
 		Ffts_pathlen: uint16(len(path)),
 		Ffts_statp:   statp,
 		Ffts_errno:   int32(err),
@@ -1240,7 +1249,11 @@ func newFtsent(t *TLS, info int, path string, stat *unix.Stat_t, err syscall.Err
 }
 
 func newCFtsent(t *TLS, info int, path string, stat *unix.Stat_t, err syscall.Errno) uintptr {
-	p := mustCalloc(t, types.Size_t(unsafe.Sizeof(fts.FTSENT{})))
+	p := Xcalloc(t, 1, types.Size_t(unsafe.Sizeof(fts.FTSENT{})))
+	if p == 0 {
+		panic("OOM")
+	}
+
 	*(*fts.FTSENT)(unsafe.Pointer(p)) = *newFtsent(t, info, path, stat, err)
 	return p
 }
@@ -1546,7 +1559,11 @@ func Xabort(t *TLS) {
 	if dmesgs {
 		dmesg("%v:", origin(1))
 	}
-	p := mustCalloc(t, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
+	p := Xcalloc(t, 1, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
+	if p == 0 {
+		panic("OOM")
+	}
+
 	(*signal.Sigaction)(unsafe.Pointer(p)).F__sigaction_u.F__sa_handler = signal.SIG_DFL
 	Xsigaction(t, signal.SIGABRT, p, 0)
 	Xfree(t, p)
@@ -2040,7 +2057,11 @@ type darwinDir struct {
 
 // DIR *opendir(const char *name);
 func Xopendir(t *TLS, name uintptr) uintptr {
-	p := mustMalloc(t, uint64(unsafe.Sizeof(darwinDir{})))
+	p := Xmalloc(t, uint64(unsafe.Sizeof(darwinDir{})))
+	if p == 0 {
+		panic("OOM")
+	}
+
 	fd := int(Xopen(t, name, fcntl.O_RDONLY|fcntl.O_DIRECTORY|fcntl.O_CLOEXEC, 0))
 	if fd < 0 {
 		if dmesgs {

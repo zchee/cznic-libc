@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !libc.membrk
+// +build !libc.membrk,!libc.memgrind
 
 package libc // import "modernc.org/libc"
 
@@ -86,3 +86,26 @@ func Xfree(t *TLS, p uintptr) {
 func UsableSize(p uintptr) types.Size_t {
 	return types.Size_t(memory.UintptrUsableSize(p))
 }
+
+// MemAuditStart locks the memory allocator, initializes and enables memory
+// auditing. Finaly it unlocks the memory allocator.
+//
+// Some memory handling errors, like double free or freeing of unallocated
+// memory, will panic when memory auditing is enabled.
+//
+// This memory auditing functionality has to be enabled using the libc.memgrind
+// build tag.
+//
+// It is intended only for debug/test builds. It slows down memory allocation
+// routines and it has additional memory costs.
+func MemAuditStart() {}
+
+// MemAuditReport locks the memory allocator, reports memory leaks, if any.
+// Finally it disables memory auditing and unlocks the memory allocator.
+//
+// This memory auditing functionality has to be enabled using the libc.memgrind
+// build tag.
+//
+// It is intended only for debug/test builds. It slows down memory allocation
+// routines and it has additional memory costs.
+func MemAuditReport() error { return nil }
