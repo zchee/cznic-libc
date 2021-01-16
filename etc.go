@@ -279,9 +279,7 @@ func (t *TLS) Free(n int) {
 	//if we are the first one, just free all of them
 	if isFirst {
 		for nstack = t.stack; ; nstack = *(*stackHeader)(unsafe.Pointer(nstack.next)) {
-			if isFirst {
-				Xfree(t, nstack.page)
-			}
+			Xfree(t, nstack.page)
 			if nstack.next == 0 {
 				break
 			}
