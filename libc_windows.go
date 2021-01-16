@@ -206,7 +206,7 @@ func (f *file) setErr() {
 // stdout, stdin, sterr
 //
 // Using the windows specific GetStdHandle
-// they're mapped to the standrd fds (0,1,2)
+// they're mapped to the standard fds (0,1,2)
 // Note: it's possible they don't exist
 // if the app has been built for a GUI only
 // target in windows. If that's the case
@@ -1154,12 +1154,21 @@ func Xmkstemp64(t *TLS, template uintptr) int32 {
 // func newFtsent(t *TLS, info int, path string, stat *unix.Stat_t, err syscall.Errno) (r *fts.FTSENT) {
 // 	var statp uintptr
 // 	if stat != nil {
-// 		statp = mustMalloc(t, types.Size_t(unsafe.Sizeof(unix.Stat_t{})))
+// 		statp = Xmalloc(t, types.Size_t(unsafe.Sizeof(unix.Stat_t{})))
+// 		if statp == 0 {
+// 			panic("OOM")
+// 		}
+//
 // 		*(*unix.Stat_t)(unsafe.Pointer(statp)) = *stat
 // 	}
+// 	csp := CString(path)
+// 	if csp == 0 {
+// 		panic("OOM")
+// 	}
+//
 // 	return &fts.FTSENT{
 // 		Ffts_info:    uint16(info),
-// 		Ffts_path:    mustCString(path),
+// 		Ffts_path:    csp,
 // 		Ffts_pathlen: uint16(len(path)),
 // 		Ffts_statp:   statp,
 // 		Ffts_errno:   int32(err),
@@ -1167,7 +1176,11 @@ func Xmkstemp64(t *TLS, template uintptr) int32 {
 // }
 //
 // func newCFtsent(t *TLS, info int, path string, stat *unix.Stat_t, err syscall.Errno) uintptr {
-// 	p := mustCalloc(t, types.Size_t(unsafe.Sizeof(fts.FTSENT{})))
+// 	p := Xcalloc(t, types.Size_t(unsafe.Sizeof(fts.FTSENT{})))
+// 	if p == 0 {
+// 		panic("OOM")
+// 	}
+//
 // 	*(*fts.FTSENT)(unsafe.Pointer(p)) = *newFtsent(t, info, path, stat, err)
 // 	return p
 // }
@@ -1476,7 +1489,11 @@ func Xabort(t *TLS) {
 	// 	if dmesgs {
 	// 		dmesg("%v:\n%s", origin(1), debug.Stack())
 	// 	}
-	// 	p := mustMalloc(t, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
+	// 	p := Xmalloc(t, types.Size_t(unsafe.Sizeof(signal.Sigaction{})))
+	// 	if p == 0 {
+	//		panic("OOM")
+	//	}
+	//
 	// 	*(*signal.Sigaction)(unsafe.Pointer(p)) = signal.Sigaction{
 	// 		F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: signal.SIG_DFL},
 	// 	}

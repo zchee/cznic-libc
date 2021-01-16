@@ -174,7 +174,11 @@ type TLS struct {
 func NewTLS() *TLS {
 	id := atomic.AddInt32(&tid, 1)
 	t := &TLS{ID: id}
-	t.errnop = mustCalloc(t, types.Size_t(unsafe.Sizeof(int32(0))))
+	t.errnop = Xcalloc(t, 1, types.Size_t(unsafe.Sizeof(int32(0))))
+	if t.errnop == 0 {
+		panic("OOM")
+	}
+
 	return t
 }
 
@@ -241,7 +245,11 @@ func (t *TLS) Alloc(n int) (r uintptr) {
 
 	rq += 15
 	rq &^= 15
-	t.stack.page = mustMalloc(t, types.Size_t(rq))
+	t.stack.page = Xmalloc(t, types.Size_t(rq))
+	if t.stack.page == 0 {
+		panic("OOM")
+	}
+
 	t.stack.sp = t.stack.page + stackHeaderSize
 
 	r = t.stack.sp
@@ -308,20 +316,16 @@ type stackHeader struct {
 	_    stackHeaderPadding
 }
 
-func cString(t *TLS, s string) uintptr {
+func cString(t *TLS, s string) uintptr { //TODO-
 	n := len(s)
-	p := mustMalloc(t, types.Size_t(n)+1)
+	p := Xmalloc(t, types.Size_t(n)+1)
+	if p == 0 {
+		panic("OOM")
+	}
+
 	copy((*RawMem)(unsafe.Pointer(p))[:n:n], s)
 	*(*byte)(unsafe.Pointer(p + uintptr(n))) = 0
 	return p
-}
-
-func mustMalloc(t *TLS, n types.Size_t) uintptr {
-	if p := Xmalloc(t, n); p != 0 || n == 0 {
-		return p
-	}
-
-	panic("OOM")
 }
 
 // VaList fills a varargs list at p with args and returns uintptr(p).  The list
@@ -490,14 +494,6 @@ func GoBytes(s uintptr, len int) []byte {
 	return (*RawMem)(unsafe.Pointer(s))[:len:len]
 }
 
-func mustCalloc(t *TLS, n types.Size_t) uintptr {
-	if p := Xcalloc(t, 1, n); p != 0 || n == 0 {
-		return p
-	}
-
-	panic("OOM")
-}
-
 func Bool32(b bool) int32 {
 	if b {
 		return 1
@@ -548,15 +544,6 @@ func CString(s string) (uintptr, error) {
 	copy((*RawMem)(unsafe.Pointer(p))[:n:n], s)
 	*(*byte)(unsafe.Pointer(p + uintptr(n))) = 0
 	return p, nil
-}
-
-func mustCString(s string) uintptr {
-	p, err := CString(s)
-	if err != nil {
-		panic(todo("", err))
-	}
-
-	return p
 }
 
 func GetEnviron() (r []string) {

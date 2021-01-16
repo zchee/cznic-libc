@@ -66,10 +66,18 @@ func X__errno_location(t *TLS) uintptr {
 func Start(main func(*TLS, int32, uintptr) int32) {
 	runtime.LockOSThread()
 	t := NewTLS()
-	argv := mustCalloc(t, types.Size_t((len(os.Args)+1)*int(uintptrSize)))
+	argv := Xcalloc(t, 1, types.Size_t((len(os.Args)+1)*int(uintptrSize)))
+	if argv == 0 {
+		panic("OOM")
+	}
+
 	p := argv
 	for _, v := range os.Args {
-		s := mustCalloc(t, types.Size_t(len(v)+1))
+		s := Xcalloc(t, 1, types.Size_t(len(v)+1))
+		if s == 0 {
+			panic("OOM")
+		}
+
 		copy((*RawMem)(unsafe.Pointer(s))[:len(v):len(v)], v)
 		*(*uintptr)(unsafe.Pointer(p)) = s
 		p += uintptrSize
@@ -79,10 +87,18 @@ func Start(main func(*TLS, int32, uintptr) int32) {
 }
 
 func SetEnviron(t *TLS, env []string) {
-	p := mustCalloc(t, types.Size_t((len(env)+1)*(int(uintptrSize))))
+	p := Xcalloc(t, 1, types.Size_t((len(env)+1)*(int(uintptrSize))))
+	if p == 0 {
+		panic("OOM")
+	}
+
 	*(*uintptr)(unsafe.Pointer(EnvironP())) = p
 	for _, v := range env {
-		s := mustCalloc(t, types.Size_t(len(v)+1))
+		s := Xcalloc(t, 1, types.Size_t(len(v)+1))
+		if s == 0 {
+			panic("OOM")
+		}
+
 		copy((*(*RawMem)(unsafe.Pointer(s)))[:len(v):len(v)], v)
 		*(*uintptr)(unsafe.Pointer(p)) = s
 		p += uintptrSize
