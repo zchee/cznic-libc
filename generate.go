@@ -30,7 +30,7 @@ func main() {
 	if s := os.Getenv("TARGET_GOARCH"); s != "" {
 		goarch = s
 	}
-	g := []string{"libc.go"}
+	g := []string{"libc.go", "mem.go"}
 	switch goos {
 	case "linux":
 		g = append(g, "libc_unix.go")

@@ -662,6 +662,7 @@ func __FLOAT_BITS(tls *TLS, __f float32) uint32 { /* math.h:55:26: */
 	*(*float32)(unsafe.Pointer(bp /* &__u */)) = __f
 	return *(*uint32)(unsafe.Pointer(bp /* &__u */))
 }
+
 func __DOUBLE_BITS(tls *TLS, __f float64) uint64 { /* math.h:61:36: */
 	bp := tls.Alloc(8)
 	defer tls.Free(8)

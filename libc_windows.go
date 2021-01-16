@@ -17,7 +17,6 @@ import (
 	"modernc.org/libc/sys/types"
 	"modernc.org/libc/time"
 	"modernc.org/libc/unistd"
-	"modernc.org/memory"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -4875,7 +4874,7 @@ func XOpenEventA(t *TLS, _ ...interface{}) uintptr {
 //    void *memblock
 // );
 func X_msize(t *TLS, memblock uintptr) types.Size_t {
-	return types.Size_t(memory.UintptrUsableSize(memblock))
+	return types.Size_t(UsableSize(memblock))
 }
 
 // unsigned long _byteswap_ulong ( unsigned long val );
