@@ -3444,7 +3444,20 @@ func X_stat64(t *TLS, path, buffer uintptr) int32 {
 //    long size
 // );
 func X_chsize(t *TLS, fd int32, size long) int32 {
-	panic(todo(""))
+
+	f, ok := fdToFile(fd)
+	if !ok {
+		t.setErrno(EBADF)
+		return -1
+	}
+
+	err := syscall.Ftruncate(f.Handle, int64(size))
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
 }
 
 // int _snprintf(char *str, size_t size, const char *format, ...);
@@ -3518,8 +3531,8 @@ func XCancelSynchronousIo(t *TLS, hThread uintptr) int32 {
 	panic(todo(""))
 }
 
-func X_endthreadex(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+func X_endthreadex(t *TLS, _ ...interface{}) {
+	// NOOP
 }
 
 func X_beginthread(t *TLS, _ ...interface{}) int32 {
@@ -3534,8 +3547,17 @@ func X_beginthread(t *TLS, _ ...interface{}) int32 {
 //    unsigned initflag,
 //    unsigned *thrdaddr
 // );
-func X_beginthreadex(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+func X_beginthreadex(t *TLS, _ uintptr, stack_sz uint32, procAddr uintptr, args uintptr, initf uint32, thAddr uintptr) int32 {
+	f := (*struct{ f func(*TLS, uintptr) uint32 })(unsafe.Pointer(&struct{ uintptr }{procAddr})).f
+	var tAdp = ThreadAdapter{threadFunc: f, tls: NewTLS(), param: args}
+	tAdp.token = addObject(&tAdp)
+
+	r0, _, err := syscall.Syscall6(procCreateThread.Addr(), 6, 0, uintptr(stack_sz),
+		threadCallback, tAdp.token, uintptr(initf), thAddr)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return int32(r0)
 }
 
 // DWORD GetCurrentThreadId();
