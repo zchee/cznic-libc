@@ -113,6 +113,7 @@ var (
 	procReadConsoleW               = modkernel32.NewProc("ReadConsoleW")
 	procGetExitCodeProcess         = modkernel32.NewProc("GetExitCodeProcess")
 	procWaitForSingleObjectEx      = modkernel32.NewProc("WaitForSingleObjectEx")
+	procAreFileApisANSI            = modkernel32.NewProc("AreFileApisANSI")
 	//	procSetConsoleCP               = modkernel32.NewProc("SetConsoleCP")
 	//	procSetThreadPriority          = modkernel32.NewProc("SetThreadPriority")
 	//--
@@ -359,7 +360,6 @@ func Xstat(t *TLS, pathname, statbuf uintptr) int32 {
 
 // int chdir(const char *path);
 func Xchdir(t *TLS, path uintptr) int32 {
-
 	err := syscall.Chdir(GoString(path))
 	if err != nil {
 		t.setErrno(err)
@@ -2864,7 +2864,9 @@ func Xrename(t *TLS, oldpath, newpath uintptr) int32 {
 
 // BOOL AreFileApisANSI();
 func XAreFileApisANSI(t *TLS) int32 {
-	panic(todo(""))
+
+	r0, _, _ := syscall.Syscall(procAreFileApisANSI.Addr(), 0, 0, 0, 0)
+	return int32(r0)
 }
 
 // HANDLE CreateFileA(
@@ -3370,9 +3372,54 @@ func XFlushViewOfFile(t *TLS, lpBaseAddress uintptr, dwNumberOfBytesToFlush type
 	return 1
 }
 
+type _ino_t = uint16 /* types.h:43:24 */
+type _dev_t = uint32 /* types.h:51:22 */
+type _stat64 = struct {
+	Fst_dev   _dev_t
+	Fst_ino   _ino_t
+	Fst_mode  uint16
+	Fst_nlink int16
+	Fst_uid   int16
+	Fst_gid   int16
+	_         [2]byte
+	Fst_rdev  _dev_t
+	_         [4]byte
+	Fst_size  int64
+	Fst_atime int64
+	Fst_mtime int64
+	Fst_ctime int64
+} /* _mingw_stat64.h:83:3 */
+
+var (
+	Windows_Tick   int64 = 10000000
+	SecToUnixEpoch int64 = 11644473600
+)
+
+func WindowsTickToUnixSeconds(windowsTicks int64) int64 {
+	return (windowsTicks/Windows_Tick - SecToUnixEpoch)
+}
+
 // int _stat64(const char *path, struct __stat64 *buffer);
 func X_stat64(t *TLS, path, buffer uintptr) int32 {
-	panic(todo(""))
+
+	var fa syscall.Win32FileAttributeData
+	err := syscall.GetFileAttributesEx((*uint16)(unsafe.Pointer(path)), syscall.GetFileExInfoStandard, (*byte)(unsafe.Pointer(&fa)))
+	if err != nil {
+		t.setErrno(err)
+		return 1
+	}
+
+	var bStat64 = (*_stat64)(unsafe.Pointer(buffer))
+	var accessTime = int64(fa.LastAccessTime.HighDateTime)<<32 + int64(fa.LastAccessTime.LowDateTime)
+	bStat64.Fst_atime = WindowsTickToUnixSeconds(accessTime)
+	var modTime = int64(fa.LastWriteTime.HighDateTime)<<32 + int64(fa.LastWriteTime.LowDateTime)
+	bStat64.Fst_mtime = WindowsTickToUnixSeconds(modTime)
+	var crTime = int64(fa.CreationTime.HighDateTime)<<32 + int64(fa.CreationTime.LowDateTime)
+	bStat64.Fst_ctime = WindowsTickToUnixSeconds(crTime)
+	var fSz = int64(fa.FileSizeHigh)<<32 + int64(fa.FileSizeLow)
+	bStat64.Fst_size = fSz
+
+	return 0
 }
 
 // int _chsize(
@@ -3520,10 +3567,9 @@ func XMessageBoxW(t *TLS, _ ...interface{}) int32 {
 //   DWORD   nSize
 // );
 func XGetModuleFileNameW(t *TLS, hModule, lpFileName uintptr, nSize uint32) uint32 {
-	r0, _, _ := syscall.Syscall(procGetModuleFileNameW.Addr(), 3, hModule, lpFileName, uintptr(nSize))
+	r0, _, err := syscall.Syscall(procGetModuleFileNameW.Addr(), 3, hModule, lpFileName, uintptr(nSize))
 	if r0 == 0 {
-		r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
-		t.setErrno(r1)
+		t.setErrno(err)
 	}
 	return uint32(r0)
 }
@@ -3807,10 +3853,9 @@ func XWSAStartup(t *TLS, wVersionRequired uint16, lpWSAData uintptr) int32 {
 //   LPCWSTR lpModuleName
 // );
 func XGetModuleHandleW(t *TLS, lpModuleName uintptr) uintptr {
-	r0, _, _ := syscall.Syscall(procGetModuleHandleW.Addr(), 1, lpModuleName, 0, 0)
+	r0, _, err := syscall.Syscall(procGetModuleHandleW.Addr(), 1, lpModuleName, 0, 0)
 	if r0 == 0 {
-		r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
-		t.setErrno(r1)
+		t.setErrno(err)
 	}
 	return r0
 }
@@ -3882,10 +3927,9 @@ func XwsprintfW(t *TLS, _ ...interface{}) int32 {
 //   const WNDCLASSW *lpWndClass
 // );
 func XRegisterClassW(t *TLS, lpWndClass uintptr) int32 {
-	r0, _, _ := syscall.Syscall(procRegisterClassW.Addr(), 1, lpWndClass, 0, 0)
+	r0, _, err := syscall.Syscall(procRegisterClassW.Addr(), 1, lpWndClass, 0, 0)
 	if r0 == 0 {
-		r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
-		t.setErrno(r1)
+		t.setErrno(err)
 	}
 	return int32(r0)
 }
@@ -3903,10 +3947,9 @@ func XDestroyWindow(t *TLS, _ ...interface{}) int32 {
 //   HINSTANCE hInstance
 // );
 func XUnregisterClassW(t *TLS, lpClassName, hInstance uintptr) int32 {
-	r0, _, _ := syscall.Syscall(procUnregisterClassW.Addr(), 2, lpClassName, hInstance, 0)
+	r0, _, err := syscall.Syscall(procUnregisterClassW.Addr(), 2, lpClassName, hInstance, 0)
 	if r0 == 0 {
-		r1, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
-		t.setErrno(r1)
+		t.setErrno(err)
 	}
 	return int32(r0)
 }
@@ -4002,11 +4045,6 @@ func XCreatePipe(t *TLS, hReadPipe, hWritePipe, lpPipeAttributes uintptr, nSize 
 func XCreateProcessW(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes uintptr, bInheritHandles int32, dwCreationFlags uint32,
 	lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation uintptr) int32 {
 
-	//var app = goWideString(lpApplicationName)
-	var cmd = goWideString(lpCommandLine)
-	//var lpcd = goWideString(lpCurrentDirectory)
-	fmt.Printf("cmd =  %s", cmd)
-
 	r1, _, e1 := syscall.Syscall12(procCreateProcessW.Addr(), 10, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes,
 		uintptr(bInheritHandles), uintptr(dwCreationFlags), lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation, 0, 0)
 	if r1 == 0 {
@@ -4017,9 +4055,6 @@ func XCreateProcessW(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttribut
 		}
 	}
 	return int32(r1)
-
-	//t.setErrno(errno.EINVAL)
-	//return 0
 }
 
 // DWORD WaitForInputIdle(
@@ -4891,7 +4926,7 @@ func X_byteswap_uint64(t *TLS, val uint64) uint64 {
 //    int fd
 // );
 func X_commit(t *TLS, fd int32) int32 {
-	panic(todo(""))
+	return Xfsync(t, fd)
 }
 
 // int _stati64(
