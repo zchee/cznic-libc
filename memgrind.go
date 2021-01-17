@@ -23,10 +23,11 @@ import (
 
 type memReportItem struct {
 	p, pc uintptr
+	s     string
 }
 
 func (it *memReportItem) String() string {
-	more := allocsMore[it.p]
+	more := it.s
 	if more != "" {
 		a := strings.Split(more, "\n")
 		more = "\n\t\t" + strings.Join(a, "\n\t\t")
@@ -155,6 +156,7 @@ func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
 			}
 
 			delete(allocs, ptr)
+			delete(allocsMore, ptr)
 		}
 	}
 
@@ -200,6 +202,7 @@ func Xfree(t *TLS, p uintptr) {
 		}
 
 		delete(allocs, p)
+		delete(allocsMore, p)
 		frees[p] = pc
 	}
 
@@ -265,7 +268,7 @@ func MemAuditReport() (r error) {
 
 	if len(allocs) != 0 {
 		for p, pc := range allocs {
-			memAudit = append(memAudit, memReportItem{p, pc})
+			memAudit = append(memAudit, memReportItem{p, pc, allocsMore[p]})
 		}
 		sort.Slice(memAudit, func(i, j int) bool {
 			return memAudit[i].String() < memAudit[j].String()
