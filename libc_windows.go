@@ -3462,7 +3462,32 @@ func X_chsize(t *TLS, fd int32, size long) int32 {
 
 // int _snprintf(char *str, size_t size, const char *format, ...);
 func X_snprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) int32 {
-	panic(todo(""))
+	return Xsnprintf(t, str, size, format, args)
+}
+
+const wErr_ERROR_INSUFFICIENT_BUFFER = 122
+
+func win32FindDataToFileInfo(t *TLS, fdata *stat.X_finddata64i32_t, wfd *syscall.Win32finddata) int32 {
+	// t64 = 64-bit time value
+	var accessTime = int64(wfd.LastAccessTime.HighDateTime)<<32 + int64(wfd.LastAccessTime.LowDateTime)
+	fdata.Ftime_access = WindowsTickToUnixSeconds(accessTime)
+	var modTime = int64(wfd.LastWriteTime.HighDateTime)<<32 + int64(wfd.LastWriteTime.LowDateTime)
+	fdata.Ftime_write = WindowsTickToUnixSeconds(modTime)
+	var crTime = int64(wfd.CreationTime.HighDateTime)<<32 + int64(wfd.CreationTime.LowDateTime)
+	fdata.Ftime_create = WindowsTickToUnixSeconds(crTime)
+	// i32 = 32-bit size
+	fdata.Fsize = wfd.FileSizeLow
+	fdata.Fattrib = wfd.FileAttributes
+
+	var cp = XGetConsoleCP(t)
+	var wcFn = (uintptr)(unsafe.Pointer(&wfd.FileName[0]))
+	var mbcsFn = (uintptr)(unsafe.Pointer(&fdata.Fname[0]))
+	rv := XWideCharToMultiByte(t, cp, 0, wcFn, -1, mbcsFn, 260, 0, 0)
+	if rv == wErr_ERROR_INSUFFICIENT_BUFFER {
+		t.setErrno(errno.ENOMEM)
+		return -1
+	}
+	return 0
 }
 
 // intptr_t _findfirst64i32(
@@ -3470,7 +3495,25 @@ func X_snprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) in
 //    struct _finddata64i32_t *fileinfo
 // );
 func X_findfirst64i32(t *TLS, filespec, fileinfo uintptr) types.Intptr_t {
-	panic(todo(""))
+
+	// Note: this is the 'narrow' character findfirst -- expects output
+	// as mbcs -- conversion below -- via ToFileInfo
+
+	var fdata = (*stat.X_finddata64i32_t)(unsafe.Pointer(fileinfo))
+	var wfd syscall.Win32finddata
+	h, err := syscall.FindFirstFile((*uint16)(unsafe.Pointer(filespec)), &wfd)
+	if err != nil {
+		t.setErrno(err)
+		return types.Intptr_t(-1)
+	}
+	rv := win32FindDataToFileInfo(t, fdata, &wfd)
+	if rv != 0 {
+		if h != 0 {
+			syscall.FindClose(h)
+		}
+		return types.Intptr_t(-1)
+	}
+	return types.Intptr_t(h)
 }
 
 // int _findnext64i32(
@@ -3478,14 +3521,34 @@ func X_findfirst64i32(t *TLS, filespec, fileinfo uintptr) types.Intptr_t {
 //    struct _finddata64i32_t *fileinfo
 // );
 func X_findnext64i32(t *TLS, handle types.Intptr_t, fileinfo uintptr) int32 {
-	panic(todo(""))
+
+	var fdata = (*stat.X_finddata64i32_t)(unsafe.Pointer(fileinfo))
+	var wfd syscall.Win32finddata
+
+	err := syscall.FindNextFile(syscall.Handle(handle), &wfd)
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	rv := win32FindDataToFileInfo(t, fdata, &wfd)
+	if rv != 0 {
+		return -1
+	}
+	return 0
 }
 
 // int _findclose(
 //    intptr_t handle
 // );
 func X_findclose(t *TLS, handle types.Intptr_t) int32 {
-	panic(todo(""))
+
+	err := syscall.FindClose(syscall.Handle(handle))
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
+	return 0
 }
 
 // DWORD GetEnvironmentVariableA(
