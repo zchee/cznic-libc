@@ -227,9 +227,15 @@ func (t *TLS) Alloc(n int) (r uintptr) {
 			t.stack.sp += uintptr(n)
 			return r
 		}
-		Xfree(t, nstack)
+		for ; ; nstack = (*stackHeader)(unsafe.Pointer(nstack)).next {
+			Xfree(t, (*stackHeader)(unsafe.Pointer(nstack)).page)
+			if (*stackHeader)(unsafe.Pointer(nstack)).next == 0 {
+				break
+			}
+		}
 		t.stack.next = 0
 	}
+
 	if t.stack.page != 0 {
 		*(*stackHeader)(unsafe.Pointer(t.stack.page)) = t.stack
 	}
