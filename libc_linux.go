@@ -1477,6 +1477,11 @@ func Xexit(t *TLS, status int32) {
 
 // void _exit(int status);
 func X_exit(t *TLS, status int32) {
+	if err := MemAuditReport(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 	os.Exit(int(status))
 }
 

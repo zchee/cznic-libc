@@ -87,12 +87,12 @@ func Xmalloc(t *TLS, n types.Size_t) uintptr {
 	if memAuditEnabled {
 		pc, _, _, ok := runtime.Caller(1)
 		if !ok {
-			panic(todo("cannot obtain caller's PC"))
+			panic("cannot obtain caller's PC")
 		}
 
 		delete(frees, p)
 		if pc0, ok := allocs[p]; ok {
-			panic(todo("%v: malloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+			panic(fmt.Errorf("%v: malloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 		}
 
 		allocs[p] = pc
@@ -120,12 +120,12 @@ func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
 	if memAuditEnabled {
 		pc, _, _, ok := runtime.Caller(1)
 		if !ok {
-			panic(todo("cannot obtain caller's PC"))
+			panic("cannot obtain caller's PC")
 		}
 
 		delete(frees, p)
 		if pc0, ok := allocs[p]; ok {
-			panic(todo("%v: calloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+			panic(fmt.Errorf("%v: calloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 		}
 
 		allocs[p] = pc
@@ -143,16 +143,16 @@ func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
 	if memAuditEnabled {
 		var ok bool
 		if pc, _, _, ok = runtime.Caller(1); !ok {
-			panic(todo("cannot obtain caller's PC"))
+			panic("cannot obtain caller's PC")
 		}
 
 		if ptr != 0 {
 			if pc0, ok := frees[ptr]; ok {
-				panic(todo("%v: realloc of freed memory, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+				panic(fmt.Errorf("%v: realloc of freed memory, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 			}
 
 			if _, ok := allocs[ptr]; !ok {
-				panic(todo("%v: realloc of unallocated memory: %#x", pc2origin(pc), p))
+				panic(fmt.Errorf("%v: realloc of unallocated memory: %#x", pc2origin(pc), p))
 			}
 
 			delete(allocs, ptr)
@@ -169,7 +169,7 @@ func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
 	if memAuditEnabled {
 		delete(frees, p)
 		if pc0, ok := allocs[p]; ok {
-			panic(todo("%v: realloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+			panic(fmt.Errorf("%v: realloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 		}
 
 		allocs[p] = pc
@@ -190,15 +190,15 @@ func Xfree(t *TLS, p uintptr) {
 	if memAuditEnabled {
 		pc, _, _, ok := runtime.Caller(1)
 		if !ok {
-			panic(todo("cannot obtain caller's PC"))
+			panic("cannot obtain caller's PC")
 		}
 
 		if pc0, ok := frees[p]; ok {
-			panic(todo("%v: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+			panic(fmt.Errorf("%v: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 		}
 
 		if _, ok := allocs[p]; !ok {
-			panic(todo("%v: free of unallocated memory: %#x", pc2origin(pc), p))
+			panic(fmt.Errorf("%v: free of unallocated memory: %#x", pc2origin(pc), p))
 		}
 
 		delete(allocs, p)
@@ -213,11 +213,11 @@ func UsableSize(p uintptr) types.Size_t {
 	if memAuditEnabled {
 		pc, _, _, ok := runtime.Caller(1)
 		if !ok {
-			panic(todo("cannot obtain caller's PC"))
+			panic("cannot obtain caller's PC")
 		}
 
 		if _, ok := allocs[p]; !ok {
-			panic(todo("%v: usable size of unallocated memory: %#x", pc2origin(pc), p))
+			panic(fmt.Errorf("%v: usable size of unallocated memory: %#x", pc2origin(pc), p))
 		}
 	}
 
