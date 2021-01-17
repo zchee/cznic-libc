@@ -28,7 +28,7 @@ import (
 const (
 	allocatorPageOverhead = 4 * unsafe.Sizeof(int(0))
 	stackHeaderSize       = unsafe.Sizeof(stackHeader{})
-	stackSegmentSize      = 1<<11 - allocatorPageOverhead
+	stackSegmentSize      = 1<<12 - allocatorPageOverhead
 	uintptrSize           = unsafe.Sizeof(uintptr(0))
 )
 
@@ -165,6 +165,8 @@ func removeObject(t uintptr) {
 	objectMu.Unlock()
 }
 
+var errno0 int32 // Temp errno for NewTLS
+
 type TLS struct {
 	ID     int32
 	errnop uintptr
@@ -173,12 +175,9 @@ type TLS struct {
 
 func NewTLS() *TLS {
 	id := atomic.AddInt32(&tid, 1)
-	t := &TLS{ID: id}
-	t.errnop = Xcalloc(t, 1, types.Size_t(unsafe.Sizeof(int32(0))))
-	if t.errnop == 0 {
-		panic("OOM")
-	}
-
+	t := &TLS{ID: id, errnop: uintptr(unsafe.Pointer(&errno0))}
+	t.errnop = t.Alloc(int(unsafe.Sizeof(int32(0))))
+	*(*int32)(unsafe.Pointer(t.errnop)) = 0
 	return t
 }
 
@@ -206,7 +205,7 @@ again:
 }
 
 func (t *TLS) Close() {
-	Xfree(t, t.errnop)
+	t.Free(int(unsafe.Sizeof(int32(0))))
 }
 
 func (t *TLS) Alloc(n int) (r uintptr) {
