@@ -273,12 +273,12 @@ func (t *TLS) Free(n int) {
 	if t.stack.sp != t.stack.page+stackHeaderSize {
 		return
 	}
-	isFirst := t.stack.prev == 0
+
 	nstack := t.stack
 
 	//if we are the first one, just free all of them
-	if isFirst {
-		for nstack = t.stack; ; nstack = *(*stackHeader)(unsafe.Pointer(nstack.next)) {
+	if t.stack.prev == 0 {
+		for ; ; nstack = *(*stackHeader)(unsafe.Pointer(nstack.next)) {
 			Xfree(t, nstack.page)
 			if nstack.next == 0 {
 				break
@@ -292,10 +292,8 @@ func (t *TLS) Free(n int) {
 	//if we find something just return and set the current stack pointer to the previous one
 	for i := 0; i < stackFrameKeepalive; i++ {
 		if nstack.next == 0 {
-			if !isFirst {
-				*((*stackHeader)(unsafe.Pointer(t.stack.page))) = t.stack
-				t.stack = *(*stackHeader)(unsafe.Pointer(t.stack.prev))
-			}
+			*((*stackHeader)(unsafe.Pointer(t.stack.page))) = t.stack
+			t.stack = *(*stackHeader)(unsafe.Pointer(t.stack.prev))
 			return
 		}
 		nstack = *(*stackHeader)(unsafe.Pointer(nstack.next))
