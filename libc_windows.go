@@ -58,6 +58,7 @@ var (
 	procGetFullPathNameW           = modkernel32.NewProc("GetFullPathNameW")
 	procGetFileAttributesExW       = modkernel32.NewProc("GetFileAttributesExW")
 	procCreateFileW                = modkernel32.NewProc("CreateFileW")
+	procCreateFileA                = modkernel32.NewProc("CreateFileA")
 	procReadFile                   = modkernel32.NewProc("ReadFile")
 	procWriteFile                  = modkernel32.NewProc("WriteFile")
 	procFormatMessageW             = modkernel32.NewProc("FormatMessageW")
@@ -82,6 +83,7 @@ var (
 	procGetModuleFileNameW         = modkernel32.NewProc("GetModuleFileNameW")
 	procGetProcAddress             = modkernel32.NewProc("GetProcAddress")
 	procGetCurrentThreadId         = modkernel32.NewProc("GetCurrentThreadId")
+	procCreateEventA               = modkernel32.NewProc("CreateEventA")
 	procCreateEventW               = modkernel32.NewProc("CreateEventW")
 	procGetACP                     = modkernel32.NewProc("GetACP")
 	procGetEnvironmentVariableW    = modkernel32.NewProc("GetEnvironmentVariableW")
@@ -114,6 +116,9 @@ var (
 	procGetExitCodeProcess         = modkernel32.NewProc("GetExitCodeProcess")
 	procWaitForSingleObjectEx      = modkernel32.NewProc("WaitForSingleObjectEx")
 	procAreFileApisANSI            = modkernel32.NewProc("AreFileApisANSI")
+	procOpenEventA                 = modkernel32.NewProc("OpenEventA")
+	procLockFile                   = modkernel32.NewProc("LockFile")
+	procUnlockFile                 = modkernel32.NewProc("UnlockFile")
 	//	procSetConsoleCP               = modkernel32.NewProc("SetConsoleCP")
 	//	procSetThreadPriority          = modkernel32.NewProc("SetThreadPriority")
 	//--
@@ -1546,6 +1551,11 @@ func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types
 
 // size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
 func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types.Size_t {
+
+	if ptr == 0 || size == 0 {
+		return 0
+	}
+
 	f, ok := getObject(stream).(*file)
 	if !ok {
 		t.setErrno(errno.EBADF)
@@ -2895,8 +2905,22 @@ func XAreFileApisANSI(t *TLS) int32 {
 //   DWORD                 dwFlagsAndAttributes,
 //   HANDLE                hTemplateFile
 // );
-func XCreateFileA(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
-	panic(todo(""))
+func XCreateFileA(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32,
+	lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
+
+	r0, _, e1 := syscall.Syscall9(procCreateFileA.Addr(), 7, lpFileName, uintptr(dwDesiredAccess), uintptr(dwShareMode), lpSecurityAttributes,
+		uintptr(dwCreationDisposition), uintptr(dwFlagsAndAttributes), hTemplateFile, 0, 0)
+	h := syscall.Handle(r0)
+	if h == syscall.InvalidHandle {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return r0
+	}
+	return uintptr(h)
+
 }
 
 // HANDLE CreateFileMappingA(
@@ -3242,7 +3266,19 @@ func XLocalFree(t *TLS, hMem uintptr) uintptr {
 //   DWORD  nNumberOfBytesToLockHigh
 // );
 func XLockFile(t *TLS, hFile uintptr, dwFileOffsetLow, dwFileOffsetHigh, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh uint32) int32 {
-	panic(todo(""))
+
+	r1, _, e1 := syscall.Syscall6(procLockFile.Addr(), 5,
+		hFile, uintptr(dwFileOffsetLow), uintptr(dwFileOffsetHigh), uintptr(nNumberOfBytesToLockLow), uintptr(nNumberOfBytesToLockHigh), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return 0
+	}
+	return int32(r1)
+
 }
 
 // BOOL LockFileEx(
@@ -3315,7 +3351,17 @@ func XSystemTimeToFileTime(t *TLS, lpSystemTime, lpFileTime uintptr) int32 {
 //   DWORD  nNumberOfBytesToUnlockHigh
 // );
 func XUnlockFile(t *TLS, hFile uintptr, dwFileOffsetLow, dwFileOffsetHigh, nNumberOfBytesToUnlockLow, nNumberOfBytesToUnlockHigh uint32) int32 {
-	panic(todo(""))
+	r1, _, e1 := syscall.Syscall6(procUnlockFile.Addr(), 5,
+		hFile, uintptr(dwFileOffsetLow), uintptr(dwFileOffsetHigh), uintptr(nNumberOfBytesToUnlockLow), uintptr(nNumberOfBytesToUnlockHigh), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+		return 0
+	}
+	return int32(r1)
 }
 
 // BOOL UnlockFileEx(
@@ -3584,7 +3630,12 @@ func X_fstat64(t *TLS, fd int32, buffer uintptr) int32 {
 //   LPCSTR                lpName
 // );
 func XCreateEventA(t *TLS, lpEventAttributes uintptr, bManualReset, bInitialState int32, lpName uintptr) uintptr {
-	panic(todo(""))
+	r0, _, err := syscall.Syscall6(procCreateEventA.Addr(), 4, lpEventAttributes, uintptr(bManualReset),
+		uintptr(bInitialState), lpName, 0, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return r0
 }
 
 // BOOL WINAPI CancelSynchronousIo(
@@ -3598,8 +3649,21 @@ func X_endthreadex(t *TLS, _ ...interface{}) {
 	// NOOP
 }
 
-func X_beginthread(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// The calling convention for beginthread is cdecl -- but in this
+// case we're just intercepting it and sending it through CreateThread which expects stdcall
+// and gets that via the go callback. This is safe because the thread is calling into go
+// not a cdecl function which would expect the stack setup of cdecl.
+func X_beginthread(t *TLS, procAddr uintptr, stack_sz uint32, args uintptr) int32 {
+	f := (*struct{ f func(*TLS, uintptr) uint32 })(unsafe.Pointer(&struct{ uintptr }{procAddr})).f
+	var tAdp = ThreadAdapter{threadFunc: f, tls: NewTLS(), param: args}
+	tAdp.token = addObject(&tAdp)
+
+	r0, _, err := syscall.Syscall6(procCreateThread.Addr(), 6, 0, uintptr(stack_sz),
+		threadCallback, tAdp.token, 0, 0)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return int32(r0)
 }
 
 // uintptr_t _beginthreadex( // NATIVE CODE
@@ -5003,8 +5067,13 @@ func X_set_abort_behavior(t *TLS, _ ...interface{}) uint32 {
 //   BOOL   bInheritHandle,
 //   LPCSTR lpName
 // );
-func XOpenEventA(t *TLS, _ ...interface{}) uintptr {
-	panic(todo(""))
+func XOpenEventA(t *TLS, dwDesiredAccess uint32, bInheritHandle uint32, lpName uintptr) uintptr {
+
+	r0, _, err := syscall.Syscall(procOpenEventA.Addr(), 3, uintptr(dwDesiredAccess), uintptr(bInheritHandle), lpName)
+	if r0 == 0 {
+		t.setErrno(err)
+	}
+	return r0
 }
 
 // size_t _msize(
