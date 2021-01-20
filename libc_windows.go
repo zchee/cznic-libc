@@ -2083,8 +2083,8 @@ func XWspiapiGetAddrInfo(t *TLS, _ ...interface{}) int32 {
 //    const wchar_t *string2
 // );
 func Xwcscmp(t *TLS, string1, string2 uintptr) int32 {
-	var s1 = GoString(string1)
-	var s2 = GoString(string1)
+	var s1 = goWideString(string1)
+	var s2 = goWideString(string2)
 	return int32(strings.Compare(s1, s2))
 }
 
@@ -2233,7 +2233,7 @@ func XWriteFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToWrite uint32, l
 //   LPCWSTR lpFileName
 // );
 func XGetFileAttributesW(t *TLS, lpFileName uintptr) uint32 {
-	attrs, err := syscall.GetFileAttributes((*uint16)(unsafe.Pointer(lpFileName)))
+attrs, err := syscall.GetFileAttributes((*uint16)(unsafe.Pointer(lpFileName)))
 	if attrs == syscall.INVALID_FILE_ATTRIBUTES {
 		if err != nil {
 			t.setErrno(err)
@@ -2356,9 +2356,9 @@ func XGetCommState(t *TLS, hFile, lpDCB uintptr) int32 {
 // );
 func X_wcsnicmp(t *TLS, string1, string2 uintptr, count types.Size_t) int32 {
 
-	var s1 = strings.ToLower(GoString(string1))
+	var s1 = strings.ToLower(goWideString(string1))
 	var l1 = len(s1)
-	var s2 = strings.ToLower(GoString(string2))
+	var s2 = strings.ToLower(goWideString(string2))
 	var l2 = len(s2)
 
 	// shorter is lesser
@@ -3872,8 +3872,8 @@ func XAccessCheck(t *TLS, pSecurityDescriptor, ClientToken uintptr, DesiredAcces
 //    const wchar_t *string2
 // );
 func Xwcsicmp(t *TLS, string1, string2 uintptr) int32 {
-	var s1 = strings.ToLower(GoString(string1))
-	var s2 = strings.ToLower(GoString(string1))
+	var s1 = strings.ToLower(goWideString(string1))
+	var s2 = strings.ToLower(goWideString(string2))
 	return int32(strings.Compare(s1, s2))
 }
 
