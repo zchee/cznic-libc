@@ -45,6 +45,8 @@ var (
 	objectMu sync.Mutex
 	objects  = map[uintptr]interface{}{}
 
+	tlsBalance int32
+
 	_ = origin
 	_ = trc
 )
@@ -168,14 +170,18 @@ func removeObject(t uintptr) {
 var errno0 int32 // Temp errno for NewTLS
 
 type TLS struct {
-	ID     int32
-	errnop uintptr
-	stack  stackHeader
+	ID                 int32
+	errnop             uintptr
+	stack              stackHeader
+	stackHeaderBalance int32
 }
 
 func NewTLS() *TLS {
 	id := atomic.AddInt32(&tid, 1)
 	t := &TLS{ID: id, errnop: uintptr(unsafe.Pointer(&errno0))}
+	if memgrind {
+		atomic.AddInt32(&tlsBalance, 1)
+	}
 	t.errnop = t.Alloc(int(unsafe.Sizeof(int32(0))))
 	*(*int32)(unsafe.Pointer(t.errnop)) = 0
 	return t
@@ -205,7 +211,17 @@ again:
 }
 
 func (t *TLS) Close() {
+	if memgrind {
+		if atomic.AddInt32(&tlsBalance, -1) < 0 {
+			panic(todo("negative TLS balance"))
+		}
+	}
 	t.Free(int(unsafe.Sizeof(int32(0))))
+	if memgrind {
+		if t.stackHeaderBalance != 0 {
+			panic(todo("non zero stack header balance: %d", t.stackHeaderBalance))
+		}
+	}
 }
 
 func (t *TLS) Alloc(n int) (r uintptr) {
@@ -229,6 +245,11 @@ func (t *TLS) Alloc(n int) (r uintptr) {
 		}
 		nstack := *(*stackHeader)(unsafe.Pointer(t.stack.next))
 		for ; ; nstack = *(*stackHeader)(unsafe.Pointer(nstack.next)) {
+			if memgrind {
+				if atomic.AddInt32(&t.stackHeaderBalance, -1) < 0 {
+					panic(todo("negative stack header balance"))
+				}
+			}
 			Xfree(t, nstack.page)
 			if nstack.next == 0 {
 				break
@@ -256,6 +277,9 @@ func (t *TLS) Alloc(n int) (r uintptr) {
 		panic("OOM")
 	}
 
+	if memgrind {
+		atomic.AddInt32(&t.stackHeaderBalance, 1)
+	}
 	t.stack.sp = t.stack.page + stackHeaderSize
 
 	r = t.stack.sp
@@ -285,6 +309,11 @@ func (t *TLS) Free(n int) {
 	//if we are the first one, just free all of them
 	if t.stack.prev == 0 {
 		for ; ; nstack = *(*stackHeader)(unsafe.Pointer(nstack.next)) {
+			if memgrind {
+				if atomic.AddInt32(&t.stackHeaderBalance, -1) < 0 {
+					panic(todo("negative stack header balance"))
+				}
+			}
 			Xfree(t, nstack.page)
 			if nstack.next == 0 {
 				break
@@ -306,6 +335,11 @@ func (t *TLS) Free(n int) {
 	}
 
 	//else only free the last
+	if memgrind {
+		if atomic.AddInt32(&t.stackHeaderBalance, -1) < 0 {
+			panic(todo("negative stack header balance"))
+		}
+	}
 	Xfree(t, nstack.page)
 	(*stackHeader)(unsafe.Pointer(nstack.prev)).next = 0
 	*(*stackHeader)(unsafe.Pointer(t.stack.page)) = t.stack

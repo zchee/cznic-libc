@@ -21,6 +21,8 @@ import (
 	"modernc.org/memory"
 )
 
+const memgrind = true
+
 type memReportItem struct {
 	p, pc uintptr
 	s     string

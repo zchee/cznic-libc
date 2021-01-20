@@ -12,6 +12,8 @@ import (
 	"modernc.org/memory"
 )
 
+const memgrind = false
+
 var (
 	allocator memory.Allocator
 )

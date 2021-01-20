@@ -1715,6 +1715,17 @@ func Xexit(t *TLS, status int32) {
 
 // void _exit(int status);
 func X_exit(t *TLS, status int32) {
+	t.Close()
+	if memgrind && tlsBalance != 0 {
+		fmt.Fprintf(os.Stderr, "non zero TLS balance: %d\n", tlsBalance)
+		os.Exit(1)
+	}
+
+	if err := MemAuditReport(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 	os.Exit(int(status))
 }
 
@@ -2233,7 +2244,7 @@ func XWriteFile(t *TLS, hFile, lpBuffer uintptr, nNumberOfBytesToWrite uint32, l
 //   LPCWSTR lpFileName
 // );
 func XGetFileAttributesW(t *TLS, lpFileName uintptr) uint32 {
-attrs, err := syscall.GetFileAttributes((*uint16)(unsafe.Pointer(lpFileName)))
+	attrs, err := syscall.GetFileAttributes((*uint16)(unsafe.Pointer(lpFileName)))
 	if attrs == syscall.INVALID_FILE_ATTRIBUTES {
 		if err != nil {
 			t.setErrno(err)
