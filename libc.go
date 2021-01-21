@@ -247,6 +247,13 @@ func X__builtin_mul_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
 	return Bool32(ovf)
 }
 
+// bool __builtin_mul_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_mul_overflowUint128(t *TLS, a, b Uint128, res uintptr) int32 {
+	r, ovf := a.mulOvf(b)
+	*(*Uint128)(unsafe.Pointer(res)) = r
+	return Bool32(ovf)
+}
+
 func X__builtin_unreachable(t *TLS) {
 	fmt.Fprintf(os.Stderr, "unrechable\n")
 	os.Stderr.Sync()
