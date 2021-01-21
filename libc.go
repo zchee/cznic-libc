@@ -65,7 +65,7 @@ func X__errno_location(t *TLS) uintptr {
 
 func Start(main func(*TLS, int32, uintptr) int32) {
 	runtime.LockOSThread()
-	t := NewTLS()
+	t := &TLS{errnop: uintptr(unsafe.Pointer(&errno0))}
 	argv := Xcalloc(t, 1, types.Size_t((len(os.Args)+1)*int(uintptrSize)))
 	if argv == 0 {
 		panic("OOM")
@@ -86,6 +86,7 @@ func Start(main func(*TLS, int32, uintptr) int32) {
 	if s := os.Getenv("LIBC_MEMGRIND_START"); s != "0" {
 		MemAuditStart()
 	}
+	t = NewTLS()
 	Xexit(t, main(t, int32(len(os.Args)), argv))
 }
 
@@ -671,10 +672,12 @@ func Xmemset(t *TLS, s uintptr, c int32, n types.Size_t) uintptr {
 		for i := range b {
 			b[i] = c
 		}
-		i64 := uint64(c) + uint64(c)<<8 + uint64(c)<<16 + uint64(c)<<24 + uint64(c)<<32 + uint64(c)<<40 + uint64(c)<<48 + uint64(c)<<56
-		b8 := (*RawMem64)(unsafe.Pointer(s + bytesBeforeAllignment))[: n/8 : n/8]
-		for i := range b8 {
-			b8[i] = i64
+		if n >= 8 {
+			i64 := uint64(c) + uint64(c)<<8 + uint64(c)<<16 + uint64(c)<<24 + uint64(c)<<32 + uint64(c)<<40 + uint64(c)<<48 + uint64(c)<<56
+			b8 := (*RawMem64)(unsafe.Pointer(s + bytesBeforeAllignment))[: n/8 : n/8]
+			for i := range b8 {
+				b8[i] = i64
+			}
 		}
 		if n%8 != 0 {
 			b = (*RawMem)(unsafe.Pointer(s + bytesBeforeAllignment + uintptr(n-n%8)))[: n%8 : n%8]
