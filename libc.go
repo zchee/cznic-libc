@@ -248,6 +248,13 @@ func X__builtin_mul_overflowInt64(t *TLS, a, b int64, res uintptr) int32 {
 }
 
 // bool __builtin_mul_overflow (type1 a, type2 b, type3 *res)
+func X__builtin_mul_overflowUint64(t *TLS, a, b uint64, res uintptr) int32 {
+	hi, lo := mbits.Mul64(a, b)
+	*(*uint64)(unsafe.Pointer(res)) = lo
+	return Bool32(hi != 0)
+}
+
+// bool __builtin_mul_overflow (type1 a, type2 b, type3 *res)
 func X__builtin_mul_overflowUint128(t *TLS, a, b Uint128, res uintptr) int32 {
 	r, ovf := a.mulOvf(b)
 	*(*Uint128)(unsafe.Pointer(res)) = r
