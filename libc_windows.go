@@ -5,7 +5,6 @@
 package libc // import "modernc.org/libc"
 
 import (
-	"C"
 	"bufio"
 	"errors"
 	"fmt"
