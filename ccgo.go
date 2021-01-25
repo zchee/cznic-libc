@@ -696,6 +696,12 @@ func PreIncFloat32(p *float32, d float32) float32 { *p += d; return *p }
 func PreIncFloat64(p *float64, d float64) float64 { *p += d; return *p }
 func PreIncUintptr(p *uintptr, d uintptr) uintptr { *p += d; return *p }
 
+func PreIncAtomicInt32(p *int32, d int32) int32         { return atomic.AddInt32(p, d) }
+func PreIncAtomicInt64(p *int64, d int64) int64         { return atomic.AddInt64(p, d) }
+func PreIncAtomicUint32(p *uint32, d uint32) uint32     { return atomic.AddUint32(p, d) }
+func PreIncAtomicUint64(p *uint64, d uint64) uint64     { return atomic.AddUint64(p, d) }
+func PreIncAtomicUintptr(p *uintptr, d uintptr) uintptr { return atomic.AddUintptr(p, d) }
+
 func PreDecInt8(p *int8, d int8) int8             { *p -= d; return *p }
 func PreDecInt16(p *int16, d int16) int16         { *p -= d; return *p }
 func PreDecInt32(p *int32, d int32) int32         { *p -= d; return *p }
@@ -707,6 +713,12 @@ func PreDecUint64(p *uint64, d uint64) uint64     { *p -= d; return *p }
 func PreDecFloat32(p *float32, d float32) float32 { *p -= d; return *p }
 func PreDecFloat64(p *float64, d float64) float64 { *p -= d; return *p }
 func PreDecUintptr(p *uintptr, d uintptr) uintptr { *p -= d; return *p }
+
+func PreDecAtomicInt32(p *int32, d int32) int32         { return atomic.AddInt32(p, -d) }
+func PreDecAtomicInt64(p *int64, d int64) int64         { return atomic.AddInt64(p, -d) }
+func PreDecAtomicUint32(p *uint32, d uint32) uint32     { return atomic.AddUint32(p, -d) }
+func PreDecAtomicUint64(p *uint64, d uint64) uint64     { return atomic.AddUint64(p, -d) }
+func PreDecAtomicUintptr(p *uintptr, d uintptr) uintptr { return atomic.AddUintptr(p, -d) }
 
 func PostIncInt8(p *int8, d int8) int8             { r := *p; *p += d; return r }
 func PostIncInt16(p *int16, d int16) int16         { r := *p; *p += d; return r }
@@ -720,6 +732,12 @@ func PostIncFloat32(p *float32, d float32) float32 { r := *p; *p += d; return r 
 func PostIncFloat64(p *float64, d float64) float64 { r := *p; *p += d; return r }
 func PostIncUintptr(p *uintptr, d uintptr) uintptr { r := *p; *p += d; return r }
 
+func PostIncAtomicInt32(p *int32, d int32) int32         { return atomic.AddInt32(p, d) - d }
+func PostIncAtomicInt64(p *int64, d int64) int64         { return atomic.AddInt64(p, d) - d }
+func PostIncAtomicUint32(p *uint32, d uint32) uint32     { return atomic.AddUint32(p, d) - d }
+func PostIncAtomicUint64(p *uint64, d uint64) uint64     { return atomic.AddUint64(p, d) - d }
+func PostIncAtomicUintptr(p *uintptr, d uintptr) uintptr { return atomic.AddUintptr(p, d) - d }
+
 func PostDecInt8(p *int8, d int8) int8             { r := *p; *p -= d; return r }
 func PostDecInt16(p *int16, d int16) int16         { r := *p; *p -= d; return r }
 func PostDecInt32(p *int32, d int32) int32         { r := *p; *p -= d; return r }
@@ -731,6 +749,12 @@ func PostDecUint64(p *uint64, d uint64) uint64     { r := *p; *p -= d; return r 
 func PostDecFloat32(p *float32, d float32) float32 { r := *p; *p -= d; return r }
 func PostDecFloat64(p *float64, d float64) float64 { r := *p; *p -= d; return r }
 func PostDecUintptr(p *uintptr, d uintptr) uintptr { r := *p; *p -= d; return r }
+
+func PostDecAtomicInt32(p *int32, d int32) int32         { return atomic.AddInt32(p, -d) + d }
+func PostDecAtomicInt64(p *int64, d int64) int64         { return atomic.AddInt64(p, -d) + d }
+func PostDecAtomicUint32(p *uint32, d uint32) uint32     { return atomic.AddUint32(p, -d) + d }
+func PostDecAtomicUint64(p *uint64, d uint64) uint64     { return atomic.AddUint64(p, -d) + d }
+func PostDecAtomicUintptr(p *uintptr, d uintptr) uintptr { return atomic.AddUintptr(p, -d) + d }
 
 func Int8FromInt8(n int8) int8             { return int8(n) }
 func Int8FromInt16(n int16) int8           { return int8(n) }

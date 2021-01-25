@@ -280,3 +280,9 @@ func MemAuditReport() (r error) {
 
 	return nil
 }
+
+func MemAuditAnnotate(pc uintptr, s string) {
+	allocMu.Lock()
+	allocsMore[pc] = s
+	allocMu.Unlock()
+}

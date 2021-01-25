@@ -678,8 +678,18 @@ import (
 	}
 
 	fmt.Fprintln(b)
+	for _, v := range atomic {
+		fmt.Fprintf(b, "func PreIncAtomic%s(p *%s, d %[2]s) %[2]s { return atomic.Add%[1]s(p, d) }\n", capitalize(v), v)
+	}
+
+	fmt.Fprintln(b)
 	for _, v := range scalar {
 		fmt.Fprintf(b, "func PreDec%s(p *%s, d %[2]s) %[2]s { *p -= d; return *p }\n", capitalize(v), v)
+	}
+
+	fmt.Fprintln(b)
+	for _, v := range atomic {
+		fmt.Fprintf(b, "func PreDecAtomic%s(p *%s, d %[2]s) %[2]s { return atomic.Add%[1]s(p, -d) }\n", capitalize(v), v)
 	}
 
 	fmt.Fprintln(b)
@@ -688,8 +698,18 @@ import (
 	}
 
 	fmt.Fprintln(b)
+	for _, v := range atomic {
+		fmt.Fprintf(b, "func PostIncAtomic%s(p *%s, d %[2]s) %[2]s { return atomic.Add%[1]s(p, d) - d }\n", capitalize(v), v)
+	}
+
+	fmt.Fprintln(b)
 	for _, v := range scalar {
 		fmt.Fprintf(b, "func PostDec%s(p *%s, d %[2]s) %[2]s { r := *p; *p -= d; return r }\n", capitalize(v), v)
+	}
+
+	fmt.Fprintln(b)
+	for _, v := range atomic {
+		fmt.Fprintf(b, "func PostDecAtomic%s(p *%s, d %[2]s) %[2]s { return atomic.Add%[1]s(p, -d) + d }\n", capitalize(v), v)
 	}
 
 	fmt.Fprintln(b)
