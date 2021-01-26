@@ -1079,6 +1079,34 @@ func AtomicStoreFloat64(addr *float64, val float64) {
 	atomic.StoreUint64((*uint64)(unsafe.Pointer(addr)), math.Float64bits(val))
 }
 
+func AtomicStorePInt32(addr uintptr, val int32) {
+	atomic.StoreInt32((*int32)(unsafe.Pointer(addr)), val)
+}
+
+func AtomicStorePInt64(addr uintptr, val int64) {
+	atomic.StoreInt64((*int64)(unsafe.Pointer(addr)), val)
+}
+
+func AtomicStorePUint32(addr uintptr, val uint32) {
+	atomic.StoreUint32((*uint32)(unsafe.Pointer(addr)), val)
+}
+
+func AtomicStorePUint64(addr uintptr, val uint64) {
+	atomic.StoreUint64((*uint64)(unsafe.Pointer(addr)), val)
+}
+
+func AtomicStorePUintptr(addr uintptr, val uintptr) {
+	atomic.StoreUintptr((*uintptr)(unsafe.Pointer(addr)), val)
+}
+
+func AtomicStorePFloat32(addr uintptr, val float32) {
+	atomic.StoreUint32((*uint32)(unsafe.Pointer(addr)), math.Float32bits(val))
+}
+
+func AtomicStorePFloat64(addr uintptr, val float64) {
+	atomic.StoreUint64((*uint64)(unsafe.Pointer(addr)), math.Float64bits(val))
+}
+
 func AtomicAddInt32(addr *int32, delta int32) (new int32)     { return atomic.AddInt32(addr, delta) }
 func AtomicAddInt64(addr *int64, delta int64) (new int64)     { return atomic.AddInt64(addr, delta) }
 func AtomicAddUint32(addr *uint32, delta uint32) (new uint32) { return atomic.AddUint32(addr, delta) }

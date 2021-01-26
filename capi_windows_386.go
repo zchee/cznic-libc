@@ -290,6 +290,8 @@ var CAPI = map[string]struct{}{
 	"__builtin_mmap":                    {},
 	"__builtin_mul_overflow":            {},
 	"__builtin_mul_overflowInt64":       {},
+	"__builtin_mul_overflowUint128":     {},
+	"__builtin_mul_overflowUint64":      {},
 	"__builtin_nanf":                    {},
 	"__builtin_object_size":             {},
 	"__builtin_prefetch":                {},

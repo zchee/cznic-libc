@@ -5,11 +5,13 @@ package time
 import (
 	"math"
 	"reflect"
+	"sync/atomic"
 	"unsafe"
 )
 
 var _ = math.Pi
 var _ reflect.Kind
+var _ atomic.Value
 var _ unsafe.Pointer
 
 const (

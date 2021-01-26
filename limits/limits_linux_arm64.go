@@ -5,11 +5,13 @@ package limits
 import (
 	"math"
 	"reflect"
+	"sync/atomic"
 	"unsafe"
 )
 
 var _ = math.Pi
 var _ reflect.Kind
+var _ atomic.Value
 var _ unsafe.Pointer
 
 const (
@@ -129,8 +131,14 @@ type Size_t = uint64 /* <builtin>:9:23 */
 
 type Wchar_t = uint32 /* <builtin>:15:24 */
 
-type X__int128_t = [2]int64   /* <builtin>:21:24 */ //TODO
-type X__uint128_t = [2]uint64 /* <builtin>:22:25 */ //TODO
+type X__int128_t = struct {
+	Flo int64
+	Fhi int64
+} /* <builtin>:21:43 */ // must match modernc.org/mathutil.Int128
+type X__uint128_t = struct {
+	Flo uint64
+	Fhi uint64
+} /* <builtin>:22:44 */ // must match modernc.org/mathutil.Int128
 
 type X__builtin_va_list = uintptr /* <builtin>:47:14 */
 type X__float128 = float64        /* <builtin>:48:21 */

@@ -5,11 +5,13 @@ package libc
 import (
 	"math"
 	"reflect"
+	"sync/atomic"
 	"unsafe"
 )
 
 var _ = math.Pi
 var _ reflect.Kind
+var _ atomic.Value
 var _ unsafe.Pointer
 
 // musl as a whole is licensed under the following standard MIT license:
