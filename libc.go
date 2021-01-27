@@ -384,7 +384,7 @@ func Xvsprintf(t *TLS, str, format, va uintptr) int32 {
 
 // int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 func Xvsnprintf(t *TLS, str uintptr, size types.Size_t, format, va uintptr) int32 {
-	panic(todo(""))
+	return Xsnprintf(t, str, size, format, va)
 }
 
 // int obstack_vprintf (struct obstack *obstack, const char *template, va_list ap)
