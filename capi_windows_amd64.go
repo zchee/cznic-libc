@@ -259,6 +259,7 @@ var CAPI = map[string]struct{}{
 	"__builtin___strcat_chk":            {},
 	"__builtin___strcpy_chk":            {},
 	"__builtin___strncpy_chk":           {},
+	"__builtin___vsnprintf_chk":         {},
 	"__builtin_abort":                   {},
 	"__builtin_abs":                     {},
 	"__builtin_add_overflow":            {},

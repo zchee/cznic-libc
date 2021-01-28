@@ -462,8 +462,17 @@ func Xsnprintf(t *TLS, str uintptr, size types.Size_t, format, args uintptr) (r 
 	return r
 }
 
-// int __builtin___snprintf_chk(char * str, size_t maxlen, int flag, size_t strlen, const char * format);
+// int __builtin___snprintf_chk(char * str, size_t maxlen, int flag, size_t strlen, const char * format, ...);
 func X__builtin___snprintf_chk(t *TLS, str uintptr, maxlen types.Size_t, flag int32, strlen types.Size_t, format, args uintptr) (r int32) {
+	if maxlen != ^types.Size_t(0) && strlen > maxlen {
+		Xabort(t)
+	}
+
+	return Xsnprintf(t, str, strlen, format, args)
+}
+
+// int __builtin___vsnprintf_chk (char *s, size_t maxlen, int flag, size_t os, const char *fmt, va_list ap);
+func X__builtin___vsnprintf_chk(t *TLS, str uintptr, maxlen types.Size_t, flag int32, strlen types.Size_t, format, args uintptr) (r int32) {
 	if maxlen != ^types.Size_t(0) && strlen > maxlen {
 		Xabort(t)
 	}
