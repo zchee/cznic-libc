@@ -118,6 +118,8 @@ var (
 	procOpenEventA                 = modkernel32.NewProc("OpenEventA")
 	procLockFile                   = modkernel32.NewProc("LockFile")
 	procUnlockFile                 = modkernel32.NewProc("UnlockFile")
+	procGetExitCodeThread          = modkernel32.NewProc("GetExitCodeThread")
+
 	//	procSetConsoleCP               = modkernel32.NewProc("SetConsoleCP")
 	//	procSetThreadPriority          = modkernel32.NewProc("SetThreadPriority")
 	//--
@@ -2264,6 +2266,7 @@ func XGetFileAttributesW(t *TLS, lpFileName uintptr) uint32 {
 //   HANDLE                hTemplateFile
 // );
 func XCreateFileW(t *TLS, lpFileName uintptr, dwDesiredAccess, dwShareMode uint32, lpSecurityAttributes uintptr, dwCreationDisposition, dwFlagsAndAttributes uint32, hTemplateFile uintptr) uintptr {
+
 	r0, _, e1 := syscall.Syscall9(procCreateFileW.Addr(), 7, lpFileName, uintptr(dwDesiredAccess), uintptr(dwShareMode), lpSecurityAttributes,
 		uintptr(dwCreationDisposition), uintptr(dwFlagsAndAttributes), hTemplateFile, 0, 0)
 	h := syscall.Handle(r0)
@@ -2887,11 +2890,11 @@ func XMessageBeep(t *TLS, _ ...interface{}) int32 {
 //    long Comparand
 // );
 func X_InterlockedCompareExchange(t *TLS, Destination uintptr, Exchange, Comparand long) long {
-	swapped := atomic.CompareAndSwapInt32((*int32)(unsafe.Pointer(Destination)), Comparand, Exchange)
-	if swapped {
-		return Exchange
-	}
-	return 0
+
+	// The function returns the initial value of the Destination parameter.
+	var v = *(*int32)(unsafe.Pointer(Destination))
+	_ = atomic.CompareAndSwapInt32((*int32)(unsafe.Pointer(Destination)), Comparand, Exchange)
+	return long(v)
 }
 
 // int rename(const char *oldpath, const char *newpath);
@@ -3709,7 +3712,8 @@ func XGetCurrentThreadId(t *TLS) uint32 {
 //   LPDWORD lpExitCode
 // );
 func XGetExitCodeThread(t *TLS, hThread, lpExitCode uintptr) int32 {
-	panic(todo(""))
+	r0, _, _ := syscall.Syscall(procGetExitCodeThread.Addr(), 2, hThread, lpExitCode, 0)
+	return int32(r0)
 }
 
 // DWORD WaitForSingleObjectEx(
@@ -4230,6 +4234,7 @@ func XCreateProcessW(t *TLS, lpApplicationName, lpCommandLine, lpProcessAttribut
 			t.setErrno(errno.EINVAL)
 		}
 	}
+
 	return int32(r1)
 }
 
@@ -4379,12 +4384,6 @@ func X_controlfp(t *TLS, _ ...interface{}) uint32 {
 //   LARGE_INTEGER *lpFrequency
 // );
 func XQueryPerformanceFrequency(t *TLS, lpFrequency uintptr) int32 {
-
-	// -- If we allow this then Tcl will try to spin up a thread
-	// to use the performance counter, then it will WaitForSingleObject for the
-	// thread to be 'ready' -- hanging the test suites.
-
-	// return 0
 
 	r1, _, err := syscall.Syscall(procQueryPerformanceFrequency.Addr(), 1, lpFrequency, 0, 0)
 	if r1 == 0 {
