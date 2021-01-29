@@ -19,7 +19,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -1887,104 +1886,6 @@ func X__acrt_iob_func(t *TLS, fd uint32) uintptr {
 	return f.t
 }
 
-func extractDigits(s string, base int32) (string, int) {
-	// grab digits, sign
-	//[whitespace] [{+ | -}] [0 [{ x | X }]] [alphanumerics]
-	var sbldr strings.Builder
-	var ct = 0
-	var lastRune rune
-	for _, r := range s {
-		ct++
-		// space, remove on front
-		// or end of num
-		if unicode.IsSpace(r) {
-			lastRune = r
-			if sbldr.Len() > 0 {
-				break
-			}
-			continue
-		}
-		if r == '+' {
-			sbldr.WriteRune(r)
-			lastRune = r
-			continue
-		}
-		if r == '-' {
-			sbldr.WriteRune(r)
-			lastRune = r
-			continue
-		}
-		if r == '0' {
-			sbldr.WriteRune(r)
-			lastRune = r
-			continue
-		}
-		if r == 'x' || r == 'X' {
-			sbldr.WriteRune(r)
-
-			if lastRune != '0' {
-				// not at end, x terminator
-				break
-			}
-			// 'x' after 0, ok to continue
-			continue
-		}
-		if unicode.IsDigit(r) {
-			sbldr.WriteRune(r)
-			continue
-		}
-		if base != 10 {
-			if unicode.IsLetter(r) {
-				sbldr.WriteRune(r)
-				continue
-			} else {
-				break
-			}
-		} else {
-			break
-		}
-	}
-
-	var numStr = sbldr.String()
-	return numStr, ct
-}
-
-// unsigned long int strtoul(const char *nptr, char **endptr, int base);
-func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
-	var s = GoString(nptr)
-
-	var numStr, ct = extractDigits(s, base)
-	if ct == 0 {
-		t.setErrno(errno.EINVAL)
-		return 0
-	}
-
-	if strings.HasSuffix(strings.ToLower(numStr), "x") {
-		numStr = numStr[0 : len(numStr)-1]
-		base = 16
-	}
-
-	var out, err = strconv.ParseUint(numStr, int(base), 64)
-	if err != nil {
-		if err.(*strconv.NumError) == strconv.ErrRange {
-			t.setErrno(errno.ERANGE)
-		} else {
-			t.setErrno(errno.EINVAL)
-		}
-	}
-
-	if endptr != 0 {
-		var off = ct - 1
-		var end = &(*RawMem)(unsafe.Pointer(nptr))[off]
-		*(*uintptr)(unsafe.Pointer(endptr)) = (uintptr)(unsafe.Pointer(end))
-
-		//var rem = GoString((uintptr)(unsafe.Pointer(end)))
-		//fmt.Printf("remainder: |%s|\n", rem)
-	}
-
-	return ulong(out)
-}
-
 // BOOL SetEvent(
 //   HANDLE hEvent
 // );
@@ -1994,42 +1895,6 @@ func XSetEvent(t *TLS, hEvent uintptr) int32 {
 		t.setErrno(err)
 	}
 	return int32(r0)
-}
-
-// long int strtol(const char *nptr, char **endptr, int base);
-func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
-	var s = GoString(nptr)
-
-	var numStr, ct = extractDigits(s, base)
-	if ct == 0 {
-		t.setErrno(errno.EINVAL)
-		return 0
-	}
-
-	if strings.HasSuffix(strings.ToLower(numStr), "x") {
-		numStr = numStr[0 : len(numStr)-1]
-		base = 16
-	}
-
-	var out, err = strconv.ParseInt(numStr, int(base), 64)
-	if err != nil {
-		if err.(*strconv.NumError) == strconv.ErrRange {
-			t.setErrno(errno.ERANGE)
-		} else {
-			t.setErrno(errno.EINVAL)
-		}
-	}
-
-	if endptr != 0 {
-		var off = ct - 1
-		var end = &(*RawMem)(unsafe.Pointer(nptr))[off]
-		*(*uintptr)(unsafe.Pointer(endptr)) = (uintptr)(unsafe.Pointer(end))
-
-		//var rem = GoString((uintptr)(unsafe.Pointer(end)))
-		//fmt.Printf("remainder: |%s|\n", rem)
-	}
-
-	return long(out)
 }
 
 // int _stricmp(
@@ -5139,4 +5004,244 @@ func X_findnext32(t *TLS, handle types.Intptr_t, buffer uintptr) int32 {
 // );
 func X_findfirst32(t *TLS, filespec, fileinfo uintptr) types.Intptr_t {
 	panic(todo(""))
+}
+
+
+// long strtol(const char *nptr, char **endptr, int base);
+func Xstrtol(t *TLS, nptr, endptr uintptr, base int32) long {
+
+	var s uintptr = nptr
+	var acc ulong
+	var c byte
+	var cutoff ulong
+	var neg int32
+	var any int32
+	var cutlim int32
+
+	/*
+	 * Skip white space and pick up leading +/- sign if any.
+	 * If base is 0, allow 0x for hex and 0 for octal, else
+	 * assume decimal; if base is already 16, allow 0x.
+	 */
+	for {
+		c = *(*byte)(unsafe.Pointer(s))
+		PostIncUintptr(&s, 1)
+		var sp = strings.TrimSpace(string(c))
+		if len(sp) > 0 {
+			break
+		}
+	}
+
+	if c == '-' {
+		neg = 1
+		c = *(*byte)(unsafe.Pointer(s))
+		PostIncUintptr(&s, 1)
+	} else if c == '+' {
+		c = *(*byte)(unsafe.Pointer(s))
+		PostIncUintptr(&s, 1)
+	}
+
+	sp := *(*byte)(unsafe.Pointer(s))
+
+	if (base == 0 || base == 16) &&
+		c == '0' && (sp == 'x' || sp == 'X') {
+		PostIncUintptr(&s, 1)
+		c = *(*byte)(unsafe.Pointer(s)) //s[1];
+		PostIncUintptr(&s, 1)
+		base = 16
+	}
+	if base == 0 {
+		if c == '0' {
+			base = 0
+		} else {
+			base = 10
+		}
+	}
+	/*
+	 * Compute the cutoff value between legal numbers and illegal
+	 * numbers.  That is the largest legal value, divided by the
+	 * base.  An input number that is greater than this value, if
+	 * followed by a legal input character, is too big.  One that
+	 * is equal to this value may be valid or not; the limit
+	 * between valid and invalid numbers is then based on the last
+	 * digit.  For instance, if the range for longs is
+	 * [-2147483648..2147483647] and the input base is 10,
+	 * cutoff will be set to 214748364 and cutlim to either
+	 * 7 (neg==0) or 8 (neg==1), meaning that if we have accumulated
+	 * a value > 214748364, or equal but the next digit is > 7 (or 8),
+	 * the number is too big, and we will return a range error.
+	 *
+	 * Set any if any `digits' consumed; make it negative to indicate
+	 * overflow.
+	 */
+	var ULONG_MAX ulong = 0xFFFFFFFF
+	var LONG_MAX long = long(ULONG_MAX >> 1)
+	var LONG_MIN long = ^LONG_MAX
+
+	if neg == 1 {
+		cutoff = ulong(-1 * LONG_MIN)
+	} else {
+		cutoff = ulong(LONG_MAX)
+	}
+	cutlim = int32(cutoff % ulong(base))
+	cutoff = cutoff / ulong(base)
+
+	acc = 0
+	any = 0
+
+	for {
+		var cs = string(c)
+		if unicode.IsDigit([]rune(cs)[0]) {
+			c -= '0'
+		} else if unicode.IsLetter([]rune(cs)[0]) {
+			if unicode.IsUpper([]rune(cs)[0]) {
+				c -= 'A' - 10
+			} else {
+				c -= 'a' - 10
+			}
+		} else {
+			break
+		}
+
+		if int32(c) >= base {
+			break
+		}
+		if any < 0 || acc > cutoff || (acc == cutoff && int32(c) > cutlim) {
+			any = -1
+
+		} else {
+			any = 1
+			acc *= ulong(base)
+			acc += ulong(c)
+		}
+
+		c = *(*byte)(unsafe.Pointer(s))
+		PostIncUintptr(&s, 1)
+	}
+
+	if any < 0 {
+		if neg == 1 {
+			acc = ulong(LONG_MIN)
+		} else {
+			acc = ulong(LONG_MAX)
+		}
+		t.setErrno(errno.ERANGE)
+	} else if neg == 1 {
+		acc = -acc
+	}
+
+	if endptr != 0 {
+		if any == 1 {
+			PostDecUintptr(&s, 1)
+			AssignPtrUintptr(endptr, s)
+		} else {
+			AssignPtrUintptr(endptr, nptr)
+		}
+	}
+	return long(acc)
+}
+
+// unsigned long int strtoul(const char *nptr, char **endptr, int base);
+func Xstrtoul(t *TLS, nptr, endptr uintptr, base int32) ulong {
+	var s uintptr = nptr
+	var acc ulong
+	var c byte
+	var cutoff ulong
+	var neg int32
+	var any int32
+	var cutlim int32
+
+	/*
+	 * Skip white space and pick up leading +/- sign if any.
+	 * If base is 0, allow 0x for hex and 0 for octal, else
+	 * assume decimal; if base is already 16, allow 0x.
+	 */
+	for {
+		c = *(*byte)(unsafe.Pointer(s))
+		PostIncUintptr(&s, 1)
+		var sp = strings.TrimSpace(string(c))
+		if len(sp) > 0 {
+			break
+		}
+	}
+
+	if c == '-' {
+		neg = 1
+		c = *(*byte)(unsafe.Pointer(s))
+		PostIncUintptr(&s, 1)
+	} else if c == '+' {
+		c = *(*byte)(unsafe.Pointer(s))
+		PostIncUintptr(&s, 1)
+	}
+
+	sp := *(*byte)(unsafe.Pointer(s))
+
+	if (base == 0 || base == 16) &&
+		c == '0' && (sp == 'x' || sp == 'X') {
+		PostIncUintptr(&s, 1)
+		c = *(*byte)(unsafe.Pointer(s)) //s[1];
+		PostIncUintptr(&s, 1)
+		base = 16
+	}
+	if base == 0 {
+		if c == '0' {
+			base = 0
+		} else {
+			base = 10
+		}
+	}
+	var ULONG_MAX ulong = 0xFFFFFFFF
+
+	cutoff = ULONG_MAX / ulong(base)
+	cutlim = int32(ULONG_MAX % ulong(base))
+
+	acc = 0
+	any = 0
+
+	for {
+		var cs = string(c)
+		if unicode.IsDigit([]rune(cs)[0]) {
+			c -= '0'
+		} else if unicode.IsLetter([]rune(cs)[0]) {
+			if unicode.IsUpper([]rune(cs)[0]) {
+				c -= 'A' - 10
+			} else {
+				c -= 'a' - 10
+			}
+		} else {
+			break
+		}
+
+		if int32(c) >= base {
+			break
+		}
+		if any < 0 || acc > cutoff || (acc == cutoff && int32(c) > cutlim) {
+			any = -1
+
+		} else {
+			any = 1
+			acc *= ulong(base)
+			acc += ulong(c)
+		}
+
+		c = *(*byte)(unsafe.Pointer(s))
+		PostIncUintptr(&s, 1)
+	}
+
+	if any < 0 {
+		acc = ULONG_MAX
+		t.setErrno(errno.ERANGE)
+	} else if neg == 1 {
+		acc = -acc
+	}
+
+	if endptr != 0 {
+		if any == 1 {
+			PostDecUintptr(&s, 1)
+			AssignPtrUintptr(endptr, s)
+		} else {
+			AssignPtrUintptr(endptr, nptr)
+		}
+	}
+	return acc
 }
