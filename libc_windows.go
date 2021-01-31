@@ -445,6 +445,34 @@ func Xlocaltime_r(_ *TLS, timep, result uintptr) uintptr {
 	// return result
 }
 
+// int _wopen(
+//    const wchar_t *filename,
+//    int oflag [,
+//    int pmode]
+// );
+func X_wopen(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
+	var mode types.Mode_t
+	if args != 0 {
+		mode = *(*types.Mode_t)(unsafe.Pointer(args))
+	}
+	s := goWideString(pathname)
+	h, err := syscall.Open(GoString(pathname), int(flags), uint32(mode))
+	if err != nil {
+		if dmesgs {
+			dmesg("%v: %q %#x: %v", origin(1), s, flags, err)
+		}
+
+		t.setErrno(err)
+		return 0
+	}
+
+	_, n := wrapFdHandle(h)
+	if dmesgs {
+		dmesg("%v: %q flags %#x mode %#o: fd %v", origin(1), s, flags, mode, n)
+	}
+	return n
+}
+
 // int open(const char *pathname, int flags, ...);
 func Xopen(t *TLS, pathname uintptr, flags int32, args uintptr) int32 {
 	return Xopen64(t, pathname, flags, args)
@@ -1358,9 +1386,12 @@ func Xtzset(t *TLS) {
 	//TODO
 }
 
+var strerrorBuf [256]byte
+
 // char *strerror(int errnum);
 func Xstrerror(t *TLS, errnum int32) uintptr {
-	panic(todo(""))
+	copy((*RawMem)(unsafe.Pointer(&strerrorBuf[0]))[:len(strerrorBuf):len(strerrorBuf)], fmt.Sprintf("errno %d\x00", errnum))
+	return uintptr(unsafe.Pointer(&strerrorBuf[0]))
 }
 
 // void *dlopen(const char *filename, int flags);
@@ -1852,7 +1883,7 @@ func X__ms_vscanf(t *TLS, format, ap uintptr) int32 {
 
 // int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 func X__ms_vsnprintf(t *TLS, str uintptr, size types.Size_t, format, ap uintptr) int32 {
-	panic(todo(""))
+	return Xvsnprintf(t, str, size, format, ap)
 }
 
 // int vfwscanf(FILE *stream, const wchar_t *format, va_list argptr;);
@@ -4663,6 +4694,11 @@ func X_pclose(t *TLS, stream uintptr) int32 {
 	panic(todo(""))
 }
 
+// int setmode (int fd, int mode);
+func Xsetmode(t *TLS, fd, mode int32) int32 {
+	return X_setmode(t, fd, mode)
+}
+
 // int _setmode (int fd, int mode);
 func X_setmode(t *TLS, fd, mode int32) int32 {
 
@@ -5005,7 +5041,6 @@ func X_findnext32(t *TLS, handle types.Intptr_t, buffer uintptr) int32 {
 func X_findfirst32(t *TLS, filespec, fileinfo uintptr) types.Intptr_t {
 	panic(todo(""))
 }
-
 
 /*-
  * Copyright (c) 1990 The Regents of the University of California.

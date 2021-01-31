@@ -184,6 +184,9 @@ func makeMuslWin(goos, goarch string) {
 		"src/env/putenv.c",
 		"src/env/setenv.c",
 		"src/env/unsetenv.c",
+		"src/multibyte/wcrtomb.c",
+		"src/multibyte/wcsrtombs.c",
+		"src/multibyte/wcstombs.c",
 		"src/string/strchrnul.c",
 
 		// FAILS b/c Windows long is 32 bits
