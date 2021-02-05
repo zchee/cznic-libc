@@ -55,6 +55,7 @@ var (
 	procGetVersionExW              = modkernel32.NewProc("GetVersionExW")
 	procGetFullPathNameW           = modkernel32.NewProc("GetFullPathNameW")
 	procGetFileAttributesExW       = modkernel32.NewProc("GetFileAttributesExW")
+	procGetFileAttributesExA       = modkernel32.NewProc("GetFileAttributesExA")
 	procCreateFileW                = modkernel32.NewProc("CreateFileW")
 	procCreateFileA                = modkernel32.NewProc("CreateFileA")
 	procReadFile                   = modkernel32.NewProc("ReadFile")
@@ -3375,9 +3376,13 @@ func WindowsTickToUnixSeconds(windowsTicks int64) int64 {
 func X_stat64(t *TLS, path, buffer uintptr) int32 {
 
 	var fa syscall.Win32FileAttributeData
-	err := syscall.GetFileAttributesEx((*uint16)(unsafe.Pointer(path)), syscall.GetFileExInfoStandard, (*byte)(unsafe.Pointer(&fa)))
-	if err != nil {
-		t.setErrno(err)
+	r1, _, e1 := syscall.Syscall(procGetFileAttributesExA.Addr(), 3, path, syscall.GetFileExInfoStandard, (uintptr)(unsafe.Pointer(&fa)))
+	if r1 == 0 {
+		if e1 != 0 {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
 		return 1
 	}
 
