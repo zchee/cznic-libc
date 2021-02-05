@@ -495,7 +495,7 @@ func Xopen64(t *TLS, pathname uintptr, flags int32, cmode uintptr) int32 {
 		}
 
 		t.setErrno(err)
-		return 0
+		return -1
 	}
 
 	_, n := wrapFdHandle(h)
@@ -3383,7 +3383,7 @@ func X_stat64(t *TLS, path, buffer uintptr) int32 {
 		} else {
 			t.setErrno(errno.EINVAL)
 		}
-		return 1
+		return -1
 	}
 
 	var bStat64 = (*_stat64)(unsafe.Pointer(buffer))
@@ -3395,8 +3395,29 @@ func X_stat64(t *TLS, path, buffer uintptr) int32 {
 	bStat64.Fst_ctime = WindowsTickToUnixSeconds(crTime)
 	var fSz = int64(fa.FileSizeHigh)<<32 + int64(fa.FileSizeLow)
 	bStat64.Fst_size = fSz
+	bStat64.Fst_mode = WindowsAttrbiutesToStat(fa.FileAttributes)
 
 	return 0
+}
+
+func WindowsAttrbiutesToStat(fa uint32) uint16 {
+	var src_mode = fa & 0xff
+	var st_mode uint16
+	if (src_mode & syscall.FILE_ATTRIBUTE_DIRECTORY) != 0 {
+		st_mode = syscall.S_IFDIR
+	} else {
+		st_mode = syscall.S_IFREG
+	}
+
+	if src_mode&syscall.FILE_ATTRIBUTE_READONLY != 0 {
+		st_mode = st_mode | syscall.S_IRUSR
+	} else {
+		st_mode = st_mode | syscall.S_IRUSR | syscall.S_IWUSR
+	}
+	// fill group fields
+	st_mode = st_mode | (st_mode&0x700)>>3
+	st_mode = st_mode | (st_mode&0x700)>>6
+	return st_mode
 }
 
 // int _chsize(
@@ -3459,9 +3480,16 @@ func X_findfirst64i32(t *TLS, filespec, fileinfo uintptr) types.Intptr_t {
 	// Note: this is the 'narrow' character findfirst -- expects output
 	// as mbcs -- conversion below -- via ToFileInfo
 
+	var gsFileSpec = GoString(filespec)
+	namep, err := syscall.UTF16PtrFromString(gsFileSpec)
+	if err != nil {
+		t.setErrno(err)
+		return types.Intptr_t(-1)
+	}
+
 	var fdata = (*stat.X_finddata64i32_t)(unsafe.Pointer(fileinfo))
 	var wfd syscall.Win32finddata
-	h, err := syscall.FindFirstFile((*uint16)(unsafe.Pointer(filespec)), &wfd)
+	h, err := syscall.FindFirstFile((*uint16)(unsafe.Pointer(namep)), &wfd)
 	if err != nil {
 		t.setErrno(err)
 		return types.Intptr_t(-1)
@@ -3534,7 +3562,32 @@ func XGetEnvironmentVariableA(t *TLS, lpName, lpBuffer uintptr, nSize uint32) ui
 //    struct __stat64 *buffer
 // );
 func X_fstat64(t *TLS, fd int32, buffer uintptr) int32 {
-	panic(todo(""))
+
+	f, ok := fdToFile(fd)
+	if !ok {
+		t.setErrno(EBADF)
+		return -1
+	}
+
+	var d syscall.ByHandleFileInformation
+	err := syscall.GetFileInformationByHandle(f.Handle, &d)
+	if err != nil {
+		t.setErrno(EBADF)
+		return -1
+	}
+
+	var bStat64 = (*_stat64)(unsafe.Pointer(buffer))
+	var accessTime = int64(d.LastAccessTime.HighDateTime)<<32 + int64(d.LastAccessTime.LowDateTime)
+	bStat64.Fst_atime = WindowsTickToUnixSeconds(accessTime)
+	var modTime = int64(d.LastWriteTime.HighDateTime)<<32 + int64(d.LastWriteTime.LowDateTime)
+	bStat64.Fst_mtime = WindowsTickToUnixSeconds(modTime)
+	var crTime = int64(d.CreationTime.HighDateTime)<<32 + int64(d.CreationTime.LowDateTime)
+	bStat64.Fst_ctime = WindowsTickToUnixSeconds(crTime)
+	var fSz = int64(d.FileSizeHigh)<<32 + int64(d.FileSizeLow)
+	bStat64.Fst_size = fSz
+	bStat64.Fst_mode = WindowsAttrbiutesToStat(d.FileAttributes)
+
+	return 0
 }
 
 // HANDLE CreateEventA(
