@@ -1137,3 +1137,33 @@ func AtomicAddFloat64(addr *float64, delta float64) (new float64) {
 	AtomicStoreFloat64(addr, v)
 	return v
 }
+
+// size_t mbstowcs(wchar_t *dest, const char *src, size_t n);
+func Xmbstowcs(t *TLS, dest, src uintptr, n types.Size_t) types.Size_t {
+	panic(todo(""))
+}
+
+// int mbtowc(wchar_t *pwc, const char *s, size_t n);
+func Xmbtowc(t *TLS, pwc, s uintptr, n types.Size_t) int32 {
+	panic(todo(""))
+}
+
+// size_t __ctype_get_mb_cur_max(void);
+func X__ctype_get_mb_cur_max(t *TLS) types.Size_t {
+	panic(todo(""))
+}
+
+// int wctomb(char *s, wchar_t wc);
+func Xwctomb(t *TLS, s uintptr, wc wchar_t) int32 {
+	panic(todo(""))
+}
+
+// int mblen(const char *s, size_t n);
+func Xmblen(t *TLS, s uintptr, n types.Size_t) int32 {
+	panic(todo(""))
+}
+
+// ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
+func Xreadv(t *TLS, fd int32, iov uintptr, iovcnt int32) types.Ssize_t {
+	panic(todo(""))
+}
