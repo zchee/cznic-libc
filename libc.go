@@ -1167,3 +1167,57 @@ func Xmblen(t *TLS, s uintptr, n types.Size_t) int32 {
 func Xreadv(t *TLS, fd int32, iov uintptr, iovcnt int32) types.Ssize_t {
 	panic(todo(""))
 }
+
+// wchar_t *wcschr(const wchar_t *wcs, wchar_t wc);
+func Xwcschr(t *TLS, wcs uintptr, wc wchar_t) wchar_t {
+	panic(todo(""))
+}
+
+// int unsetenv(const char *name);
+func Xunsetenv(t *TLS, name uintptr) int32 {
+	panic(todo(""))
+}
+
+// int setenv(const char *name, const char *value, int overwrite);
+func Xsetenv(t *TLS, name, value uintptr, overwrite int32) int32 {
+	panic(todo(""))
+}
+
+// int openpty(int *amaster, int *aslave, char *name,
+//                    const struct termios *termp,
+//                    const struct winsize *winp);
+func Xopenpty(t *TLS, amaster, aslave, name, termp, winp uintptr) int32 {
+	panic(todo(""))
+}
+
+// pid_t setsid(void);
+func Xsetsid(t *TLS) types.Pid_t {
+	panic(todo(""))
+}
+
+// int pselect(int nfds, fd_set *readfds, fd_set *writefds,
+//                    fd_set *exceptfds, const struct timespec *timeout,
+//                    const sigset_t *sigmask);
+func Xpselect(t *TLS, nfds int32, readfds, writefds, exceptfds, timeout, sigmask uintptr) int32 {
+	panic(todo(""))
+}
+
+// int kill(pid_t pid, int sig);
+func Xkill(t *TLS, pid types.Pid_t, sig int32) int32 {
+	panic(todo(""))
+}
+
+// int tcsendbreak(int fd, int duration);
+func Xtcsendbreak(t *TLS, fd, duration int32) int32 {
+	panic(todo(""))
+}
+
+// int wcwidth(wchar_t c);
+func Xwcwidth(t *TLS, c wchar_t) int32 {
+	panic(todo(""))
+}
+
+// int clock_gettime(clockid_t clk_id, struct timespec *tp);
+func Xclock_gettime(t *TLS, clk_id int32, tp uintptr) int32 {
+	panic(todo(""))
+}

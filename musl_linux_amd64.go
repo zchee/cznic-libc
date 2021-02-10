@@ -2969,7 +2969,7 @@ type ifreq = struct {
 type ifconf = struct {
 	ifc_len  int32
 	_        [4]byte
-	ifc_ifcu struct{ ifcu_buf uintptr }
+	ifc_ifcu uintptr
 } /* if.h:116:1 */
 
 type ns_sect = uint32 /* nameser.h:37:3 */

@@ -1295,7 +1295,7 @@ type Sig_t = X__sighandler_t /* signal.h:190:24 */
 
 // Structure describing the action to be taken when a signal arrives.
 type Sigaction = struct {
-	F__sigaction_handler struct{ Fsa_handler X__sighandler_t }
+	F__sigaction_handler uintptr
 	Fsa_mask             X__sigset_t
 	Fsa_flags            int32
 	_                    [4]byte

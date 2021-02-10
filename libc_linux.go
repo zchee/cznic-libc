@@ -1332,7 +1332,7 @@ func Xabort(t *TLS) {
 	}
 
 	*(*signal.Sigaction)(unsafe.Pointer(p)) = signal.Sigaction{
-		F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: signal.SIG_DFL},
+		F__sigaction_handler: signal.SIG_DFL,
 	}
 	Xsigaction(t, signal.SIGABRT, p, 0)
 	Xfree(t, p)

@@ -40,7 +40,7 @@ func Xsigaction(t *TLS, signum int32, act, oldact uintptr) int32 {
 		kact = t.Alloc(sz)
 		defer t.Free(sz)
 		*(*k_sigaction)(unsafe.Pointer(kact)) = k_sigaction{
-			handler:  (*signal.Sigaction)(unsafe.Pointer(act)).F__sigaction_handler.Fsa_handler,
+			handler:  (*signal.Sigaction)(unsafe.Pointer(act)).F__sigaction_handler,
 			flags:    ulong((*signal.Sigaction)(unsafe.Pointer(act)).Fsa_flags),
 			restorer: (*signal.Sigaction)(unsafe.Pointer(act)).Fsa_restorer,
 		}
