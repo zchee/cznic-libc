@@ -1332,7 +1332,7 @@ func Xabort(t *TLS) {
 	}
 
 	*(*signal.Sigaction)(unsafe.Pointer(p)) = signal.Sigaction{
-		F__sigaction_handler: signal.SIG_DFL,
+		F__sigaction_handler: struct{ Fsa_handler signal.X__sighandler_t }{Fsa_handler: signal.SIG_DFL},
 	}
 	Xsigaction(t, signal.SIGABRT, p, 0)
 	Xfree(t, p)
@@ -1606,4 +1606,14 @@ func fcntlCmdStr(cmd int32) string {
 	default:
 		return fmt.Sprintf("cmd(%d)", cmd)
 	}
+}
+
+// int setenv(const char *name, const char *value, int overwrite);
+func Xsetenv(t *TLS, name, value uintptr, overwrite int32) int32 {
+	panic(todo(""))
+}
+
+// int unsetenv(const char *name);
+func Xunsetenv(t *TLS, name uintptr) int32 {
+	panic(todo(""))
 }

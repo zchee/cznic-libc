@@ -952,7 +952,7 @@ func Xwcrtomb(tls *TLS, s uintptr, wc wchar_t, st uintptr) size_t { /* wcrtomb.c
 		*(*int8)(unsafe.Pointer(s)) = int8(wc)
 		return uint64(1)
 	} else if (func() int32 {
-		if !(!(int32(*(*uintptr)(unsafe.Pointer(((*__pthread)(unsafe.Pointer(__pthread_self(tls))).locale /* &.cat */) + uintptr(0)*8))) != 0)) {
+		if !(!(int32(*(*uintptr)(unsafe.Pointer(((*__pthread)(unsafe.Pointer(__pthread_self(tls))).locale /* &.cat */)))) != 0)) {
 			return 4
 		}
 		return 1

@@ -1168,21 +1168,6 @@ func Xreadv(t *TLS, fd int32, iov uintptr, iovcnt int32) types.Ssize_t {
 	panic(todo(""))
 }
 
-// wchar_t *wcschr(const wchar_t *wcs, wchar_t wc);
-func Xwcschr(t *TLS, wcs uintptr, wc wchar_t) wchar_t {
-	panic(todo(""))
-}
-
-// int unsetenv(const char *name);
-func Xunsetenv(t *TLS, name uintptr) int32 {
-	panic(todo(""))
-}
-
-// int setenv(const char *name, const char *value, int overwrite);
-func Xsetenv(t *TLS, name, value uintptr, overwrite int32) int32 {
-	panic(todo(""))
-}
-
 // int openpty(int *amaster, int *aslave, char *name,
 //                    const struct termios *termp,
 //                    const struct winsize *winp);

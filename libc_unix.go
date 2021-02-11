@@ -218,3 +218,8 @@ func Xrecvmsg(t *TLS, sockfd int32, msg uintptr, flags int32) types.Ssize_t {
 func X__cmsg_nxthdr(t *TLS, msgh, cmsg uintptr) uintptr {
 	panic(todo(""))
 }
+
+// wchar_t *wcschr(const wchar_t *wcs, wchar_t wc);
+func Xwcschr(t *TLS, wcs uintptr, wc wchar_t) wchar_t {
+	panic(todo(""))
+}
