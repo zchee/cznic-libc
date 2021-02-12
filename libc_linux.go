@@ -1355,7 +1355,7 @@ func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types
 
 	if dmesgs {
 		// dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
-		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
+		dmesg("%v: %d %#x x %#x: %#x", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
 	}
 	return types.Size_t(m) / size
 }
@@ -1370,7 +1370,7 @@ func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) type
 
 	if dmesgs {
 		// dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size, hex.Dump(GoBytes(ptr, int(m))))
-		dmesg("%v: %d %#x x %#x: %#x\n%s", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
+		dmesg("%v: %d %#x x %#x: %#x", origin(1), file(stream).fd(), size, nmemb, types.Size_t(m)/size)
 	}
 	return types.Size_t(m) / size
 }
@@ -1616,4 +1616,34 @@ func Xsetenv(t *TLS, name, value uintptr, overwrite int32) int32 {
 // int unsetenv(const char *name);
 func Xunsetenv(t *TLS, name uintptr) int32 {
 	panic(todo(""))
+}
+
+// int pause(void);
+func Xpause(t *TLS) int32 {
+	err := unix.Pause()
+	if err != nil {
+		t.setErrno(err)
+	}
+
+	return -1
+}
+
+// ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
+func Xwritev(t *TLS, fd int32, iov uintptr, iovcnt int32) types.Ssize_t {
+	if iovcnt == 0 {
+		panic(todo(""))
+	}
+
+	iovs := make([][]byte, iovcnt)
+	for ; iovcnt != 0; iovcnt-- {
+		len := (*unix.Iovec)(unsafe.Pointer(iov)).Len
+		iovs = append(iovs, (*RawMem)(unsafe.Pointer((*unix.Iovec)(unsafe.Pointer(iov)).Base))[:len:len])
+		iov += unsafe.Sizeof(unix.Iovec{})
+	}
+	n, err := unix.Writev(int(fd), iovs)
+	if err != nil {
+		panic(todo(""))
+	}
+
+	return types.Ssize_t(n)
 }

@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	"golang.org/x/sys/unix"
 	"modernc.org/libc/errno"
 	"modernc.org/libc/poll"
 	"modernc.org/libc/signal"
@@ -114,66 +115,6 @@ func Xpathconf(t *TLS, path uintptr, name int32) long {
 	panic(todo(""))
 }
 
-// int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine) (void *), void *arg);
-func Xpthread_create(tls *TLS, thread, attr, start_routine, arg uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_detach(pthread_t thread);
-func Xpthread_detach(tls *TLS, thread types.Pthread_t) int32 {
-	panic(todo(""))
-}
-
-// int pthread_mutex_lock(pthread_mutex_t *mutex);
-func Xpthread_mutex_lock(tls *TLS, mutex uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_cond_signal(pthread_cond_t *cond);
-func Xpthread_cond_signal(tls *TLS, cond uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_mutex_unlock(pthread_mutex_t *mutex);
-func Xpthread_mutex_unlock(tls *TLS, mutex uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_mutex_init(pthread_mutex_t *restrict mutex, const pthread_mutexattr_t *restrict attr);
-func Xpthread_mutex_init(tls *TLS, mutex, attr uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_cond_init(pthread_cond_t *restrict cond, const pthread_condattr_t *restrict attr);
-func Xpthread_cond_init(tls *TLS, cond, attr uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex);
-func Xpthread_cond_wait(tls *TLS, cond, mutex uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_cond_destroy(pthread_cond_t *cond);
-func Xpthread_cond_destroy(tls *TLS, cond uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_mutex_destroy(pthread_mutex_t *mutex);
-func Xpthread_mutex_destroy(tls *TLS, mutex uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_mutex_trylock(pthread_mutex_t *mutex);
-func Xpthread_mutex_trylock(tls *TLS, mutex uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_cond_broadcast(pthread_cond_t *cond);
-func Xpthread_cond_broadcast(tls *TLS, cond uintptr) int32 {
-	panic(todo(""))
-}
-
 // ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 func Xrecvfrom(t *TLS, sockfd int32, buf uintptr, len types.Size_t, flags int32, src_addr, addrlen uintptr) types.Ssize_t {
 	panic(todo(""))
@@ -199,19 +140,36 @@ func Xsendmsg(t *TLS, sockfd int32, msg uintptr, flags int32) types.Ssize_t {
 	panic(todo(""))
 }
 
-// ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
-func Xwritev(t *TLS, fd int32, iov uintptr, iovcnt int32) types.Ssize_t {
-	panic(todo(""))
-}
-
 // int poll(struct pollfd *fds, nfds_t nfds, int timeout);
 func Xpoll(t *TLS, fds uintptr, nfds poll.Nfds_t, timeout int32) int32 {
-	panic(todo(""))
+	if nfds == 0 {
+		panic(todo(""))
+	}
+
+	if dmesgs {
+		dmesg("%v: %#x %v %v, %+v", origin(1), fds, nfds, timeout, (*[1000]unix.PollFd)(unsafe.Pointer(fds))[:nfds:nfds])
+	}
+	n, err := unix.Poll((*[1000]unix.PollFd)(unsafe.Pointer(fds))[:nfds:nfds], int(timeout))
+	if dmesgs {
+		dmesg("%v: %v %v", origin(1), n, err)
+	}
+	if err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	return int32(n)
 }
 
 // ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
 func Xrecvmsg(t *TLS, sockfd int32, msg uintptr, flags int32) types.Ssize_t {
-	panic(todo(""))
+	n, _, err := unix.Syscall(unix.SYS_RECVMSG, uintptr(sockfd), msg, uintptr(flags))
+	if err != 0 {
+		t.setErrno(err)
+		return -1
+	}
+
+	return types.Ssize_t(n)
 }
 
 // struct cmsghdr *CMSG_NXTHDR(struct msghdr *msgh, struct cmsghdr *cmsg);
