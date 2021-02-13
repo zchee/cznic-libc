@@ -23,6 +23,33 @@ var (
 	goarch = runtime.GOARCH
 )
 
+func origin(skip int) string {
+	pc, fn, fl, _ := runtime.Caller(skip)
+	f := runtime.FuncForPC(pc)
+	var fns string
+	if f != nil {
+		fns = f.Name()
+		if x := strings.LastIndex(fns, "."); x > 0 {
+			fns = fns[x+1:]
+		}
+	}
+	return fmt.Sprintf("%s:%d:%s", filepath.Base(fn), fl, fns)
+}
+
+func trc(s string, args ...interface{}) string { //TODO-
+	switch {
+	case s == "":
+		s = fmt.Sprintf(strings.Repeat("%v ", len(args)), args...)
+	default:
+		s = fmt.Sprintf(s, args...)
+	}
+	_, fn, fl, _ := runtime.Caller(1)
+	r := fmt.Sprintf("\n%s:%d: TRC %s", fn, fl, s)
+	fmt.Fprintf(os.Stdout, "%s\n", r)
+	os.Stdout.Sync()
+	return r
+}
+
 func main() {
 	if s := os.Getenv("TARGET_GOOS"); s != "" {
 		goos = s
@@ -462,14 +489,14 @@ func libcHeaders(paths []string) error {
 			return nil
 		}
 
-		//fmt.Printf("%q: %v\n", path, err) //TODO-
+		// trc("%q: %v\n", path, err) //TODO-
 		dir := path
 		ok := false
 		for _, v := range paths {
 			full := filepath.Join(v, dir+".h")
-			//fmt.Printf("%s\n", full) //TODO-
+			// trc("%s\n", full) //TODO-
 			if fi, err := os.Stat(full); err == nil && !fi.IsDir() {
-				// fmt.Printf("OK %s\n", full) //TODO-
+				// trc("OK %s\n", full) //TODO-
 				ok = true
 				break
 			}

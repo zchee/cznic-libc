@@ -15,6 +15,7 @@ import (
 	"modernc.org/libc/signal"
 	"modernc.org/libc/sys/stat"
 	"modernc.org/libc/sys/types"
+	"modernc.org/libc/uuid/uuid"
 )
 
 // int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
@@ -453,4 +454,19 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	Xclose(t, int32(fd))
 	t.setErrno(errno.ENOMEM)
 	return 0
+}
+
+// void uuid_generate_random(uuid_t out);
+func Xuuid_generate_random(t *TLS, out uuid.Uuid_t) {
+	panic(todo(""))
+}
+
+// void uuid_unparse(uuid_t uu, char *out);
+func Xuuid_unparse(t *TLS, uu uuid.Uuid_t, out uintptr) {
+	panic(todo(""))
+}
+
+// int uuid_parse( char *in, uuid_t uu);
+func Xuuid_parse(t *TLS, in uintptr, uu uuid.Uuid_t) int32 {
+	panic(todo(""))
 }
