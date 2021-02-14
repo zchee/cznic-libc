@@ -178,6 +178,11 @@ func X__isnanf(t *TLS, arg float32) int32                            { return Xi
 func X__isnanl(t *TLS, arg float64) int32                            { return Xisnanl(t, arg) }
 func Xvfprintf(t *TLS, stream, format, ap uintptr) int32             { return Xfprintf(t, stream, format, ap) }
 
+// int __builtin_popcount (unsigned int x)
+func X__builtin_popcount(t *TLS, x uint32) int32 {
+	return int32(mbits.OnesCount32(x))
+}
+
 // char * __builtin___strcpy_chk (char *dest, const char *src, size_t os);
 func X__builtin___strcpy_chk(t *TLS, dest, src uintptr, os types.Size_t) uintptr {
 	return Xstrcpy(t, dest, src)
@@ -495,6 +500,7 @@ func Xasin(t *TLS, x float64) float64             { return math.Asin(x) }
 func Xatan(t *TLS, x float64) float64             { return math.Atan(x) }
 func Xatan2(t *TLS, x, y float64) float64         { return math.Atan2(x, y) }
 func Xceil(t *TLS, x float64) float64             { return math.Ceil(x) }
+func Xceilf(t *TLS, x float32) float32            { return float32(math.Ceil(float64(x))) }
 func Xcopysign(t *TLS, x, y float64) float64      { return math.Copysign(x, y) }
 func Xcopysignf(t *TLS, x, y float32) float32     { return float32(math.Copysign(float64(x), float64(y))) }
 func Xcos(t *TLS, x float64) float64              { return math.Cos(x) }
@@ -588,6 +594,10 @@ func Xstrcmp(t *TLS, s1, s2 uintptr) int32 {
 
 // size_t strlen(const char *s)
 func Xstrlen(t *TLS, s uintptr) (r types.Size_t) {
+	if s == 0 {
+		return 0
+	}
+
 	for ; *(*int8)(unsafe.Pointer(s)) != 0; s++ {
 		r++
 	}
@@ -863,11 +873,6 @@ func Xtoupper(t *TLS, c int32) int32 {
 // int isatty(int fd);
 func Xisatty(t *TLS, fd int32) int32 {
 	return Bool32(isatty.IsTerminal(uintptr(fd)))
-}
-
-// char *strdup(const char *s);
-func Xstrdup(t *TLS, s uintptr) uintptr {
-	panic(todo(""))
 }
 
 // long atol(const char *nptr);
@@ -1209,5 +1214,16 @@ func Xclock_gettime(t *TLS, clk_id int32, tp uintptr) int32 {
 
 // int posix_fadvise(int fd, off_t offset, off_t len, int advice);
 func Xposix_fadvise(t *TLS, fd int32, offset, len types.Off_t, advice int32) int32 {
+	panic(todo(""))
+}
+
+// int initstate_r(unsigned int seed, char *statebuf,
+//                        size_t statelen, struct random_data *buf);
+func Xinitstate_r(t *TLS, seed uint32, statebuf uintptr, statelen types.Size_t, buf uintptr) int32 {
+	panic(todo(""))
+}
+
+// int random_r(struct random_data *buf, int32_t *result);
+func Xrandom_r(t *TLS, buf, result uintptr) int32 {
 	panic(todo(""))
 }

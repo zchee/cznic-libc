@@ -217,6 +217,7 @@ func makeMuslWin(goos, goarch string) {
 		"src/multibyte/wcrtomb.c",
 		"src/multibyte/wcsrtombs.c",
 		"src/multibyte/wcstombs.c",
+		"src/string/strdup.c",
 		"src/string/strchrnul.c",
 
 		// FAILS b/c Windows long is 32 bits
@@ -319,6 +320,7 @@ func makeMuslDarwin(goos, goarch string) {
 		"src/prng/rand_r.c",
 		"src/stdio/__toread.c",
 		"src/stdio/__uflow.c",
+		"src/string/strdup.c",
 		"src/stdlib/strtod.c",
 		"src/stdlib/strtol.c",
 		"src/string/strchrnul.c",
@@ -429,6 +431,7 @@ func makeMuslLinux(goos, goarch string) {
 		"src/stdio/__uflow.c",
 		"src/stdlib/strtod.c",
 		"src/stdlib/strtol.c",
+		"src/string/strdup.c",
 		"src/string/strlcat.c",
 		"src/string/strlcpy.c",
 		"src/string/strncat.c",

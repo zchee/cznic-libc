@@ -396,8 +396,8 @@ type X__uint128_t = struct {
 	Fhi uint64
 } /* <builtin>:22:44 */ // must match modernc.org/mathutil.Int128
 
-type X__builtin_va_list = uintptr /* <builtin>:47:14 */
-type X__float128 = float64        /* <builtin>:48:21 */
+type X__builtin_va_list = uintptr /* <builtin>:46:14 */
+type X__float128 = float64        /* <builtin>:47:21 */
 // Copyright (c) 2000, 2002-2006, 2008-2010, 2012 Apple Inc. All rights reserved.
 //
 // @APPLE_LICENSE_HEADER_START@

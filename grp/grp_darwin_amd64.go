@@ -53,8 +53,8 @@ type X__uint128_t = struct {
 	Fhi uint64
 } /* <builtin>:22:44 */ // must match modernc.org/mathutil.Int128
 
-type X__builtin_va_list = uintptr /* <builtin>:47:14 */
-type X__float128 = float64        /* <builtin>:48:21 */
+type X__builtin_va_list = uintptr /* <builtin>:46:14 */
+type X__float128 = float64        /* <builtin>:47:21 */
 // -
 // Copyright (c) 1989, 1993
 //	The Regents of the University of California.  All rights reserved.
@@ -987,5 +987,7 @@ type Group = struct {
 type Uuid_t = X__darwin_uuid_t /* _uuid_t.h:31:25 */
 
 type Uuid_string_t = X__darwin_uuid_string_t /* uuid.h:43:33 */
+
+var sUUID_NULL = Uuid_t{uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0)} /* uuid.h:49:1 */
 
 var _ int8 /* gen.c:2:13: */

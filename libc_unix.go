@@ -181,3 +181,50 @@ func X__cmsg_nxthdr(t *TLS, msgh, cmsg uintptr) uintptr {
 func Xwcschr(t *TLS, wcs uintptr, wc wchar_t) wchar_t {
 	panic(todo(""))
 }
+
+// gid_t getegid(void);
+func Xgetegid(t *TLS) types.Gid_t {
+	panic(todo(""))
+}
+
+// gid_t getgid(void);
+func Xgetgid(t *TLS) types.Gid_t {
+	panic(todo(""))
+}
+
+// void *shmat(int shmid, const void *shmaddr, int shmflg);
+func Xshmat(t *TLS, shmid int32, shmaddr uintptr, shmflg int32) uintptr {
+	panic(todo(""))
+}
+
+// int shmctl(int shmid, int cmd, struct shmid_ds *buf);
+func Xshmctl(t *TLS, shmid, cmd int32, buf uintptr) int32 {
+	panic(todo(""))
+}
+
+// int shmdt(const void *shmaddr);
+func Xshmdt(t *TLS, shmaddr uintptr) int32 {
+	panic(todo(""))
+}
+
+// int getpwnam_r(const char *name, struct passwd *pwd,
+//                       char *buf, size_t buflen, struct passwd **result);
+func Xgetpwnam_r(t *TLS, name, pwd, buf uintptr, buflen types.Size_t, result uintptr) int32 {
+	panic(todo(""))
+}
+
+// int getpwuid_r(uid_t uid, struct passwd *pwd,
+//                       char *buf, size_t buflen, struct passwd **result);
+func Xgetpwuid_r(t *TLS, uid types.Uid_t, pwd, buf uintptr, buflen types.Size_t, result uintptr) int32 {
+	panic(todo(""))
+}
+
+// int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid);
+func Xgetresuid(t *TLS, ruid, euid, suid uintptr) int32 {
+	panic(todo(""))
+}
+
+// int getresgid(gid_t *rgid, gid_t *egid, gid_t *sgid);
+func Xgetresgid(t *TLS, rgid, egid, sgid uintptr) int32 {
+	panic(todo(""))
+}

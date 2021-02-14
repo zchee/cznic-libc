@@ -182,3 +182,13 @@ func Xpthread_cond_broadcast(tls *TLS, cond uintptr) int32 {
 
 	return errno.EINVAL
 }
+
+// pthread_t pthread_self(void);
+func Xpthread_self(t *TLS) pthread.Pthread_t {
+	panic(todo(""))
+}
+
+// int pthread_equal(pthread_t t1, pthread_t t2);
+func Xpthread_equal(t *TLS, t1, t2 pthread.Pthread_t) int32 {
+	panic(todo(""))
+}
