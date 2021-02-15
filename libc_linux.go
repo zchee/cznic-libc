@@ -1265,14 +1265,16 @@ func Xfork(t *TLS) int32 {
 	return -1
 }
 
+var emptyStr = [1]byte{}
+
 // char *setlocale(int category, const char *locale);
 func Xsetlocale(t *TLS, category int32, locale uintptr) uintptr {
-	return 0 //TODO
+	return uintptr(unsafe.Pointer(&emptyStr)) //TODO
 }
 
 // char *nl_langinfo(nl_item item);
 func Xnl_langinfo(t *TLS, item langinfo.Nl_item) uintptr {
-	panic(todo(""))
+	return uintptr(unsafe.Pointer(&emptyStr)) //TODO
 }
 
 // FILE *popen(const char *command, const char *type);

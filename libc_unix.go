@@ -35,9 +35,9 @@ func Xsignal(t *TLS, signum int32, handler uintptr) uintptr { //TODO use sigacti
 	case signal.SIG_IGN:
 		switch r {
 		case signal.SIG_DFL:
-			gosignal.Ignore(syscall.Signal(signum))
+			gosignal.Ignore(syscall.Signal(signum)) //TODO
 		case signal.SIG_IGN:
-			panic(todo("%v %#x", syscall.Signal(signum), handler))
+			gosignal.Ignore(syscall.Signal(signum))
 		default:
 			panic(todo("%v %#x", syscall.Signal(signum), handler))
 		}
