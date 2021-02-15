@@ -1630,20 +1630,33 @@ func Xpause(t *TLS) int32 {
 
 // ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
 func Xwritev(t *TLS, fd int32, iov uintptr, iovcnt int32) types.Ssize_t {
+	if dmesgs {
+		dmesg("%v: fd %v iov %#x iovcnt %v", origin(1), fd, iov, iovcnt)
+	}
 	if iovcnt == 0 {
 		panic(todo(""))
 	}
 
 	iovs := make([][]byte, iovcnt)
 	for ; iovcnt != 0; iovcnt-- {
+		base := (*unix.Iovec)(unsafe.Pointer(iov)).Base
 		len := (*unix.Iovec)(unsafe.Pointer(iov)).Len
-		iovs = append(iovs, (*RawMem)(unsafe.Pointer((*unix.Iovec)(unsafe.Pointer(iov)).Base))[:len:len])
-		iov += unsafe.Sizeof(unix.Iovec{})
+		if dmesgs {
+			dmesg("%v: base %#x len %v", origin(1), base, len)
+		}
+		if base != nil && len != 0 {
+			iovs = append(iovs, (*RawMem)(unsafe.Pointer(base))[:len:len])
+			iov += unsafe.Sizeof(unix.Iovec{})
+		}
 	}
 	n, err := unix.Writev(int(fd), iovs)
 	if err != nil {
+		if dmesgs {
+			dmesg("%v: %v", origin(1), err)
+		}
 		panic(todo(""))
 	}
 
+	dmesg("%v: ok: %v", origin(1), n)
 	return types.Ssize_t(n)
 }
