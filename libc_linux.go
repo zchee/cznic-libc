@@ -1660,3 +1660,13 @@ func Xwritev(t *TLS, fd int32, iov uintptr, iovcnt int32) types.Ssize_t {
 	dmesg("%v: ok: %v", origin(1), n)
 	return types.Ssize_t(n)
 }
+
+// void endpwent(void);
+func Xendpwent(t *TLS) {
+	panic(todo(""))
+}
+
+// char *ctime(const time_t *timep);
+func Xctime(t *TLS, timep uintptr) uintptr {
+	panic(todo(""))
+}

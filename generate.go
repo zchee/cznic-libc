@@ -434,6 +434,7 @@ func makeMuslLinux(goos, goarch string) {
 		"src/string/strdup.c",
 		"src/string/strlcat.c",
 		"src/string/strlcpy.c",
+		"src/string/strncasecmp.c",
 		"src/string/strncat.c",
 		"src/string/strnlen.c",
 		"src/string/strspn.c",
