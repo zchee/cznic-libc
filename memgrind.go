@@ -15,13 +15,27 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"unsafe"
 
 	"modernc.org/libc/errno"
 	"modernc.org/libc/sys/types"
 	"modernc.org/memory"
 )
 
-const memgrind = true
+const (
+	memgrind     = true
+	memGuardSize = 16
+)
+
+func init() {
+	if memGuardSize%16 != 0 {
+		panic(todo("internal error"))
+	}
+}
+
+type memGuardT = [memGuardSize]byte
+
+var memGuard memGuardT
 
 type memReportItem struct {
 	p, pc uintptr
@@ -71,20 +85,27 @@ func pc2origin(pc uintptr) string {
 }
 
 // void *malloc(size_t size);
-func Xmalloc(t *TLS, n types.Size_t) uintptr {
-	if n == 0 {
+func Xmalloc(t *TLS, size types.Size_t) uintptr {
+	if size == 0 {
 		return 0
 	}
+
+	size = types.Size_t(roundup(uintptr(size), 16))
 
 	allocMu.Lock()
 
 	defer allocMu.Unlock()
 
-	p, err := allocator.UintptrMalloc(int(n))
+	p0, err := allocator.UintptrMalloc(int(size + 2*memGuardSize))
 	if err != nil {
 		t.setErrno(errno.ENOMEM)
 		return 0
 	}
+
+	p := p0 + memGuardSize
+	p2 := p + uintptr(size)
+	*(*memGuardT)(unsafe.Pointer(p)) = memGuard
+	*(*memGuardT)(unsafe.Pointer(p2)) = memGuard
 
 	if memAuditEnabled {
 		pc, _, _, ok := runtime.Caller(1)
@@ -103,21 +124,28 @@ func Xmalloc(t *TLS, n types.Size_t) uintptr {
 }
 
 // void *calloc(size_t nmemb, size_t size);
-func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
-	rq := int(n * size)
+func Xcalloc(t *TLS, nmemb, size types.Size_t) uintptr {
+	rq := int(nmemb * size)
 	if rq == 0 {
 		return 0
 	}
+
+	rq = int(roundup(uintptr(rq), 16))
 
 	allocMu.Lock()
 
 	defer allocMu.Unlock()
 
-	p, err := allocator.UintptrCalloc(int(n * size))
+	p0, err := allocator.UintptrCalloc(rq + 2*memGuardSize)
 	if err != nil {
 		t.setErrno(errno.ENOMEM)
 		return 0
 	}
+
+	p := p0 + memGuardSize
+	p2 := p + uintptr(rq)
+	*(*memGuardT)(unsafe.Pointer(p)) = memGuard
+	*(*memGuardT)(unsafe.Pointer(p2)) = memGuard
 
 	if memAuditEnabled {
 		pc, _, _, ok := runtime.Caller(1)
@@ -137,6 +165,20 @@ func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
 
 // void *realloc(void *ptr, size_t size);
 func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
+	switch {
+	case ptr == 0 && size == 0:
+		return 0
+	case ptr == 0 && size != 0:
+		return Xmalloc(t, size)
+	case size == 0:
+		Xfree(t, ptr)
+		return 0
+	case size != 0:
+		size = types.Size_t(roundup(uintptr(size), 16))
+		if *(*memGuardT)(unsafe.Pointer(ptr - memGuardSize)) != memGuard {
+			panic(fmt.Errorf("corrupted memory guard: %#x", ptr))
+		}
+	}
 	allocMu.Lock()
 
 	defer allocMu.Unlock()
@@ -162,11 +204,16 @@ func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
 		}
 	}
 
-	p, err := allocator.UintptrRealloc(ptr, int(size))
+	p0, err := allocator.UintptrRealloc(ptr, int(size+2*memGuardSize))
 	if err != nil {
 		t.setErrno(errno.ENOMEM)
 		return 0
 	}
+
+	p := p0 + memGuardSize
+	p2 := p + uintptr(size)
+	*(*memGuardT)(unsafe.Pointer(p)) = memGuard
+	*(*memGuardT)(unsafe.Pointer(p2)) = memGuard
 
 	if memAuditEnabled {
 		delete(frees, p)
@@ -183,6 +230,11 @@ func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
 func Xfree(t *TLS, p uintptr) {
 	if p == 0 {
 		return
+	}
+
+	p0 := p - memGuardSize
+	if *(*memGuardT)(unsafe.Pointer(p0)) != memGuard {
+		panic(fmt.Errorf("corrupted memory guard: %#x", p))
 	}
 
 	allocMu.Lock()
@@ -208,10 +260,15 @@ func Xfree(t *TLS, p uintptr) {
 		frees[p] = pc
 	}
 
-	allocator.UintptrFree(p)
+	allocator.UintptrFree(p0)
 }
 
 func UsableSize(p uintptr) types.Size_t {
+	p0 := p - memGuardSize
+	if *(*memGuardT)(unsafe.Pointer(p0)) != memGuard {
+		panic(fmt.Errorf("corrupted memory guard: %#x", p))
+	}
+
 	if memAuditEnabled {
 		pc, _, _, ok := runtime.Caller(1)
 		if !ok {
@@ -223,7 +280,7 @@ func UsableSize(p uintptr) types.Size_t {
 		}
 	}
 
-	return types.Size_t(memory.UintptrUsableSize(p))
+	return types.Size_t(memory.UintptrUsableSize(p0)) - 2*memGuardSize
 }
 
 // MemAuditStart locks the memory allocator, initializes and enables memory

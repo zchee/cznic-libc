@@ -188,9 +188,9 @@ func NewTLS() *TLS {
 }
 
 func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
-	if dmesgs {
-		dmesg("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
-	}
+	// if dmesgs {
+	// 	dmesg("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
+	// }
 again:
 	switch x := err.(type) {
 	case int:

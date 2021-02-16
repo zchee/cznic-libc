@@ -21,7 +21,6 @@ import (
 	"math/rand"
 	"os"
 	"runtime"
-	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -139,9 +138,9 @@ func Xrandom(t *TLS) long {
 }
 
 func write(b []byte) (int, error) {
-	if dmesgs {
-		dmesg("%v: %s", origin(1), b)
-	}
+	// if dmesgs {
+	// 	dmesg("%v: %s", origin(1), b)
+	// }
 	if _, err := os.Stdout.Write(b); err != nil {
 		return -1, err
 	}
@@ -367,18 +366,18 @@ func Xvprintf(t *TLS, s, ap uintptr) int32 { return Xprintf(t, s, ap) }
 // int __isoc99_sscanf(const char *str, const char *format, ...);
 func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
 	r := scanf(strings.NewReader(GoString(str)), format, va)
-	if dmesgs {
-		dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
-	}
+	// if dmesgs {
+	// 	dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
+	// }
 	return r
 }
 
 // int sscanf(const char *str, const char *format, ...);
 func Xsscanf(t *TLS, str, format, va uintptr) int32 {
 	r := scanf(strings.NewReader(GoString(str)), format, va)
-	if dmesgs {
-		dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
-	}
+	// if dmesgs {
+	// 	dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
+	// }
 	return r
 }
 
@@ -1017,9 +1016,9 @@ func Xfopen(t *TLS, pathname, mode uintptr) uintptr {
 
 // void sqlite3_log(int iErrCode, const char *zFormat, ...);
 func X__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr) {
-	if dmesgs {
-		dmesg("%v: iErrCode: %v, msg: %s\n%s", origin(1), iErrCode, printf(zFormat, args), debug.Stack())
-	}
+	// if dmesgs {
+	// 	dmesg("%v: iErrCode: %v, msg: %s\n%s", origin(1), iErrCode, printf(zFormat, args), debug.Stack())
+	// }
 }
 
 // int _IO_putc(int __c, _IO_FILE *__fp);

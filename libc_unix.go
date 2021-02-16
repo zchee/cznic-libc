@@ -146,13 +146,13 @@ func Xpoll(t *TLS, fds uintptr, nfds poll.Nfds_t, timeout int32) int32 {
 		panic(todo(""))
 	}
 
-	if dmesgs {
-		dmesg("%v: %#x %v %v, %+v", origin(1), fds, nfds, timeout, (*[1000]unix.PollFd)(unsafe.Pointer(fds))[:nfds:nfds])
-	}
+	// if dmesgs {
+	// 	dmesg("%v: %#x %v %v, %+v", origin(1), fds, nfds, timeout, (*[1000]unix.PollFd)(unsafe.Pointer(fds))[:nfds:nfds])
+	// }
 	n, err := unix.Poll((*[1000]unix.PollFd)(unsafe.Pointer(fds))[:nfds:nfds], int(timeout))
-	if dmesgs {
-		dmesg("%v: %v %v", origin(1), n, err)
-	}
+	// if dmesgs {
+	// 	dmesg("%v: %v %v", origin(1), n, err)
+	// }
 	if err != nil {
 		t.setErrno(err)
 		return -1
