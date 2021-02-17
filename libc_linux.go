@@ -349,9 +349,9 @@ func Xread(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 func Xwrite(t *TLS, fd int32, buf uintptr, count types.Size_t) types.Ssize_t {
 	n, _, err := unix.Syscall(unix.SYS_WRITE, uintptr(fd), buf, uintptr(count))
 	if err != 0 {
-		if dmesgs {
-			dmesg("%v: fd %v, count %#x: %v", origin(1), fd, count, err)
-		}
+		// if dmesgs {
+		// 	dmesg("%v: fd %v, count %#x: %v", origin(1), fd, count, err)
+		// }
 		t.setErrno(err)
 		return -1
 	}

@@ -190,6 +190,7 @@ func makeMuslWin(goos, goarch string) {
 		"-nostdlib",
 		"-o", fmt.Sprintf("../musl_%s_%s.go", goos, goarch),
 		"-pkgname", "libc",
+		"-static-locals-prefix", "_s",
 
 		// Keep the order below, don't sort!
 		fmt.Sprintf("-I%s", filepath.Join("arch", arch)),
@@ -266,6 +267,7 @@ func makeMuslDarwin(goos, goarch string) {
 		"-nostdlib",
 		"-o", fmt.Sprintf("../musl_%s_%s.go", goos, goarch),
 		"-pkgname", "libc",
+		"-static-locals-prefix", "_s",
 
 		// Keep the order below, don't sort!
 		fmt.Sprintf("-I%s", filepath.Join("arch", arch)),
@@ -375,6 +377,7 @@ func makeMuslLinux(goos, goarch string) {
 		"-nostdlib",
 		"-o", fmt.Sprintf("../musl_%s_%s.go", goos, goarch),
 		"-pkgname", "libc",
+		"-static-locals-prefix", "_s",
 
 		// Keep the order below, don't sort!
 		fmt.Sprintf("-I%s", filepath.Join("arch", arch)),

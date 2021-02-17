@@ -71,8 +71,8 @@ func pc2origin(pc uintptr) string {
 }
 
 // void *malloc(size_t size);
-func Xmalloc(t *TLS, n types.Size_t) uintptr {
-	if n == 0 {
+func Xmalloc(t *TLS, size types.Size_t) uintptr {
+	if size == 0 {
 		return 0
 	}
 
@@ -80,7 +80,10 @@ func Xmalloc(t *TLS, n types.Size_t) uintptr {
 
 	defer allocMu.Unlock()
 
-	p, err := allocator.UintptrMalloc(int(n))
+	p, err := allocator.UintptrMalloc(int(size))
+	if dmesgs {
+		dmesg("%v: %v -> %#x, %v", origin(1), size, p, err)
+	}
 	if err != nil {
 		t.setErrno(errno.ENOMEM)
 		return 0
@@ -94,6 +97,7 @@ func Xmalloc(t *TLS, n types.Size_t) uintptr {
 
 		delete(frees, p)
 		if pc0, ok := allocs[p]; ok {
+			dmesg("%v: malloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0))
 			panic(fmt.Errorf("%v: malloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 		}
 
@@ -114,6 +118,9 @@ func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
 	defer allocMu.Unlock()
 
 	p, err := allocator.UintptrCalloc(int(n * size))
+	if dmesgs {
+		dmesg("%v: %v -> %#x, %v", origin(1), n*size, p, err)
+	}
 	if err != nil {
 		t.setErrno(errno.ENOMEM)
 		return 0
@@ -127,6 +134,7 @@ func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
 
 		delete(frees, p)
 		if pc0, ok := allocs[p]; ok {
+			dmesg("%v: calloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0))
 			panic(fmt.Errorf("%v: calloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 		}
 
@@ -150,27 +158,34 @@ func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
 
 		if ptr != 0 {
 			if pc0, ok := frees[ptr]; ok {
-				panic(fmt.Errorf("%v: realloc of freed memory, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+				dmesg("%v: realloc: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0))
+				panic(fmt.Errorf("%v: realloc: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 			}
 
 			if _, ok := allocs[ptr]; !ok {
-				panic(fmt.Errorf("%v: realloc of unallocated memory: %#x", pc2origin(pc), p))
+				dmesg("%v: %v: realloc, free of unallocated memory: %#x", origin(1), pc2origin(pc), ptr)
+				panic(fmt.Errorf("%v: realloc, free of unallocated memory: %#x", pc2origin(pc), ptr))
 			}
 
 			delete(allocs, ptr)
 			delete(allocsMore, ptr)
+			frees[ptr] = pc
 		}
 	}
 
 	p, err := allocator.UintptrRealloc(ptr, int(size))
+	if dmesgs {
+		dmesg("%v: %#x, %v -> %#x, %v", origin(1), ptr, size, p, err)
+	}
 	if err != nil {
 		t.setErrno(errno.ENOMEM)
 		return 0
 	}
 
-	if memAuditEnabled {
+	if memAuditEnabled && p != 0 {
 		delete(frees, p)
 		if pc0, ok := allocs[p]; ok {
+			dmesg("%v: realloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0))
 			panic(fmt.Errorf("%v: realloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 		}
 
@@ -185,6 +200,10 @@ func Xfree(t *TLS, p uintptr) {
 		return
 	}
 
+	if dmesgs {
+		dmesg("%v: %#x", origin(1), p)
+	}
+
 	allocMu.Lock()
 
 	defer allocMu.Unlock()
@@ -196,10 +215,12 @@ func Xfree(t *TLS, p uintptr) {
 		}
 
 		if pc0, ok := frees[p]; ok {
+			dmesg("%v: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0))
 			panic(fmt.Errorf("%v: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
 		}
 
 		if _, ok := allocs[p]; !ok {
+			dmesg("%v: free of unallocated memory: %#x", pc2origin(pc), p)
 			panic(fmt.Errorf("%v: free of unallocated memory: %#x", pc2origin(pc), p))
 		}
 
@@ -219,6 +240,7 @@ func UsableSize(p uintptr) types.Size_t {
 		}
 
 		if _, ok := allocs[p]; !ok {
+			dmesg("%v: usable size of unallocated memory: %#x", pc2origin(pc), p)
 			panic(fmt.Errorf("%v: usable size of unallocated memory: %#x", pc2origin(pc), p))
 		}
 	}

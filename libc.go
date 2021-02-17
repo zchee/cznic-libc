@@ -1054,6 +1054,12 @@ func Xfopen(t *TLS, pathname, mode uintptr) uintptr {
 	return Xfopen64(t, pathname, mode) //TODO 32 bit
 }
 
+func Dmesg(s string, args ...interface{}) {
+	if dmesgs {
+		dmesg(s, args...)
+	}
+}
+
 // void sqlite3_log(int iErrCode, const char *zFormat, ...);
 func X__ccgo_sqlite3_log(t *TLS, iErrCode int32, zFormat uintptr, args uintptr) {
 	// if dmesgs {
