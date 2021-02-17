@@ -83,11 +83,15 @@ func Start(main func(*TLS, int32, uintptr) int32) {
 		p += uintptrSize
 	}
 	SetEnviron(t, os.Environ())
+	chk := false
 	if s := os.Getenv("LIBC_MEMGRIND_START"); s != "0" {
 		MemAuditStart()
+		chk = true
 	}
 	t = NewTLS()
-	Xexit(t, main(t, int32(len(os.Args)), argv))
+	rc := main(t, int32(len(os.Args)), argv)
+	x_exit_checks = chk
+	Xexit(t, rc)
 }
 
 func SetEnviron(t *TLS, env []string) {

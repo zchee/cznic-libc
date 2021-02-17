@@ -211,11 +211,6 @@ again:
 }
 
 func (t *TLS) Close() {
-	if memgrind {
-		if atomic.AddInt32(&tlsBalance, -1) < 0 {
-			panic(todo("negative TLS balance"))
-		}
-	}
 	t.Free(int(unsafe.Sizeof(int32(0))))
 	if memgrind {
 		if t.stackHeaderBalance != 0 {

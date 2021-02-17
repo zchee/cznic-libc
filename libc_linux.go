@@ -1483,19 +1483,22 @@ func Xexit(t *TLS, status int32) {
 	X_exit(t, status)
 }
 
+var x_exit_checks bool
+
 // void _exit(int status);
 func X_exit(t *TLS, status int32) {
-	t.Close()
-	if memgrind && tlsBalance != 0 {
-		fmt.Fprintf(os.Stderr, "non zero TLS balance: %d\n", tlsBalance)
-		os.Exit(1)
-	}
+	if x_exit_checks {
+		t.Close()
+		if memgrind && tlsBalance != 0 {
+			fmt.Fprintf(os.Stderr, "non zero TLS balance: %d\n", tlsBalance)
+			os.Exit(1)
+		}
 
-	if err := MemAuditReport(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		if err := MemAuditReport(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
-
 	os.Exit(int(status))
 }
 
