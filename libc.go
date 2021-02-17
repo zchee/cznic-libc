@@ -85,13 +85,13 @@ func Start(main func(*TLS, int32, uintptr) int32) {
 	}
 	SetEnviron(t, os.Environ())
 	audit := false
-	t = NewTLS()
 	if memgrind {
 		if s := os.Getenv("LIBC_MEMGRIND_START"); s != "0" {
 			MemAuditStart()
 			audit = true
 		}
 	}
+	t = NewTLS()
 	rc := main(t, int32(len(os.Args)), argv)
 	exit(t, rc, audit)
 }
@@ -116,11 +116,6 @@ func exit(t *TLS, status int32, audit bool) {
 		t.Close()
 		if tlsBalance != 0 {
 			fmt.Fprintf(os.Stderr, "non zero TLS balance: %d\n", tlsBalance)
-			status = 1
-		}
-
-		if err := MemAuditReport(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
 			status = 1
 		}
 	}
@@ -888,6 +883,9 @@ func Xatoi(t *TLS, nptr uintptr) int32 {
 // double atof(const char *nptr);
 func Xatof(t *TLS, nptr uintptr) float64 {
 	n, _ := strToFloatt64(t, nptr, 64)
+	if dmesgs {
+		dmesg("%v: %q: %v", origin(1), GoString(nptr), n)
+	}
 	return n
 }
 

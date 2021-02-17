@@ -32,6 +32,7 @@ func TestSwap(t *testing.T) {
 var (
 	valist       [256]byte
 	formatString [256]byte
+	srcString    [256]byte
 )
 
 func TestPrintf(t *testing.T) {
@@ -52,6 +53,36 @@ func TestPrintf(t *testing.T) {
 		b := printf(uintptr(unsafe.Pointer(&formatString[0])), VaList(uintptr(unsafe.Pointer(&valist[0])), test.args...))
 		if g, e := string(b), test.result; g != e {
 			t.Errorf("%v: %q %q", itest, g, e)
+		}
+	}
+}
+
+func TestStrtod(t *testing.T) {
+	tls := NewTLS()
+	defer tls.Close()
+
+	for itest, test := range []struct {
+		s      string
+		result float64
+	}{
+		{"+0", 0},
+		{"+1", 1},
+		{"+2", 2},
+		{"-0", 0},
+		{"-1", -1},
+		{"-2", -2},
+		{".5", .5},
+		{"0", 0},
+		{"1", 1},
+		{"1.", 1},
+		{"1.024e3", 1024},
+		{"16", 16},
+		{"2", 2},
+		{"32", 32},
+	} {
+		copy(srcString[:], test.s+"\x00")
+		if g, e := Xstrtod(tls, uintptr(unsafe.Pointer(&srcString[0])), 0), test.result; g != e {
+			t.Errorf("%v: %q: %v %v", itest, test.s, g, e)
 		}
 	}
 }

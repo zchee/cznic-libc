@@ -675,7 +675,7 @@ func __DOUBLE_BITS(tls *TLS, __f float64) uint64 { /* math.h:61:36: */
 	return *(*uint64)(unsafe.Pointer(bp /* &__u */))
 }
 
-func scanexp(tls *TLS, f uintptr, pok int32) int64 { /* floatscan.c:36:18: */
+func scanexp(tls *TLS, f uintptr, pok int32) int64 { /* floatscan.c:38:18: */
 	var c int32
 	var x int32
 	var y int64
@@ -742,11 +742,11 @@ func scanexp(tls *TLS, f uintptr, pok int32) int64 { /* floatscan.c:36:18: */
 	return y
 }
 
-func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, pok int32) float64 { /* floatscan.c:63:20: */
-	bp := tls.Alloc(8192)
-	defer tls.Free(8192)
+func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, pok int32) float64 { /* floatscan.c:65:20: */
+	bp := tls.Alloc(512)
+	defer tls.Free(512)
 
-	// var x [2048]uint32_t at bp, 8192
+	// var x [128]uint32_t at bp, 512
 
 	var i int32
 	var j int32
@@ -810,7 +810,7 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 			}
 			gotrad = 1
 			lrp = dc
-		} else if k < (2048 - 3) {
+		} else if k < (128 - 3) {
 			dc++
 			if c != '0' {
 				lnz = int32(dc)
@@ -828,8 +828,8 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 		} else {
 			dc++
 			if c != '0' {
-				lnz = ((2048 - 4) * 9)
-				*(*uint32_t)(unsafe.Pointer(bp /* &x */ + 2044*4)) |= (uint32_t(1))
+				lnz = ((128 - 4) * 9)
+				*(*uint32_t)(unsafe.Pointer(bp /* &x */ + 124*4)) |= (uint32_t(1))
 			}
 		}
 	}
@@ -875,11 +875,11 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 	}
 	if lrp > (int64(-emin / 2)) {
 		(*(*int32)(unsafe.Pointer(X___errno_location(tls)))) = 34
-		return ((float64(sign) * math.Float64frombits(0x7ff0000000000000)) * math.Float64frombits(0x7ff0000000000000))
+		return ((float64(sign) * 1.79769313486231570815e+308) * 1.79769313486231570815e+308)
 	}
-	if lrp < (int64(emin - (2 * 64))) {
+	if lrp < (int64(emin - (2 * 53))) {
 		(*(*int32)(unsafe.Pointer(X___errno_location(tls)))) = 34
-		return ((float64(sign) * 3.3621031431120935063e-4932) * 3.3621031431120935063e-4932)
+		return ((float64(sign) * 2.22507385850720138309e-308) * 2.22507385850720138309e-308)
 	}
 
 	// Align incomplete final B1B digit
@@ -929,7 +929,7 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 			*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4)) = ((*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4)) / uint32_t(p10)) + carry)
 			carry = ((uint32_t(1000000000 / p10)) * tmp)
 			if (k == a) && !(int32(*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4))) != 0) {
-				a = ((a + 1) & (2048 - 1))
+				a = ((a + 1) & (128 - 1))
 				rp = rp - (9)
 			}
 		}
@@ -940,10 +940,10 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 	}
 
 	// Upscale until desired number of bits are left of radix point
-	for (rp < (9 * 3)) || ((rp == (9 * 3)) && (*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(a)*4)) < _sth[0])) {
+	for (rp < (9 * 2)) || ((rp == (9 * 2)) && (*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(a)*4)) < _sth[0])) {
 		var carry uint32_t = uint32_t(0)
 		e2 = e2 - (29)
-		for k = ((z - 1) & (2048 - 1)); ; k = ((k - 1) & (2048 - 1)) {
+		for k = ((z - 1) & (128 - 1)); ; k = ((k - 1) & (128 - 1)) {
 			var tmp uint64_t = ((uint64_t(*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4))) << 29) + uint64_t(carry))
 			if tmp > uint64(1000000000) {
 				carry = (uint32_t(tmp / uint64(1000000000)))
@@ -952,7 +952,7 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 				carry = uint32_t(0)
 				*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4)) = uint32_t(tmp)
 			}
-			if ((k == ((z - 1) & (2048 - 1))) && (k != a)) && !(int32(*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4))) != 0) {
+			if ((k == ((z - 1) & (128 - 1))) && (k != a)) && !(int32(*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4))) != 0) {
 				z = k
 			}
 			if k == a {
@@ -961,10 +961,10 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 		}
 		if carry != 0 {
 			rp = rp + (9)
-			a = ((a - 1) & (2048 - 1))
+			a = ((a - 1) & (128 - 1))
 			if a == z {
-				z = ((z - 1) & (2048 - 1))
-				*(*uint32_t)(unsafe.Pointer(bp /* &x */ + uintptr(((z-1)&(2048-1)))*4)) |= (*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(z)*4)))
+				z = ((z - 1) & (128 - 1))
+				*(*uint32_t)(unsafe.Pointer(bp /* &x */ + uintptr(((z-1)&(128-1)))*4)) |= (*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(z)*4)))
 			}
 			*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(a)*4)) = carry
 		}
@@ -974,57 +974,57 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 	for {
 		var carry uint32_t = uint32_t(0)
 		var sh int32 = 1
-		for i = 0; i < 3; i++ {
-			k = ((a + i) & (2048 - 1))
+		for i = 0; i < 2; i++ {
+			k = ((a + i) & (128 - 1))
 			if (k == z) || (*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4)) < _sth[i]) {
-				i = 3
+				i = 2
 				break
 			}
-			if *(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(((a+i)&(2048-1)))*4)) > _sth[i] {
+			if *(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(((a+i)&(128-1)))*4)) > _sth[i] {
 				break
 			}
 		}
-		if (i == 3) && (rp == (9 * 3)) {
+		if (i == 2) && (rp == (9 * 2)) {
 			break
 		}
 		// FIXME: find a way to compute optimal sh
-		if rp > (9 + (9 * 3)) {
+		if rp > (9 + (9 * 2)) {
 			sh = 9
 		}
 		e2 = e2 + (sh)
-		for k = a; k != z; k = ((k + 1) & (2048 - 1)) {
+		for k = a; k != z; k = ((k + 1) & (128 - 1)) {
 			var tmp uint32_t = (*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4)) & (uint32_t((int32(1) << sh) - 1)))
 			*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4)) = ((*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4)) >> sh) + carry)
 			carry = ((uint32_t(int32(1000000000) >> sh)) * tmp)
 			if (k == a) && !(int32(*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(k)*4))) != 0) {
-				a = ((a + 1) & (2048 - 1))
+				a = ((a + 1) & (128 - 1))
 				i--
 				rp = rp - (9)
 			}
 		}
 		if carry != 0 {
-			if ((z + 1) & (2048 - 1)) != a {
+			if ((z + 1) & (128 - 1)) != a {
 				*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(z)*4)) = carry
-				z = ((z + 1) & (2048 - 1))
+				z = ((z + 1) & (128 - 1))
 			} else {
-				*(*uint32_t)(unsafe.Pointer(bp /* &x */ + uintptr(((z-1)&(2048-1)))*4)) |= (uint32_t(1))
+				*(*uint32_t)(unsafe.Pointer(bp /* &x */ + uintptr(((z-1)&(128-1)))*4)) |= (uint32_t(1))
 			}
 		}
 	}
 
 	// Assemble desired bits into floating point variable
-	for y = float64(AssignInt32(&i, 0)); i < 3; i++ {
-		if ((a + i) & (2048 - 1)) == z {
-			*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(((AssignInt32(&z, ((z+1)&(2048-1))))-1))*4)) = uint32_t(0)
+	for y = float64(AssignInt32(&i, 0)); i < 2; i++ {
+		if ((a + i) & (128 - 1)) == z {
+			*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(((AssignInt32(&z, ((z+1)&(128-1))))-1))*4)) = uint32_t(0)
 		}
-		y = ((1000000000.0 * y) + float64(*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(((a+i)&(2048-1)))*4))))
+		y = ((1000000000.0 * y) + float64(*(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(((a+i)&(128-1)))*4))))
 	}
 
 	y = y * (float64(sign))
 
 	// Limit precision for denormal results
-	if bits > ((64 + e2) - emin) {
-		bits = ((64 + e2) - emin)
+	if bits > ((53 + e2) - emin) {
+		bits = ((53 + e2) - emin)
 		if bits < 0 {
 			bits = 0
 		}
@@ -1032,28 +1032,28 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 	}
 
 	// Calculate bias term to force rounding, move out lower bits
-	if bits < 64 {
-		bias = Xcopysignl(tls, Xscalbn(tls, float64(1), (((2*64)-bits)-1)), y)
-		frac = Xfmodl(tls, y, Xscalbn(tls, float64(1), (64-bits)))
+	if bits < 53 {
+		bias = Xcopysignl(tls, Xscalbn(tls, float64(1), (((2*53)-bits)-1)), y)
+		frac = Xfmodl(tls, y, Xscalbn(tls, float64(1), (53-bits)))
 		y = y - (frac)
 		y = y + (bias)
 	}
 
 	// Process tail of decimal input so it can affect rounding
-	if ((a + i) & (2048 - 1)) != z {
-		var t uint32_t = *(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(((a+i)&(2048-1)))*4))
-		if (t < uint32_t(500000000)) && ((t != 0) || ((((a + i) + 1) & (2048 - 1)) != z)) {
+	if ((a + i) & (128 - 1)) != z {
+		var t uint32_t = *(*uint32_t)(unsafe.Pointer(bp /* &x[0] */ + uintptr(((a+i)&(128-1)))*4))
+		if (t < uint32_t(500000000)) && ((t != 0) || ((((a + i) + 1) & (128 - 1)) != z)) {
 			frac = frac + (0.25 * float64(sign))
 		} else if t > uint32_t(500000000) {
 			frac = frac + (0.75 * float64(sign))
 		} else if t == uint32_t(500000000) {
-			if (((a + i) + 1) & (2048 - 1)) == z {
+			if (((a + i) + 1) & (128 - 1)) == z {
 				frac = frac + (0.5 * float64(sign))
 			} else {
 				frac = frac + (0.75 * float64(sign))
 			}
 		}
-		if ((64 - bits) >= 2) && !(Xfmodl(tls, frac, float64(1)) != 0) {
+		if ((53 - bits) >= 2) && !(Xfmodl(tls, frac, float64(1)) != 0) {
 			frac += 1
 		}
 	}
@@ -1061,15 +1061,15 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 	y = y + (frac)
 	y = y - (bias)
 
-	if ((e2 + 64) & 0x7fffffff) > (emax - 5) {
-		if Xfabsl(tls, y) >= (float64(float64(2)) / 1.0842021724855044340e-19) {
-			if (denormal != 0) && (bits == ((64 + e2) - emin)) {
+	if ((e2 + 53) & 0x7fffffff) > (emax - 5) {
+		if Xfabsl(tls, y) >= (float64(float64(2)) / 2.22044604925031308085e-16) {
+			if (denormal != 0) && (bits == ((53 + e2) - emin)) {
 				denormal = 0
 			}
 			y = y * (0.5)
 			e2++
 		}
-		if ((e2 + 64) > emax) || ((denormal != 0) && (frac != 0)) {
+		if ((e2 + 53) > emax) || ((denormal != 0) && (frac != 0)) {
 			(*(*int32)(unsafe.Pointer(X___errno_location(tls)))) = 34
 		}
 	}
@@ -1077,11 +1077,11 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 	return Xscalbnl(tls, y, e2)
 }
 
-var _sth = [3]uint32_t{uint32_t(18), uint32_t(446744073), uint32_t(709551615)} /* floatscan.c:66:24 */
+var _sth = [2]uint32_t{uint32_t(9007199), uint32_t(254740991)} /* floatscan.c:68:24 */
 var _sp10s = [8]int32{10, 100, 1000, 10000,
-	100000, 1000000, 10000000, 100000000} /* floatscan.c:79:19 */
+	100000, 1000000, 10000000, 100000000} /* floatscan.c:81:19 */
 
-func hexfloat(tls *TLS, f uintptr, bits int32, emin int32, sign int32, pok int32) float64 { /* floatscan.c:314:20: */
+func hexfloat(tls *TLS, f uintptr, bits int32, emin int32, sign int32, pok int32) float64 { /* floatscan.c:316:20: */
 	var x uint32_t = uint32_t(0)
 	var y float64 = float64(0)
 	var scale float64 = float64(1)
@@ -1162,7 +1162,7 @@ func hexfloat(tls *TLS, f uintptr, bits int32, emin int32, sign int32, pok int32
 			}
 			if dc < int64(8) {
 				x = ((x * uint32_t(16)) + uint32_t(d))
-			} else if dc < (int64((64 / 4) + 1)) {
+			} else if dc < (int64((53 / 4) + 1)) {
 				y = y + (float64(d) * (AssignDivFloat64(&scale, float64(16))))
 			} else if (d != 0) && !(gottail != 0) {
 				y = y + (0.5 * scale)
@@ -1226,11 +1226,11 @@ func hexfloat(tls *TLS, f uintptr, bits int32, emin int32, sign int32, pok int32
 	}
 	if e2 > int64(-emin) {
 		(*(*int32)(unsafe.Pointer(X___errno_location(tls)))) = 34
-		return ((float64(sign) * math.Float64frombits(0x7ff0000000000000)) * math.Float64frombits(0x7ff0000000000000))
+		return ((float64(sign) * 1.79769313486231570815e+308) * 1.79769313486231570815e+308)
 	}
-	if e2 < (int64(emin - (2 * 64))) {
+	if e2 < (int64(emin - (2 * 53))) {
 		(*(*int32)(unsafe.Pointer(X___errno_location(tls)))) = 34
-		return ((float64(sign) * 3.3621031431120935063e-4932) * 3.3621031431120935063e-4932)
+		return ((float64(sign) * 2.22507385850720138309e-308) * 2.22507385850720138309e-308)
 	}
 
 	for x < 0x80000000 {
@@ -1251,8 +1251,8 @@ func hexfloat(tls *TLS, f uintptr, bits int32, emin int32, sign int32, pok int32
 		}
 	}
 
-	if bits < 64 {
-		bias = Xcopysignl(tls, Xscalbn(tls, float64(1), (((32+64)-bits)-1)), float64(sign))
+	if bits < 53 {
+		bias = Xcopysignl(tls, Xscalbn(tls, float64(1), (((32+53)-bits)-1)), float64(sign))
 	}
 
 	if ((bits < 32) && (y != 0)) && !((x & uint32_t(1)) != 0) {
@@ -1270,7 +1270,7 @@ func hexfloat(tls *TLS, f uintptr, bits int32, emin int32, sign int32, pok int32
 	return Xscalbnl(tls, y, int32(e2))
 }
 
-func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) float64 { /* floatscan.c:426:13: */
+func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) float64 { /* floatscan.c:428:13: */
 	var sign int32 = 1
 	var i size_t
 	var bits int32
@@ -1287,8 +1287,8 @@ func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) float64 { /* float
 		emin = ((-1021) - bits)
 		break
 	case 2:
-		bits = 64
-		emin = ((-16381) - bits)
+		bits = 53
+		emin = ((-1021) - bits)
 		break
 	default:
 		return float64(0)
@@ -1831,155 +1831,20 @@ func __bswap32(tls *TLS, __x uint32_t) uint32_t { /* endian.h:24:26: */
 	return ((((__x >> 24) | ((__x >> 8) & uint32_t(0xff00))) | ((__x << 8) & uint32_t(0xff0000))) | (__x << 24))
 }
 
-type ldshape = struct {
-	f float64
-	_ [8]byte
-} /* libm.h:12:1 */
-
-func X__fpclassifyl(tls *TLS, x float64) int32 { /* __fpclassifyl.c:9:5: */
-	bp := tls.Alloc(16)
-	defer tls.Free(16)
-
-	*(*ldshape)(unsafe.Pointer(bp /* u */)) = ldshape{f: x}
-	var e int32 = (int32(*(*uint16_t)(unsafe.Pointer((bp /* &u */ /* &.i */) + 8 /* &.se */))) & 0x7fff)
-	var msb int32 = (int32(*(*uint64_t)(unsafe.Pointer((bp /* &u */ /* &.i */) /* &.m */)) >> 63))
-	if !(e != 0) && !(msb != 0) {
-		if *(*uint64_t)(unsafe.Pointer(bp /* &u */ /* &.i */ /* &.m */)) != 0 {
-			return 3
-		}
-		return 2
-	}
-	if e == 0x7fff {
-		// The x86 variant of 80-bit extended precision only admits
-		// one representation of each infinity, with the mantissa msb
-		// necessarily set. The version with it clear is invalid/nan.
-		// The m68k variant, however, allows either, and tooling uses
-		// the version with it clear.
-		if (1234 == 1234) && !(msb != 0) {
-			return 0
-		}
-		if (*(*uint64_t)(unsafe.Pointer((bp /* &u */ /* &.i */) /* &.m */)) << 1) != 0 {
-			return 0
-		}
-		return 1
-	}
-	if !(msb != 0) {
-		return 0
-	}
-	return 4
+func X__fpclassifyl(tls *TLS, x float64) int32 { /* __fpclassifyl.c:4:5: */
+	return X__fpclassify(tls, x)
 }
 
-func Xcopysignl(tls *TLS, x float64, y float64) float64 { /* copysignl.c:9:13: */
-	bp := tls.Alloc(32)
-	defer tls.Free(32)
-
-	*(*ldshape)(unsafe.Pointer(bp /* ux */)) = ldshape{f: x}
-	*(*ldshape)(unsafe.Pointer(bp + 16 /* uy */)) = ldshape{f: y}
-	*(*uint16_t)(unsafe.Pointer(bp /* &ux */ /* &.i */ + 8 /* &.se */)) &= uint16_t((0x7fff))
-	*(*uint16_t)(unsafe.Pointer(bp /* &ux */ /* &.i */ + 8 /* &.se */)) |= uint16_t((int32(*(*uint16_t)(unsafe.Pointer((bp + 16 /* &uy */ /* &.i */) + 8 /* &.se */))) & 0x8000))
-	return *(*float64)(unsafe.Pointer(bp /* &ux */))
+func Xcopysignl(tls *TLS, x float64, y float64) float64 { /* copysignl.c:4:13: */
+	return Xcopysign(tls, x, y)
 }
 
-func Xfabsl(tls *TLS, x float64) float64 { /* fabsl.c:8:13: */
-	bp := tls.Alloc(16)
-	defer tls.Free(16)
-
-	*(*ldshape)(unsafe.Pointer(bp /* u */)) = ldshape{f: x}
-
-	*(*uint16_t)(unsafe.Pointer(bp /* &u */ /* &.i */ + 8 /* &.se */)) &= uint16_t((0x7fff))
-	return *(*float64)(unsafe.Pointer(bp /* &u */))
+func Xfabsl(tls *TLS, x float64) float64 { /* fabsl.c:3:13: */
+	return Xfabs(tls, x)
 }
 
-func Xfmodl(tls *TLS, x float64, y float64) float64 { /* fmodl.c:9:13: */
-	bp := tls.Alloc(32)
-	defer tls.Free(32)
-
-	*(*ldshape)(unsafe.Pointer(bp /* ux */)) = ldshape{f: x}
-	*(*ldshape)(unsafe.Pointer(bp + 16 /* uy */)) = ldshape{f: y}
-	var ex int32 = (int32(*(*uint16_t)(unsafe.Pointer((bp /* &ux */ /* &.i */) + 8 /* &.se */))) & 0x7fff)
-	var ey int32 = (int32(*(*uint16_t)(unsafe.Pointer((bp + 16 /* &uy */ /* &.i */) + 8 /* &.se */))) & 0x7fff)
-	var sx int32 = (int32(*(*uint16_t)(unsafe.Pointer((bp /* &ux */ /* &.i */) + 8 /* &.se */))) & 0x8000)
-
-	if ((y == float64(0)) || (func() int32 {
-		if uint64(unsafe.Sizeof(y)) == uint64(unsafe.Sizeof(float32(0))) {
-			return (Bool32((__FLOAT_BITS(tls, float32(y)) & uint32(0x7fffffff)) > uint32(0x7f800000)))
-		}
-		return func() int32 {
-			if uint64(unsafe.Sizeof(y)) == uint64(unsafe.Sizeof(float64(0))) {
-				return (Bool32((__DOUBLE_BITS(tls, y) & (uint64(NegUint64(1)) >> 1)) > (uint64(0x7ff) << 52)))
-			}
-			return (Bool32(X__fpclassifyl(tls, y) == 0))
-		}()
-	}() != 0)) || (ex == 0x7fff) {
-		return ((x * y) / (x * y))
-	}
-	*(*uint16_t)(unsafe.Pointer(bp /* &ux */ /* &.i */ + 8 /* &.se */)) = uint16_t(ex)
-	*(*uint16_t)(unsafe.Pointer(bp + 16 /* &uy */ /* &.i */ + 8 /* &.se */)) = uint16_t(ey)
-	if *(*float64)(unsafe.Pointer(bp /* &ux */)) <= *(*float64)(unsafe.Pointer(bp + 16 /* &uy */)) {
-		if *(*float64)(unsafe.Pointer(bp /* &ux */)) == *(*float64)(unsafe.Pointer(bp + 16 /* &uy */)) {
-			return (float64(0) * x)
-		}
-		return x
-	}
-
-	// normalize x and y
-	if !(ex != 0) {
-		*(*float64)(unsafe.Pointer(bp /* &ux */ /* &.f */)) *= (0x1p120)
-		ex = (int32(*(*uint16_t)(unsafe.Pointer((bp /* &ux */ /* &.i */) + 8 /* &.se */))) - 120)
-	}
-	if !(ey != 0) {
-		*(*float64)(unsafe.Pointer(bp + 16 /* &uy */ /* &.f */)) *= (0x1p120)
-		ey = (int32(*(*uint16_t)(unsafe.Pointer((bp + 16 /* &uy */ /* &.i */) + 8 /* &.se */))) - 120)
-	}
-
-	// x mod y
-	var i uint64_t
-	var mx uint64_t
-	var my uint64_t
-	mx = *(*uint64_t)(unsafe.Pointer(bp /* &ux */ /* &.i */ /* &.m */))
-	my = *(*uint64_t)(unsafe.Pointer(bp + 16 /* &uy */ /* &.i */ /* &.m */))
-	for ; ex > ey; ex-- {
-		i = (mx - my)
-		if mx >= my {
-			if i == uint64(0) {
-				return (float64(0) * x)
-			}
-			mx = (uint64(2) * i)
-		} else if (uint64(2) * mx) < mx {
-			mx = ((uint64(2) * mx) - my)
-		} else {
-			mx = (uint64(2) * mx)
-		}
-	}
-	i = (mx - my)
-	if mx >= my {
-		if i == uint64(0) {
-			return (float64(0) * x)
-		}
-		mx = i
-	}
-__1:
-	if !((mx >> 63) == uint64(0)) {
-		goto __3
-	}
-	goto __2
-__2:
-	mx = mx * (uint64(2))
-	ex--
-	goto __1
-	goto __3
-__3:
-	;
-	*(*uint64_t)(unsafe.Pointer(bp /* &ux */ /* &.i */ /* &.m */)) = mx
-
-	// scale result
-	if ex <= 0 {
-		*(*uint16_t)(unsafe.Pointer(bp /* &ux */ /* &.i */ + 8 /* &.se */)) = (uint16_t((ex + 120) | sx))
-		*(*float64)(unsafe.Pointer(bp /* &ux */ /* &.f */)) *= (0x1p-120)
-	} else {
-		*(*uint16_t)(unsafe.Pointer(bp /* &ux */ /* &.i */ + 8 /* &.se */)) = (uint16_t(ex | sx))
-	}
-	return *(*float64)(unsafe.Pointer(bp /* &ux */))
+func Xfmodl(tls *TLS, x float64, y float64) float64 { /* fmodl.c:4:13: */
+	return Xfmod(tls, x, y)
 }
 
 func Xnanf(tls *TLS, s uintptr) float32 { /* nanf.c:3:7: */
@@ -2022,36 +1887,8 @@ func Xscalbn(tls *TLS, x float64, n int32) float64 { /* scalbn.c:4:8: */
 	return x
 }
 
-func Xscalbnl(tls *TLS, x float64, n int32) float64 { /* scalbnl.c:9:13: */
-	bp := tls.Alloc(16)
-	defer tls.Free(16)
-
-	// var u ldshape at bp, 16
-
-	if n > 16383 {
-		x = x * (math.Float64frombits(0x7ff0000000000000))
-		n = n - (16383)
-		if n > 16383 {
-			x = x * (math.Float64frombits(0x7ff0000000000000))
-			n = n - (16383)
-			if n > 16383 {
-				n = 16383
-			}
-		}
-	} else if n < -16382 {
-		x = x * (float64(0x1p-16382) * 0x1p113)
-		n = n + (16382 - 113)
-		if n < -16382 {
-			x = x * (float64(0x1p-16382) * 0x1p113)
-			n = n + (16382 - 113)
-			if n < -16382 {
-				n = -16382
-			}
-		}
-	}
-	*(*float64)(unsafe.Pointer(bp /* &u */)) = 1.0
-	*(*uint16_t)(unsafe.Pointer(bp /* &u */ /* &.i */ + 8 /* &.se */)) = (uint16_t(0x3fff + n))
-	return (x * *(*float64)(unsafe.Pointer(bp /* &u */)))
+func Xscalbnl(tls *TLS, x float64, n int32) float64 { /* scalbnl.c:4:13: */
+	return Xscalbn(tls, x, n)
 }
 
 type imaxdiv_t = struct {

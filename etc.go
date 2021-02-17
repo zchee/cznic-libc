@@ -686,6 +686,7 @@ out:
 }
 
 func strToFloatt64(t *TLS, s uintptr, bits int) (n float64, errno int32) {
+	var neg bool
 	var c byte
 out:
 	for {
@@ -698,6 +699,7 @@ out:
 			break out
 		case '-':
 			s++
+			neg = true
 			break out
 		default:
 			break out
@@ -738,6 +740,9 @@ out:
 										panic(todo(""))
 									}
 
+									if neg {
+										n = -n
+									}
 									return n, 0
 								}
 
