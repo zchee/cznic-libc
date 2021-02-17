@@ -5,7 +5,6 @@
 package libc // import "modernc.org/libc"
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"math"
@@ -1726,39 +1725,6 @@ func Xfputs(t *TLS, s, stream uintptr) int32 {
 		return -1
 	}
 	return 0
-}
-
-func Xexit(t *TLS, status int32) {
-	if len(Covered) != 0 {
-		buf := bufio.NewWriter(os.Stdout)
-		CoverReport(buf)
-		buf.Flush()
-	}
-	if len(CoveredC) != 0 {
-		buf := bufio.NewWriter(os.Stdout)
-		CoverCReport(buf)
-		buf.Flush()
-	}
-	for _, v := range atExit {
-		v()
-	}
-	X_exit(t, status)
-}
-
-// void _exit(int status);
-func X_exit(t *TLS, status int32) {
-	t.Close()
-	if memgrind && tlsBalance != 0 {
-		fmt.Fprintf(os.Stderr, "non zero TLS balance: %d\n", tlsBalance)
-		os.Exit(1)
-	}
-
-	if err := MemAuditReport(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
-	os.Exit(int(status))
 }
 
 // var getservbynameStaticResult netdb.Servent

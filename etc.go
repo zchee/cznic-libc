@@ -172,6 +172,7 @@ var errno0 int32 // Temp errno for NewTLS
 type TLS struct {
 	ID                 int32
 	errnop             uintptr
+	reentryGuard       int32 // memgrind
 	stack              stackHeader
 	stackHeaderBalance int32
 }
@@ -187,7 +188,18 @@ func NewTLS() *TLS {
 	return t
 }
 
-func (t *TLS) setErrno(err interface{}) { //TODO -> etc.go
+func (t *TLS) setErrno(err interface{}) {
+	if memgrind {
+		if atomic.SwapInt32(&t.reentryGuard, 1) != 0 {
+			panic(todo("concurrent use of TLS instance %p", t))
+		}
+
+		defer func() {
+			if atomic.SwapInt32(&t.reentryGuard, 0) != 1 {
+				panic(todo("concurrent use of TLS instance %p", t))
+			}
+		}()
+	}
 	// if dmesgs {
 	// 	dmesg("%v: %T(%v)\n%s", origin(1), err, err, debug.Stack())
 	// }
@@ -216,10 +228,23 @@ func (t *TLS) Close() {
 		if t.stackHeaderBalance != 0 {
 			panic(todo("non zero stack header balance: %d", t.stackHeaderBalance))
 		}
+
+		atomic.AddInt32(&tlsBalance, -1)
 	}
 }
 
 func (t *TLS) Alloc(n int) (r uintptr) {
+	if memgrind {
+		if atomic.SwapInt32(&t.reentryGuard, 1) != 0 {
+			panic(todo("concurrent use of TLS instance %p", t))
+		}
+
+		defer func() {
+			if atomic.SwapInt32(&t.reentryGuard, 0) != 1 {
+				panic(todo("concurrent use of TLS instance %p", t))
+			}
+		}()
+	}
 	n += 15
 	n &^= 15
 	if t.stack.free >= n {
@@ -291,6 +316,17 @@ func (t *TLS) Alloc(n int) (r uintptr) {
 const stackFrameKeepalive = 2
 
 func (t *TLS) Free(n int) {
+	if memgrind {
+		if atomic.SwapInt32(&t.reentryGuard, 1) != 0 {
+			panic(todo("concurrent use of TLS instance %p", t))
+		}
+
+		defer func() {
+			if atomic.SwapInt32(&t.reentryGuard, 0) != 1 {
+				panic(todo("concurrent use of TLS instance %p", t))
+			}
+		}()
+	}
 	n += 15
 	n &^= 15
 	t.stack.free += n

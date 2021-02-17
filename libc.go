@@ -15,6 +15,7 @@ package libc // import "modernc.org/libc"
 //TODO use t.Alloc/Free where appropriate
 
 import (
+	"bufio"
 	"fmt"
 	"math"
 	mbits "math/bits"
@@ -83,16 +84,51 @@ func Start(main func(*TLS, int32, uintptr) int32) {
 		p += uintptrSize
 	}
 	SetEnviron(t, os.Environ())
-	chk := false
-	if s := os.Getenv("LIBC_MEMGRIND_START"); s != "0" {
-		MemAuditStart()
-		chk = true
-	}
+	audit := false
 	t = NewTLS()
+	if memgrind {
+		if s := os.Getenv("LIBC_MEMGRIND_START"); s != "0" {
+			MemAuditStart()
+			audit = true
+		}
+	}
 	rc := main(t, int32(len(os.Args)), argv)
-	x_exit_checks = chk
-	Xexit(t, rc)
+	exit(t, rc, audit)
 }
+
+func Xexit(t *TLS, status int32) { exit(t, status, false) }
+
+func exit(t *TLS, status int32, audit bool) {
+	if len(Covered) != 0 {
+		buf := bufio.NewWriter(os.Stdout)
+		CoverReport(buf)
+		buf.Flush()
+	}
+	if len(CoveredC) != 0 {
+		buf := bufio.NewWriter(os.Stdout)
+		CoverCReport(buf)
+		buf.Flush()
+	}
+	for _, v := range atExit {
+		v()
+	}
+	if audit {
+		t.Close()
+		if tlsBalance != 0 {
+			fmt.Fprintf(os.Stderr, "non zero TLS balance: %d\n", tlsBalance)
+			status = 1
+		}
+
+		if err := MemAuditReport(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			status = 1
+		}
+	}
+	X_exit(nil, status)
+}
+
+// void _exit(int status);
+func X_exit(_ *TLS, status int32) { os.Exit(int(status)) }
 
 func SetEnviron(t *TLS, env []string) {
 	p := Xcalloc(t, 1, types.Size_t((len(env)+1)*(int(uintptrSize))))
