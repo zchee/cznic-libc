@@ -108,6 +108,7 @@ type X__uint128_t = struct {
 
 type X__builtin_va_list = uintptr /* <builtin>:46:14 */
 type X__float128 = float64        /* <builtin>:47:21 */
+
 // -
 // Copyright (c) 2001 Alexey Zelkin <phantom@FreeBSD.org>
 // All rights reserved.
