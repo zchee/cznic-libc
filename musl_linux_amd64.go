@@ -675,7 +675,7 @@ func __DOUBLE_BITS(tls *TLS, __f float64) uint64 { /* math.h:61:36: */
 	return *(*uint64)(unsafe.Pointer(bp /* &__u */))
 }
 
-func scanexp(tls *TLS, f uintptr, pok int32) int64 { /* floatscan.c:38:18: */
+func scanexp(tls *TLS, f uintptr, pok int32) int64 { /* floatscan.c:37:18: */
 	var c int32
 	var x int32
 	var y int64
@@ -742,7 +742,7 @@ func scanexp(tls *TLS, f uintptr, pok int32) int64 { /* floatscan.c:38:18: */
 	return y
 }
 
-func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, pok int32) float64 { /* floatscan.c:65:20: */
+func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, pok int32) float64 { /* floatscan.c:64:20: */
 	bp := tls.Alloc(512)
 	defer tls.Free(512)
 
@@ -1077,11 +1077,11 @@ func decfloat(tls *TLS, f uintptr, c int32, bits int32, emin int32, sign int32, 
 	return Xscalbnl(tls, y, e2)
 }
 
-var _sth = [2]uint32_t{uint32_t(9007199), uint32_t(254740991)} /* floatscan.c:68:24 */
+var _sth = [2]uint32_t{uint32_t(9007199), uint32_t(254740991)} /* floatscan.c:67:24 */
 var _sp10s = [8]int32{10, 100, 1000, 10000,
-	100000, 1000000, 10000000, 100000000} /* floatscan.c:81:19 */
+	100000, 1000000, 10000000, 100000000} /* floatscan.c:80:19 */
 
-func hexfloat(tls *TLS, f uintptr, bits int32, emin int32, sign int32, pok int32) float64 { /* floatscan.c:316:20: */
+func hexfloat(tls *TLS, f uintptr, bits int32, emin int32, sign int32, pok int32) float64 { /* floatscan.c:315:20: */
 	var x uint32_t = uint32_t(0)
 	var y float64 = float64(0)
 	var scale float64 = float64(1)
@@ -1270,7 +1270,7 @@ func hexfloat(tls *TLS, f uintptr, bits int32, emin int32, sign int32, pok int32
 	return Xscalbnl(tls, y, int32(e2))
 }
 
-func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) float64 { /* floatscan.c:428:13: */
+func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) float64 { /* floatscan.c:427:13: */
 	var sign int32 = 1
 	var i size_t
 	var bits int32

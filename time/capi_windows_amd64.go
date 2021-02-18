@@ -2,4 +2,8 @@
 
 package time
 
-var CAPI = map[string]struct{}{}
+var CAPI = map[string]struct{}{
+	"daylight": {},
+	"timezone": {},
+	"tzname":   {},
+}

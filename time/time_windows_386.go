@@ -56,11 +56,6 @@ const (
 	X_ARGMAX                                        = 100
 	X_CLOCK_T_DEFINED                               = 0
 	X_CONST_RETURN                                  = 0
-	X_CRTIMP                                        = 0
-	X_CRTIMP2                                       = 0
-	X_CRTIMP_ALTERNATIVE                            = 0
-	X_CRTIMP_NOIA64                                 = 0
-	X_CRTIMP_PURE                                   = 0
 	X_CRTNOALIAS                                    = 0
 	X_CRTRESTRICT                                   = 0
 	X_CRT_ALTERNATIVE_IMPORTED                      = 0
@@ -84,8 +79,6 @@ const (
 	X_INT128_DEFINED                                = 0
 	X_INTEGRAL_MAX_BITS                             = 64
 	X_INTPTR_T_DEFINED                              = 0
-	X_MCRTIMP                                       = 0
-	X_MRTIMP2                                       = 0
 	X_MT                                            = 0
 	X_M_IX86                                        = 600
 	X_PGLOBAL                                       = 0
@@ -96,7 +89,6 @@ const (
 	X_PTRDIFF_T_                                    = 0
 	X_PTRDIFF_T_DEFINED                             = 0
 	X_RSIZE_T_DEFINED                               = 0
-	X_SECIMP                                        = 0
 	X_SECURECRT_FILL_BUFFER_PATTERN                 = 0xFD
 	X_SIZE_T_DEFINED                                = 0
 	X_SSIZE_T_DEFINED                               = 0
@@ -124,10 +116,6 @@ const (
 	X_WINT_T                                        = 0
 	X_WTIME_DEFINED                                 = 0
 	X_X86_                                          = 1
-	X_cdecl                                         = 0
-	X_fastcall                                      = 0
-	X_stdcall                                       = 0
-	X_thiscall                                      = 0
 	I386                                            = 1
 )
 
@@ -137,10 +125,11 @@ type Size_t = uint32 /* <builtin>:9:23 */
 
 type Wchar_t = uint16 /* <builtin>:15:24 */
 
-type X__builtin_va_list = uintptr /* <builtin>:47:14 */
-type X__float128 = float64        /* <builtin>:48:21 */
+type X__builtin_va_list = uintptr /* <builtin>:46:14 */
+type X__float128 = float64        /* <builtin>:47:21 */
 
-type Va_list = X__builtin_va_list /* <builtin>:51:27 */
+type Va_list = X__builtin_va_list /* <builtin>:50:27 */
+
 // *
 // This file has no copyright assigned and is placed in the Public Domain.
 // This file is part of the mingw-w64 runtime package.
@@ -303,6 +292,10 @@ type Tm = struct {
 	Ftm_yday  int32
 	Ftm_isdst int32
 } /* time.h:97:3 */
+
+var Xdaylight int32    /* time.h:279:22: */
+var Xtimezone int32    /* time.h:280:23: */
+var Xtzname [2]uintptr /* time.h:281:23: */
 
 // *
 // This file has no copyright assigned and is placed in the Public Domain.

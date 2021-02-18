@@ -47,6 +47,7 @@ type Wchar_t = int32 /* <builtin>:15:24 */
 
 type X__builtin_va_list = uintptr /* <builtin>:46:14 */
 type X__float128 = float64        /* <builtin>:47:21 */
+
 // Compatibility definitions for System V `poll' interface.
 //    Copyright (C) 1994-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
