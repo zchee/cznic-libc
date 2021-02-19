@@ -158,8 +158,8 @@ func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
 
 		if ptr != 0 {
 			if pc0, ok := frees[ptr]; ok {
-				dmesg("%v: realloc: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0))
-				panic(fmt.Errorf("%v: realloc: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+				dmesg("%v: realloc: double free of %#x, previous call at %v:", pc2origin(pc), ptr, pc2origin(pc0))
+				panic(fmt.Errorf("%v: realloc: double free of %#x, previous call at %v:", pc2origin(pc), ptr, pc2origin(pc0)))
 			}
 
 			if _, ok := allocs[ptr]; !ok {
@@ -215,8 +215,8 @@ func Xfree(t *TLS, p uintptr) {
 		}
 
 		if pc0, ok := frees[p]; ok {
-			dmesg("%v: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0))
-			panic(fmt.Errorf("%v: double free, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+			dmesg("%v: double free of %#x, previous call at %v:", pc2origin(pc), p, pc2origin(pc0))
+			panic(fmt.Errorf("%v: double free of %#x, previous call at %v:", pc2origin(pc), p, pc2origin(pc0)))
 		}
 
 		if _, ok := allocs[p]; !ok {
