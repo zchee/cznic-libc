@@ -398,24 +398,6 @@ func X__assert_fail(t *TLS, assertion, file uintptr, line uint32, function uintp
 // int vprintf(const char *format, va_list ap);
 func Xvprintf(t *TLS, s, ap uintptr) int32 { return Xprintf(t, s, ap) }
 
-// int __isoc99_sscanf(const char *str, const char *format, ...);
-func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
-	r := scanf(strings.NewReader(GoString(str)), format, va)
-	// if dmesgs {
-	// 	dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
-	// }
-	return r
-}
-
-// int sscanf(const char *str, const char *format, ...);
-func Xsscanf(t *TLS, str, format, va uintptr) int32 {
-	r := scanf(strings.NewReader(GoString(str)), format, va)
-	// if dmesgs {
-	// 	dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
-	// }
-	return r
-}
-
 // int vsprintf(char *str, const char *format, va_list ap);
 func Xvsprintf(t *TLS, str, format, va uintptr) int32 {
 	panic(todo(""))

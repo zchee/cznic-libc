@@ -1566,6 +1566,10 @@ func X__syscall3(t *TLS, trap, p1, p2, p3 long) long {
 	return __syscall(unix.Syscall(uintptr(trap), uintptr(p1), uintptr(p2), uintptr(p3)))
 }
 
+func X__syscall4(t *TLS, trap, p1, p2, p3, p4 long) long {
+	return __syscall(unix.Syscall6(uintptr(trap), uintptr(p1), uintptr(p2), uintptr(p3), uintptr(p4), 0, 0))
+}
+
 func fcntlCmdStr(cmd int32) string {
 	switch cmd {
 	case fcntl.F_GETOWN:
@@ -1643,4 +1647,13 @@ func Xendpwent(t *TLS) {
 // char *ctime(const time_t *timep);
 func Xctime(t *TLS, timep uintptr) uintptr {
 	panic(todo(""))
+}
+
+// int __isoc99_sscanf(const char *str, const char *format, ...);
+func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
+	r := Xsscanf(t, str, format, va)
+	// if dmesgs {
+	// 	dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
+	// }
+	return r
 }

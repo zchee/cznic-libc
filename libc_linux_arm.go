@@ -438,3 +438,12 @@ func Xmkdir(t *TLS, path uintptr, mode types.Mode_t) int32 {
 	}
 	return 0
 }
+
+// int sscanf(const char *str, const char *format, ...);
+func Xsscanf(t *TLS, str, format, va uintptr) int32 {
+	r := scanf(strings.NewReader(GoString(str)), format, va)
+	// if dmesgs {
+	// 	dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
+	// }
+	return r
+}

@@ -2111,3 +2111,21 @@ func Xpipe(t *TLS, pipefd uintptr) int32 {
 	}
 	return 0
 }
+
+// int __isoc99_sscanf(const char *str, const char *format, ...);
+func X__isoc99_sscanf(t *TLS, str, format, va uintptr) int32 {
+	r := scanf(strings.NewReader(GoString(str)), format, va)
+	// if dmesgs {
+	// 	dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
+	// }
+	return r
+}
+
+// int sscanf(const char *str, const char *format, ...);
+func Xsscanf(t *TLS, str, format, va uintptr) int32 {
+	r := scanf(strings.NewReader(GoString(str)), format, va)
+	// if dmesgs {
+	// 	dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
+	// }
+	return r
+}
