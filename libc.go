@@ -36,6 +36,11 @@ import (
 	"modernc.org/mathutil"
 )
 
+type (
+	// RawMem64 represents the biggest uint64 array the runtime can handle.
+	RawMem64 [unsafe.Sizeof(RawMem{}) / unsafe.Sizeof(uint64(0))]uint64
+)
+
 var (
 	allocMu   sync.Mutex
 	isWindows bool
