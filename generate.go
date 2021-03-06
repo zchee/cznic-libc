@@ -246,6 +246,8 @@ func makeMuslDarwin(goos, goarch string) {
 	switch goarch {
 	case "amd64":
 		arch = "x86_64"
+	case "arm64":
+		arch = "aarch64"
 	default:
 		fail(fmt.Errorf("unknown/unsupported GOARCH: %q", goarch))
 	}
