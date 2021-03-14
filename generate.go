@@ -426,6 +426,7 @@ func makeMuslLinux(goos, goarch string) {
 		"src/network/gethostbyname.c",
 		"src/network/gethostbyname2.c",
 		"src/network/gethostbyname2_r.c",
+		"src/network/gethostbyname_r.c",
 		"src/network/getnameinfo.c",
 		"src/network/h_errno.c",
 		"src/network/inet_aton.c",
