@@ -22,6 +22,7 @@ import (
 	"math/rand"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -396,6 +397,9 @@ func Xqsort(t *TLS, base uintptr, nmemb, size types.Size_t, compar uintptr) {
 // void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function);
 func X__assert_fail(t *TLS, assertion, file uintptr, line uint32, function uintptr) {
 	fmt.Fprintf(os.Stderr, "assertion failure: %s:%d.%s: %s\n", GoString(file), line, GoString(function), GoString(assertion))
+	if memgrind {
+		fmt.Fprintf(os.Stderr, "%s\n", debug.Stack())
+	}
 	os.Stderr.Sync()
 	Xexit(t, 1)
 }
