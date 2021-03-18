@@ -213,12 +213,6 @@ func Xgetpwnam_r(t *TLS, name, pwd, buf uintptr, buflen types.Size_t, result uin
 	panic(todo(""))
 }
 
-// int getpwuid_r(uid_t uid, struct passwd *pwd,
-//                       char *buf, size_t buflen, struct passwd **result);
-func Xgetpwuid_r(t *TLS, uid types.Uid_t, pwd, buf uintptr, buflen types.Size_t, result uintptr) int32 {
-	panic(todo(""))
-}
-
 // int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid);
 func Xgetresuid(t *TLS, ruid, euid, suid uintptr) int32 {
 	panic(todo(""))

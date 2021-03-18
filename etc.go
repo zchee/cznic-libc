@@ -167,27 +167,6 @@ func removeObject(t uintptr) {
 	objectMu.Unlock()
 }
 
-var errno0 int32 // Temp errno for NewTLS
-
-type TLS struct {
-	ID                 int32
-	errnop             uintptr
-	reentryGuard       int32 // memgrind
-	stack              stackHeader
-	stackHeaderBalance int32
-}
-
-func NewTLS() *TLS {
-	id := atomic.AddInt32(&tid, 1)
-	t := &TLS{ID: id, errnop: uintptr(unsafe.Pointer(&errno0))}
-	if memgrind {
-		atomic.AddInt32(&tlsBalance, 1)
-	}
-	t.errnop = t.Alloc(int(unsafe.Sizeof(int32(0))))
-	*(*int32)(unsafe.Pointer(t.errnop)) = 0
-	return t
-}
-
 func (t *TLS) setErrno(err interface{}) {
 	if memgrind {
 		if atomic.SwapInt32(&t.reentryGuard, 1) != 0 {
@@ -222,6 +201,7 @@ again:
 	}
 }
 
+// Close frees the resources of t.
 func (t *TLS) Close() {
 	t.Free(int(unsafe.Sizeof(int32(0))))
 	if memgrind {
@@ -233,6 +213,20 @@ func (t *TLS) Close() {
 	}
 }
 
+// Alloc allocates n bytes of thread-local storage. It must be paired with a
+// call to t.Free(n), using the same n. The order matters. This is ok:
+//
+//	t.Alloc(11)
+//		t.Alloc(22)
+//		t.Free(22)
+//	t.Free(11)
+//
+// This is not correct:
+//
+//	t.Alloc(11)
+//		t.Alloc(22)
+//		t.Free(11)
+//	t.Free(22)
 func (t *TLS) Alloc(n int) (r uintptr) {
 	if memgrind {
 		if atomic.SwapInt32(&t.reentryGuard, 1) != 0 {
@@ -315,6 +309,8 @@ func (t *TLS) Alloc(n int) (r uintptr) {
 //this declares how many stack frames are kept alive before being freed
 const stackFrameKeepalive = 2
 
+// Free deallocates n bytes of thread-local storage. See TLS.Alloc for details
+// on correct usage.
 func (t *TLS) Free(n int) {
 	if memgrind {
 		if atomic.SwapInt32(&t.reentryGuard, 1) != 0 {

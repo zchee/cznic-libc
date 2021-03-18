@@ -220,13 +220,6 @@ func makeMuslWin(goos, goarch string) {
 		"src/multibyte/wcstombs.c",
 		"src/string/strdup.c",
 		"src/string/strchrnul.c",
-
-		// FAILS b/c Windows long is 32 bits
-		// "src/internal/intscan.c",
-		// "src/internal/shgetc.c",
-		// "src/stdio/__toread.c",
-		// "src/stdio/__uflow.c",
-		// "src/stdlib/strtol.c",
 	); err != nil {
 		fail(err)
 	}
@@ -324,10 +317,10 @@ func makeMuslDarwin(goos, goarch string) {
 		"src/prng/rand_r.c",
 		"src/stdio/__toread.c",
 		"src/stdio/__uflow.c",
-		"src/string/strdup.c",
 		"src/stdlib/strtod.c",
 		"src/stdlib/strtol.c",
 		"src/string/strchrnul.c",
+		"src/string/strdup.c",
 		"src/string/strlcat.c",
 		"src/string/strlcpy.c",
 		"src/string/strncat.c",
@@ -452,16 +445,6 @@ func makeMuslLinux(goos, goarch string) {
 		"src/string/strnlen.c",
 		"src/string/strspn.c",
 		"src/string/strtok.c",
-
-		//TODO "src/time/__tm_to_secs.c",
-		//TODO "src/time/__year_to_secs.c",
-		//TODO "src/time/strftime.c",
-
-		//TODO "src/time/ctime.c",
-		//TODO "src/time/asctime.c",
-		//TODO "src/time/asctime_r.c",
-		//TODO "src/locale/c_locale.c",
-
 	); err != nil {
 		fail(err)
 	}

@@ -283,6 +283,8 @@ func Xsysconf(t *TLS, name int32) long {
 	switch name {
 	case unistd.X_SC_PAGESIZE:
 		return long(unix.Getpagesize())
+	case unistd.X_SC_GETPW_R_SIZE_MAX:
+		return 1024
 	}
 
 	panic(todo(""))
@@ -745,6 +747,11 @@ func initPasswd(t *TLS, p *pwd.Passwd, name, pwd string, uid, gid uint32, gecos,
 	p.Fpw_gecos = cString(t, gecos)
 	p.Fpw_dir = cString(t, dir)
 	p.Fpw_shell = cString(t, shell)
+}
+
+// int getpwuid_r(uid_t uid, struct passwd *pwd, char *buf, size_t buflen, struct passwd **result);
+func Xgetpwuid_r(t *TLS, uid types.Uid_t, pwd, buf uintptr, buflen types.Size_t, result uintptr) int32 {
+	panic(todo(""))
 }
 
 // int setvbuf(FILE *stream, char *buf, int mode, size_t size);

@@ -5351,3 +5351,7 @@ func Xsscanf(t *TLS, str, format, va uintptr) int32 {
 	// }
 	return r
 }
+
+func Xstrtod(tls *TLS, s uintptr, p uintptr) float64 { /* strtod.c:22:8: */
+	panic(todo(""))
+}

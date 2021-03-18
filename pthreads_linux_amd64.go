@@ -2,24 +2,79 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build linux darwin
-
 package libc // import "modernc.org/libc"
 
 import (
 	"sync"
+	"sync/atomic"
+	"unsafe"
 
 	"modernc.org/libc/errno"
 	"modernc.org/libc/pthread"
 	"modernc.org/libc/sys/types"
 )
 
+var errno0 int32 // Temp errno for NewTLS
+
+type TLS struct {
+	ID     int32
+	errnop uintptr
+	pthreadData
+	reentryGuard       int32 // memgrind
+	stack              stackHeader
+	stackHeaderBalance int32
+}
+
+func NewTLS() *TLS {
+	id := atomic.AddInt32(&tid, 1)
+	t := &TLS{ID: id, errnop: uintptr(unsafe.Pointer(&errno0))}
+	t.pthreadData.init(t)
+	if memgrind {
+		atomic.AddInt32(&tlsBalance, 1)
+	}
+	t.errnop = t.Alloc(int(unsafe.Sizeof(int32(0))))
+	*(*int32)(unsafe.Pointer(t.errnop)) = 0
+	return t
+}
+
 var (
-	pthreadConds     = map[uintptr]*pthreadCond{}
-	pthreadCondsMu   sync.Mutex
+	pthreadConds   = map[uintptr]*pthreadCond{}
+	pthreadCondsMu sync.Mutex
+
 	pthreadMutexes   = map[uintptr]*pthreadMutex{}
 	pthreadMutexesMu sync.Mutex
+
+	pthreads   = map[pthread.Pthread_t]*TLS{}
+	pthreadsMu sync.Mutex
+
+	pthreadKey     pthread.Pthread_key_t
+	pthreadKeys    = map[pthread.Pthread_key_t]uintptr{} // key: destructor
+	pthreadsKeysMu sync.Mutex
 )
+
+// Pthread specific part of the TLS.
+type pthreadData struct {
+	cancelState     int32
+	childHandlers   []uintptr // pthread_atfork
+	kv              map[pthread.Pthread_key_t]uintptr
+	parentHandlers  []uintptr // pthread_atfork
+	prepareHandlers []uintptr // pthread_atfork
+}
+
+func (d *pthreadData) init(t *TLS) {
+	pthreadsMu.Lock()
+	defer pthreadsMu.Unlock()
+	pthreads[pthread.Pthread_t(t.ID)] = t
+}
+
+// ChildHandlers returns the handlders set by pthread_atfork, if any.
+func (d *pthreadData) ChildHandlers() []uintptr { return d.childHandlers }
+
+// ParentHandlers returns the handlders set by pthread_atfork, if any.
+func (d *pthreadData) ParentHandlers() []uintptr { return d.parentHandlers }
+
+// PrepareHandlers returns the handlders set by pthread_atfork, if any.
+func (d *pthreadData) PrepareHandlers() []uintptr { return d.prepareHandlers }
 
 // pthread_mutex_t
 type pthreadMutex struct {
@@ -186,7 +241,7 @@ func Xpthread_cond_broadcast(tls *TLS, cond uintptr) int32 {
 
 // pthread_t pthread_self(void);
 func Xpthread_self(t *TLS) pthread.Pthread_t {
-	panic(todo(""))
+	return pthread.Pthread_t(t.ID)
 }
 
 // int pthread_equal(pthread_t t1, pthread_t t2);
@@ -196,7 +251,16 @@ func Xpthread_equal(t *TLS, t1, t2 pthread.Pthread_t) int32 {
 
 // int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void));
 func Xpthread_atfork(t *TLS, prepare, parent, child uintptr) int32 {
-	panic(todo(""))
+	if prepare != 0 {
+		t.prepareHandlers = append(t.prepareHandlers, prepare)
+	}
+	if parent != 0 {
+		t.parentHandlers = append(t.parentHandlers, parent)
+	}
+	if child != 0 {
+		t.childHandlers = append(t.childHandlers, child)
+	}
+	return 0
 }
 
 // int pthread_join(pthread_t thread, void **value_ptr);
@@ -241,7 +305,13 @@ func Xpthread_exit(t *TLS, value_ptr uintptr) {
 
 // int pthread_key_create(pthread_key_t *key, void (*destructor)(void*));
 func Xpthread_key_create(t *TLS, key, destructor uintptr) int32 {
-	panic(todo(""))
+	pthreadsKeysMu.Lock()
+	defer pthreadsKeysMu.Unlock()
+	pthreadKey++
+	r := pthreadKey
+	pthreadKeys[r] = destructor
+	*(*pthread.Pthread_key_t)(unsafe.Pointer(key)) = r
+	return 0
 }
 
 // int pthread_key_delete(pthread_key_t key);
@@ -251,10 +321,14 @@ func Xpthread_key_delete(t *TLS, key pthread.Pthread_key_t) int32 {
 
 // int pthread_setspecific(pthread_key_t key, const void *value);
 func Xpthread_setspecific(t *TLS, key pthread.Pthread_key_t, value uintptr) int32 {
-	panic(todo(""))
+	if t.kv == nil {
+		t.kv = map[pthread.Pthread_key_t]uintptr{}
+	}
+	t.kv[key] = value
+	return 0
 }
 
 // void *pthread_getspecific(pthread_key_t key);
 func Xpthread_getspecific(t *TLS, key pthread.Pthread_key_t) uintptr {
-	panic(todo(""))
+	return t.kv[key]
 }

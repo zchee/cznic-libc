@@ -619,6 +619,7 @@ var CAPI = map[string]struct{}{
 	"strpbrk":                           {},
 	"strrchr":                           {},
 	"strstr":                            {},
+	"strtod":                            {},
 	"strtol":                            {},
 	"strtoul":                           {},
 	"symlink":                           {},
