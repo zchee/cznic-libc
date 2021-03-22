@@ -1,34 +1,58 @@
-// Copyright 2020 The Libc Authors. All rights reserved.
+// Copyright 2021 The Libc Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package libc // import "modernc.org/libc"
 
 import (
+	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 	"unsafe"
 
 	"modernc.org/libc/errno"
 	"modernc.org/libc/pthread"
 	"modernc.org/libc/sys/types"
+	ctime "modernc.org/libc/time"
 )
 
-var errno0 int32 // Temp errno for NewTLS
+var (
+	mutexes   = map[uintptr]*mutex{}
+	mutexesMu sync.Mutex
 
+	threads   = map[int32]*TLS{}
+	threadsMu sync.Mutex
+
+	threadKey            pthread.Pthread_key_t
+	threadKeyDestructors = map[pthread.Pthread_key_t][]uintptr{} // key: []destructor
+	threadsKeysMu        sync.Mutex
+
+	conds   = map[uintptr]*cond{}
+	condsMu sync.Mutex
+)
+
+// Thread local storage.
 type TLS struct {
-	ID     int32
 	errnop uintptr
 	pthreadData
+	stack stackHeader
+
+	ID                 int32
 	reentryGuard       int32 // memgrind
-	stack              stackHeader
 	stackHeaderBalance int32
 }
 
+var errno0 int32 // Temp errno for NewTLS
+
 func NewTLS() *TLS {
+	return newTLS(false)
+}
+
+func newTLS(detached bool) *TLS {
 	id := atomic.AddInt32(&tid, 1)
 	t := &TLS{ID: id, errnop: uintptr(unsafe.Pointer(&errno0))}
-	t.pthreadData.init(t)
+	t.pthreadData.init(t, detached)
 	if memgrind {
 		atomic.AddInt32(&tlsBalance, 1)
 	}
@@ -37,129 +61,69 @@ func NewTLS() *TLS {
 	return t
 }
 
-var (
-	pthreadConds   = map[uintptr]*pthreadCond{}
-	pthreadCondsMu sync.Mutex
-
-	pthreadMutexes   = map[uintptr]*pthreadMutex{}
-	pthreadMutexesMu sync.Mutex
-
-	pthreads   = map[pthread.Pthread_t]*TLS{}
-	pthreadsMu sync.Mutex
-
-	pthreadKey     pthread.Pthread_key_t
-	pthreadKeys    = map[pthread.Pthread_key_t]uintptr{} // key: destructor
-	pthreadsKeysMu sync.Mutex
-)
-
-// Pthread specific part of the TLS.
+// Pthread specific part of a TLS.
 type pthreadData struct {
-	cancelState     int32
-	childHandlers   []uintptr // pthread_atfork
-	kv              map[pthread.Pthread_key_t]uintptr
-	parentHandlers  []uintptr // pthread_atfork
-	prepareHandlers []uintptr // pthread_atfork
+	done   chan struct{}
+	kv     map[pthread.Pthread_key_t]uintptr
+	retVal uintptr
+
+	detached bool
 }
 
-func (d *pthreadData) init(t *TLS) {
-	pthreadsMu.Lock()
-	defer pthreadsMu.Unlock()
-	pthreads[pthread.Pthread_t(t.ID)] = t
-}
-
-// ChildHandlers returns the handlders set by pthread_atfork, if any.
-func (d *pthreadData) ChildHandlers() []uintptr { return d.childHandlers }
-
-// ParentHandlers returns the handlders set by pthread_atfork, if any.
-func (d *pthreadData) ParentHandlers() []uintptr { return d.parentHandlers }
-
-// PrepareHandlers returns the handlders set by pthread_atfork, if any.
-func (d *pthreadData) PrepareHandlers() []uintptr { return d.prepareHandlers }
-
-// pthread_mutex_t
-type pthreadMutex struct {
-	sync.Mutex
-}
-
-// pthread_cond_t
-type pthreadCond struct {
-	sync.Cond
-}
-
-// int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine) (void *), void *arg);
-func Xpthread_create(tls *TLS, thread, attr, start_routine, arg uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_detach(pthread_t thread);
-func Xpthread_detach(tls *TLS, thread pthread.Pthread_t) int32 {
-	panic(todo(""))
-}
-
-// int pthread_mutex_lock(pthread_mutex_t *mutex);
-func Xpthread_mutex_lock(tls *TLS, mutex uintptr) int32 {
-	pthreadMutexesMu.Lock()
-
-	defer pthreadMutexesMu.Unlock()
-
-	if x := pthreadMutexes[mutex]; x != nil {
-		x.Lock()
-		return 0
+func (d *pthreadData) init(t *TLS, detached bool) {
+	d.detached = detached
+	if detached {
+		return
 	}
 
-	return errno.EINVAL
+	d.done = make(chan struct{})
+
+	threadsMu.Lock()
+
+	defer threadsMu.Unlock()
+
+	threads[t.ID] = t
 }
 
-// int pthread_cond_signal(pthread_cond_t *cond);
-func Xpthread_cond_signal(tls *TLS, cond uintptr) int32 {
-	pthreadCondsMu.Lock()
-
-	defer pthreadCondsMu.Unlock()
-
-	if x := pthreadConds[cond]; x != nil {
-		x.Signal()
-		return 0
-	}
-
-	return errno.EINVAL
-}
-
-// int pthread_mutex_unlock(pthread_mutex_t *mutex);
-func Xpthread_mutex_unlock(tls *TLS, mutex uintptr) int32 {
-	pthreadMutexesMu.Lock()
-
-	defer pthreadMutexesMu.Unlock()
-
-	if x := pthreadMutexes[mutex]; x != nil {
-		x.Unlock()
-		return 0
-	}
-
-	return errno.EINVAL
-}
-
-// The pthread_mutex_init() function shall initialize the mutex referenced by
-// mutex with attributes specified by attr. If attr is NULL, the default mutex
-// attributes are used; the effect shall be the same as passing the address of
-// a default mutex attributes object. Upon successful initialization, the state
-// of the mutex becomes initialized and unlocked.
-//
-// If successful, the pthread_mutex_destroy() and pthread_mutex_init()
-// functions shall return zero; otherwise, an error number shall be returned to
-// indicate the error.
-//
-// int pthread_mutex_init(pthread_mutex_t *restrict mutex, const pthread_mutexattr_t *restrict attr);
-func Xpthread_mutex_init(tls *TLS, mutex, attr uintptr) int32 {
-	if attr != 0 {
-		panic(todo(""))
-	}
-
-	pthreadMutexesMu.Lock()
-
-	defer pthreadMutexesMu.Unlock()
-
-	pthreadMutexes[mutex] = &pthreadMutex{}
+// int pthread_attr_init(pthread_attr_t *attr);
+func Xpthread_attr_init(t *TLS, pAttr uintptr) int32 {
+	*(*pthread.Pthread_attr_t)(unsafe.Pointer(pAttr)) = pthread.Pthread_attr_t{}
 	return 0
+}
+
+// int pthread_attr_destroy(pthread_attr_t *attr);
+func Xpthread_attr_destroy(t *TLS, pAttr uintptr) int32 {
+	return 0
+}
+
+// int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
+func Xpthread_attr_setscope(t *TLS, pAttr uintptr, contentionScope int32) int32 {
+	switch contentionScope {
+	case pthread.PTHREAD_SCOPE_SYSTEM:
+		return 0
+	default:
+		panic(todo("", contentionScope))
+	}
+}
+
+// int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
+func Xpthread_attr_setstacksize(t *TLS, attr uintptr, stackSize types.Size_t) int32 {
+	panic(todo(""))
+}
+
+// Go side data of pthread_cond_t.
+type cond struct {
+	ch chan struct{}
+
+	waiters int
+
+	closed int32
+}
+
+func newCond() *cond {
+	return &cond{
+		ch: make(chan struct{}, 1),
+	}
 }
 
 // The pthread_cond_init() function shall initialize the condition variable
@@ -174,149 +138,384 @@ func Xpthread_mutex_init(tls *TLS, mutex, attr uintptr) int32 {
 // the error.
 //
 // int pthread_cond_init(pthread_cond_t *restrict cond, const pthread_condattr_t *restrict attr);
-func Xpthread_cond_init(tls *TLS, cond, attr uintptr) int32 {
-	if attr != 0 {
-		panic(todo(""))
+func Xpthread_cond_init(t *TLS, pCond, pAttr uintptr) int32 {
+	if pCond == 0 {
+		return errno.EINVAL
 	}
 
-	pthreadCondsMu.Lock()
+	if pAttr != 0 {
+		panic(todo("%#x %#x", pCond, pAttr))
+	}
 
-	defer pthreadCondsMu.Unlock()
+	condsMu.Lock()
 
-	pthreadConds[cond] = &pthreadCond{}
+	defer condsMu.Unlock()
+
+	conds[pCond] = newCond()
 	return 0
-}
-
-// int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex);
-func Xpthread_cond_wait(tls *TLS, cond, mutex uintptr) int32 {
-	panic(todo(""))
 }
 
 // int pthread_cond_destroy(pthread_cond_t *cond);
-func Xpthread_cond_destroy(tls *TLS, cond uintptr) int32 {
-	pthreadCondsMu.Lock()
-
-	defer pthreadCondsMu.Unlock()
-
-	if pthreadConds[cond] != nil {
-		delete(pthreadConds, cond)
-		return 0
+func Xpthread_cond_destroy(t *TLS, pCond uintptr) int32 {
+	if pCond == 0 {
+		return errno.EINVAL
 	}
 
-	return errno.EINVAL
-}
+	condsMu.Lock()
 
-// int pthread_mutex_destroy(pthread_mutex_t *mutex);
-func Xpthread_mutex_destroy(tls *TLS, mutex uintptr) int32 {
-	pthreadMutexesMu.Lock()
+	defer condsMu.Unlock()
 
-	defer pthreadMutexesMu.Unlock()
-
-	if pthreadMutexes[mutex] != nil {
-		delete(pthreadMutexes, mutex)
-		return 0
+	cond := conds[pCond]
+	if cond == nil {
+		return errno.EINVAL
 	}
 
-	return errno.EINVAL
-}
-
-// int pthread_mutex_trylock(pthread_mutex_t *mutex);
-func Xpthread_mutex_trylock(tls *TLS, mutex uintptr) int32 {
-	panic(todo(""))
-}
-
-// int pthread_cond_broadcast(pthread_cond_t *cond);
-func Xpthread_cond_broadcast(tls *TLS, cond uintptr) int32 {
-	pthreadCondsMu.Lock()
-
-	defer pthreadCondsMu.Unlock()
-
-	if x := pthreadConds[cond]; x != nil {
-		x.Broadcast()
-		return 0
+	if cond.waiters != 0 {
+		return errno.EBUSY
 	}
 
-	return errno.EINVAL
-}
-
-// pthread_t pthread_self(void);
-func Xpthread_self(t *TLS) pthread.Pthread_t {
-	return pthread.Pthread_t(t.ID)
-}
-
-// int pthread_equal(pthread_t t1, pthread_t t2);
-func Xpthread_equal(t *TLS, t1, t2 pthread.Pthread_t) int32 {
-	panic(todo(""))
-}
-
-// int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void));
-func Xpthread_atfork(t *TLS, prepare, parent, child uintptr) int32 {
-	if prepare != 0 {
-		t.prepareHandlers = append(t.prepareHandlers, prepare)
-	}
-	if parent != 0 {
-		t.parentHandlers = append(t.parentHandlers, parent)
-	}
-	if child != 0 {
-		t.childHandlers = append(t.childHandlers, child)
-	}
+	delete(conds, pCond)
 	return 0
 }
 
-// int pthread_join(pthread_t thread, void **value_ptr);
-func Xpthread_join(t *TLS, thread pthread.Pthread_t, value_ptr uintptr) int32 {
-	panic(todo(""))
+// int pthread_cond_broadcast(pthread_cond_t *cond);
+func Xpthread_cond_broadcast(t *TLS, pCond uintptr) int32 {
+	if pCond == 0 {
+		return errno.EINVAL
+	}
+
+	condsMu.Lock()
+	cond := conds[pCond]
+
+	defer condsMu.Unlock()
+
+	if cond == nil {
+		return errno.EINVAL
+	}
+
+	// The pthread_cond_broadcast() and pthread_cond_signal() functions shall have
+	// no effect if there are no threads currently blocked on cond.
+	if cond.waiters == 0 {
+		return 0
+	}
+
+	if atomic.CompareAndSwapInt32(&cond.closed, 0, 1) {
+		close(conds[pCond].ch)
+	}
+	cond.waiters = 0
+	return 0
+}
+
+// int pthread_cond_signal(pthread_cond_t *cond);
+func Xpthread_cond_signal(t *TLS, pCond uintptr) int32 {
+	if pCond == 0 {
+		return errno.EINVAL
+	}
+
+	condsMu.Lock()
+	cond := conds[pCond]
+
+	if cond == nil {
+		condsMu.Unlock()
+		return errno.EINVAL
+	}
+
+	// The pthread_cond_broadcast() and pthread_cond_signal() functions shall have
+	// no effect if there are no threads currently blocked on cond.
+	if cond.waiters == 0 {
+		condsMu.Unlock()
+		return 0
+	}
+
+	cond.waiters--
+	condsMu.Unlock()
+	cond.ch <- struct{}{}
+	return 0
 }
 
 // int pthread_cond_timedwait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex, const struct timespec *restrict abstime);
-func Xpthread_cond_timedwait(t *TLS, cond, mutex, abstime uintptr) int32 {
-	panic(todo(""))
+func Xpthread_cond_timedwait(t *TLS, pCond, pMutex, pAbsTime uintptr) int32 {
+	if pCond == 0 {
+		return errno.EINVAL
+	}
+
+	condsMu.Lock()
+	cond := conds[pCond]
+	if cond == nil { // static initialized condition variables are valid
+		cond = newCond()
+		conds[pCond] = cond
+	}
+	cond.waiters++
+	condsMu.Unlock()
+
+	mutexesMu.Lock()
+	mu := mutexes[pMutex]
+	mutexesMu.Unlock()
+
+	deadlineSecs := (*ctime.Timespec)(unsafe.Pointer(pAbsTime)).Ftv_sec
+	deadlineNsecs := (*ctime.Timespec)(unsafe.Pointer(pAbsTime)).Ftv_nsec
+	deadline := time.Unix(int64(deadlineSecs), int64(deadlineNsecs))
+	d := deadline.Sub(time.Now())
+	switch {
+	case d <= 0:
+		return errno.ETIMEDOUT
+	default:
+		to := time.After(d)
+		mu.Unlock()
+
+		defer mu.Lock()
+
+		select {
+		case <-cond.ch:
+			return 0
+		case <-to:
+			return errno.ETIMEDOUT
+		}
+	}
 }
 
-// int pthread_attr_init(pthread_attr_t *attr);
-func Xpthread_attr_init(t *TLS, attr uintptr) int32 {
-	panic(todo(""))
+// int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex);
+func Xpthread_cond_wait(t *TLS, pCond, pMutex uintptr) int32 {
+	if pCond == 0 {
+		return errno.EINVAL
+	}
+
+	condsMu.Lock()
+	cond := conds[pCond]
+	if cond == nil { // static initialized condition variables are valid
+		cond = newCond()
+		conds[pCond] = cond
+	}
+	cond.waiters++
+	condsMu.Unlock()
+
+	mutexesMu.Lock()
+	mu := mutexes[pMutex]
+	mutexesMu.Unlock()
+
+	mu.Unlock()
+	<-cond.ch
+	mu.Lock()
+	return 0
 }
 
-// int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
-func Xpthread_attr_setscope(t *TLS, attr uintptr, contentionscope int32) int32 {
-	panic(todo(""))
+// Go side data of pthread_mutex_t
+type mutex struct {
+	sync.Mutex
+	typ  int // PTHREAD_MUTEX_NORMAL, ...
+	wait sync.Mutex
+
+	id  int32 // owner's t.ID
+	cnt int32
+
+	robust bool
 }
 
-// int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
-func Xpthread_attr_setstacksize(t *TLS, attr uintptr, stacksize types.Size_t) int32 {
-	panic(todo(""))
+func newMutex(typ int) *mutex {
+	return &mutex{
+		typ: typ,
+	}
 }
 
-// int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
-func Xpthread_attr_setdetachstate(t *TLS, attr uintptr, detachstate int32) int32 {
-	panic(todo(""))
+func (m *mutex) lock(id int32) int32 {
+	if m.robust {
+		panic(todo(""))
+	}
+
+	// If successful, the pthread_mutex_lock() and pthread_mutex_unlock() functions
+	// shall return zero; otherwise, an error number shall be returned to indicate
+	// the error.
+	switch m.typ {
+	case pthread.PTHREAD_MUTEX_NORMAL:
+		// If the mutex type is PTHREAD_MUTEX_NORMAL, deadlock detection shall not be
+		// provided. Attempting to relock the mutex causes deadlock. If a thread
+		// attempts to unlock a mutex that it has not locked or a mutex which is
+		// unlocked, undefined behavior results.
+		m.Lock()
+		m.id = id
+		return 0
+	case pthread.PTHREAD_MUTEX_RECURSIVE:
+		for {
+			m.Lock()
+			switch m.id {
+			case 0:
+				m.cnt = 1
+				m.id = id
+				m.wait.Lock()
+				m.Unlock()
+				return 0
+			case id:
+				m.cnt++
+				m.Unlock()
+				return 0
+			}
+
+			m.Unlock()
+			m.wait.Lock()
+			m.wait.Unlock()
+		}
+	default:
+		panic(todo("", m.typ))
+	}
 }
 
-// int pthread_attr_destroy(pthread_attr_t *attr);
-func Xpthread_attr_destroy(t *TLS, attr uintptr) int32 {
-	panic(todo(""))
+func (m *mutex) tryLock(id int32) int32 {
+	if m.robust {
+		panic(todo(""))
+	}
+
+	switch m.typ {
+	case pthread.PTHREAD_MUTEX_NORMAL:
+		return errno.EBUSY
+	case pthread.PTHREAD_MUTEX_RECURSIVE:
+		m.Lock()
+		switch m.id {
+		case 0:
+			m.cnt = 1
+			m.id = id
+			m.wait.Lock()
+			m.Unlock()
+			return 0
+		case id:
+			m.cnt++
+			m.Unlock()
+			return 0
+		}
+
+		m.Unlock()
+		return errno.EBUSY
+	default:
+		panic(todo("", m.typ))
+	}
 }
 
-// void pthread_exit(void *value_ptr);
-func Xpthread_exit(t *TLS, value_ptr uintptr) {
-	panic(todo(""))
+func (m *mutex) unlock() int32 {
+	if m.robust {
+		panic(todo(""))
+	}
+
+	// If successful, the pthread_mutex_lock() and pthread_mutex_unlock() functions
+	// shall return zero; otherwise, an error number shall be returned to indicate
+	// the error.
+	switch m.typ {
+	case pthread.PTHREAD_MUTEX_NORMAL:
+		// If the mutex type is PTHREAD_MUTEX_NORMAL, deadlock detection shall not be
+		// provided. Attempting to relock the mutex causes deadlock. If a thread
+		// attempts to unlock a mutex that it has not locked or a mutex which is
+		// unlocked, undefined behavior results.
+		m.id = 0
+		m.Unlock()
+		return 0
+	case pthread.PTHREAD_MUTEX_RECURSIVE:
+		m.Lock()
+		m.cnt--
+		if m.cnt == 0 {
+			m.id = 0
+			m.wait.Unlock()
+		}
+		m.Unlock()
+		return 0
+	default:
+		panic(todo("", m.typ))
+	}
+}
+
+// The pthread_mutex_init() function shall initialize the mutex referenced by
+// mutex with attributes specified by attr. If attr is NULL, the default mutex
+// attributes are used; the effect shall be the same as passing the address of
+// a default mutex attributes object. Upon successful initialization, the state
+// of the mutex becomes initialized and unlocked.
+//
+// If successful, the pthread_mutex_destroy() and pthread_mutex_init()
+// functions shall return zero; otherwise, an error number shall be returned to
+// indicate the error.
+//
+// int pthread_mutex_init(pthread_mutex_t *restrict mutex, const pthread_mutexattr_t *restrict attr);
+func Xpthread_mutex_init(t *TLS, pMutex, pAttr uintptr) int32 {
+	typ := pthread.PTHREAD_MUTEX_DEFAULT
+	if pAttr != 0 {
+		typ = int(X__ccgo_pthreadMutexattrGettype(t, pAttr))
+	}
+	mutexesMu.Lock()
+
+	defer mutexesMu.Unlock()
+
+	mutexes[pMutex] = newMutex(typ)
+	return 0
+}
+
+// int pthread_mutex_destroy(pthread_mutex_t *mutex);
+func Xpthread_mutex_destroy(t *TLS, pMutex uintptr) int32 {
+	mutexesMu.Lock()
+
+	defer mutexesMu.Unlock()
+
+	delete(mutexes, pMutex)
+	return 0
+}
+
+// int pthread_mutex_lock(pthread_mutex_t *mutex);
+func Xpthread_mutex_lock(t *TLS, pMutex uintptr) int32 {
+	mutexesMu.Lock()
+	mu := mutexes[pMutex]
+	if mu == nil { // static initialized mutexes are valid
+		mu = newMutex(int(X__ccgo_getMutexType(t, pMutex)))
+		mutexes[pMutex] = mu
+	}
+	mutexesMu.Unlock()
+	return mu.lock(t.ID)
+}
+
+// int pthread_mutex_trylock(pthread_mutex_t *mutex);
+func Xpthread_mutex_trylock(t *TLS, pMutex uintptr) int32 {
+	mutexesMu.Lock()
+	mu := mutexes[pMutex]
+	if mu == nil { // static initialized mutexes are valid
+		mu = newMutex(int(X__ccgo_getMutexType(t, pMutex)))
+		mutexes[pMutex] = mu
+	}
+	mutexesMu.Unlock()
+	return mu.tryLock(t.ID)
+}
+
+// int pthread_mutex_unlock(pthread_mutex_t *mutex);
+func Xpthread_mutex_unlock(t *TLS, pMutex uintptr) int32 {
+	mutexesMu.Lock()
+
+	defer mutexesMu.Unlock()
+
+	return mutexes[pMutex].unlock()
 }
 
 // int pthread_key_create(pthread_key_t *key, void (*destructor)(void*));
-func Xpthread_key_create(t *TLS, key, destructor uintptr) int32 {
-	pthreadsKeysMu.Lock()
-	defer pthreadsKeysMu.Unlock()
-	pthreadKey++
-	r := pthreadKey
-	pthreadKeys[r] = destructor
-	*(*pthread.Pthread_key_t)(unsafe.Pointer(key)) = r
+func Xpthread_key_create(t *TLS, pKey, destructor uintptr) int32 {
+	threadsKeysMu.Lock()
+
+	defer threadsKeysMu.Unlock()
+
+	threadKey++
+	r := threadKey
+	if destructor != 0 {
+		threadKeyDestructors[r] = append(threadKeyDestructors[r], destructor)
+	}
+	*(*pthread.Pthread_key_t)(unsafe.Pointer(pKey)) = pthread.Pthread_key_t(r)
 	return 0
 }
 
 // int pthread_key_delete(pthread_key_t key);
 func Xpthread_key_delete(t *TLS, key pthread.Pthread_key_t) int32 {
+	if _, ok := t.kv[key]; ok {
+		delete(t.kv, key)
+		return 0
+	}
+
 	panic(todo(""))
+
+}
+
+// void *pthread_getspecific(pthread_key_t key);
+func Xpthread_getspecific(t *TLS, key pthread.Pthread_key_t) uintptr {
+	return t.kv[key]
 }
 
 // int pthread_setspecific(pthread_key_t key, const void *value);
@@ -328,7 +527,85 @@ func Xpthread_setspecific(t *TLS, key pthread.Pthread_key_t, value uintptr) int3
 	return 0
 }
 
-// void *pthread_getspecific(pthread_key_t key);
-func Xpthread_getspecific(t *TLS, key pthread.Pthread_key_t) uintptr {
-	return t.kv[key]
+// int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine) (void *), void *arg);
+func Xpthread_create(t *TLS, pThread, pAttr, startRoutine, arg uintptr) int32 {
+	fn := (*struct {
+		f func(*TLS, uintptr) uintptr
+	})(unsafe.Pointer(&struct{ uintptr }{startRoutine})).f
+	detached := pAttr != 0 && X__ccgo_pthreadAttrGetDetachState(t, pAttr) == pthread.PTHREAD_CREATE_DETACHED
+	tls := newTLS(detached)
+	*(*pthread.Pthread_t)(unsafe.Pointer(pThread)) = pthread.Pthread_t(tls.ID)
+
+	go func() {
+		Xpthread_exit(tls, fn(tls, arg))
+	}()
+
+	return 0
+}
+
+// int pthread_detach(pthread_t thread);
+func Xpthread_detach(t *TLS, thread pthread.Pthread_t) int32 {
+	threadsMu.Lock()
+	threads[int32(thread)].detached = true
+	threadsMu.Unlock()
+	return 0
+}
+
+// int pthread_equal(pthread_t t1, pthread_t t2);
+func Xpthread_equal(t *TLS, t1, t2 pthread.Pthread_t) int32 {
+	panic(todo(""))
+}
+
+// void pthread_exit(void *value_ptr);
+func Xpthread_exit(t *TLS, value uintptr) {
+	t.retVal = value
+
+	// At thread exit, if a key value has a non-NULL destructor pointer, and the
+	// thread has a non-NULL value associated with that key, the value of the key
+	// is set to NULL, and then the function pointed to is called with the
+	// previously associated value as its sole argument. The order of destructor
+	// calls is unspecified if more than one destructor exists for a thread when it
+	// exits.
+	for k, v := range t.kv {
+		if v == 0 {
+			continue
+		}
+
+		threadsKeysMu.Lock()
+		destructors := threadKeyDestructors[k]
+		threadsKeysMu.Unlock()
+
+		for _, destructor := range destructors {
+			delete(t.kv, k)
+			panic(todo("%#x", destructor)) //TODO call destructor(v)
+		}
+	}
+
+	switch {
+	case t.detached:
+		threadsMu.Lock()
+		delete(threads, t.ID)
+		threadsMu.Unlock()
+	default:
+		close(t.done)
+	}
+	runtime.Goexit()
+}
+
+// int pthread_join(pthread_t thread, void **value_ptr);
+func Xpthread_join(t *TLS, thread pthread.Pthread_t, pValue uintptr) int32 {
+	threadsMu.Lock()
+	tls := threads[int32(thread)]
+	delete(threads, int32(thread))
+	threadsMu.Unlock()
+	<-tls.done
+	if pValue != 0 {
+		*(*uintptr)(unsafe.Pointer(pValue)) = tls.retVal
+	}
+	return 0
+}
+
+// pthread_t pthread_self(void);
+func Xpthread_self(t *TLS) pthread.Pthread_t {
+	return pthread.Pthread_t(t.ID)
 }

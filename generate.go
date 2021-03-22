@@ -445,6 +445,12 @@ func makeMuslLinux(goos, goarch string) {
 		"src/string/strnlen.c",
 		"src/string/strspn.c",
 		"src/string/strtok.c",
+		"src/thread/pthread_attr_get.c",
+		"src/thread/pthread_attr_setdetachstate.c",
+		"src/thread/pthread_mutex_lock.c",
+		"src/thread/pthread_mutexattr_destroy.c",
+		"src/thread/pthread_mutexattr_init.c",
+		"src/thread/pthread_mutexattr_settype.c",
 	); err != nil {
 		fail(err)
 	}

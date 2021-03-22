@@ -5,8 +5,8 @@
 package libc // import "modernc.org/libc"
 
 import (
-	"testing"
 	"runtime"
+	"testing"
 	"unsafe"
 )
 

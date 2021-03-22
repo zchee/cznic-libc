@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const dmesgs = true
@@ -25,6 +26,8 @@ func init() {
 	if logf, err = os.OpenFile("/tmp/libc.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644); err != nil {
 		panic(err.Error())
 	}
+
+	dmesg("%v", time.Now())
 }
 
 func dmesg(s string, args ...interface{}) {

@@ -207,12 +207,6 @@ func Xshmdt(t *TLS, shmaddr uintptr) int32 {
 	panic(todo(""))
 }
 
-// int getpwnam_r(const char *name, struct passwd *pwd,
-//                       char *buf, size_t buflen, struct passwd **result);
-func Xgetpwnam_r(t *TLS, name, pwd, buf uintptr, buflen types.Size_t, result uintptr) int32 {
-	panic(todo(""))
-}
-
 // int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid);
 func Xgetresuid(t *TLS, ruid, euid, suid uintptr) int32 {
 	panic(todo(""))
