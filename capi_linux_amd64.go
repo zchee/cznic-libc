@@ -144,6 +144,7 @@ var CAPI = map[string]struct{}{
 	"cosf":                             {},
 	"cosh":                             {},
 	"ctime":                            {},
+	"ctime_r":                          {},
 	"dlclose":                          {},
 	"dlerror":                          {},
 	"dlopen":                           {},

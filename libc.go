@@ -71,6 +71,16 @@ func X__errno_location(t *TLS) uintptr {
 }
 
 func Start(main func(*TLS, int32, uintptr) int32) {
+	if dmesgs {
+		wd, err := os.Getwd()
+		dmesg("%v: %v, wd %v, %v", origin(1), os.Args, wd, err)
+
+		defer func() {
+			if err := recover(); err != nil {
+				dmesg("%v: CRASH: %v\n%s", origin(1), err, debug.Stack())
+			}
+		}()
+	}
 	runtime.LockOSThread()
 	t := &TLS{errnop: uintptr(unsafe.Pointer(&errno0))}
 	argv := Xcalloc(t, 1, types.Size_t((len(os.Args)+1)*int(uintptrSize)))
@@ -129,7 +139,12 @@ func exit(t *TLS, status int32, audit bool) {
 }
 
 // void _exit(int status);
-func X_exit(_ *TLS, status int32) { os.Exit(int(status)) }
+func X_exit(_ *TLS, status int32) {
+	if dmesgs {
+		dmesg("%v: EXIT %v", origin(1), status)
+	}
+	os.Exit(int(status))
+}
 
 func SetEnviron(t *TLS, env []string) {
 	p := Xcalloc(t, 1, types.Size_t((len(env)+1)*(int(uintptrSize))))
@@ -878,9 +893,9 @@ func Xatoi(t *TLS, nptr uintptr) int32 {
 // double atof(const char *nptr);
 func Xatof(t *TLS, nptr uintptr) float64 {
 	n, _ := strToFloatt64(t, nptr, 64)
-	if dmesgs {
-		dmesg("%v: %q: %v", origin(1), GoString(nptr), n)
-	}
+	// if dmesgs {
+	// 	dmesg("%v: %q: %v", origin(1), GoString(nptr), n)
+	// }
 	return n
 }
 
@@ -1264,4 +1279,13 @@ func Xinitstate_r(t *TLS, seed uint32, statebuf uintptr, statelen types.Size_t, 
 // int random_r(struct random_data *buf, int32_t *result);
 func Xrandom_r(t *TLS, buf, result uintptr) int32 {
 	panic(todo(""))
+}
+
+// AtExit will attempt to run f at process exit. The execution cannot be
+// guaranteed, neither its ordering with respect to any other handlers
+// registered by AtExit.
+func AtExit(f func()) {
+	atExitMu.Lock()
+	atExit = append(atExit, f)
+	atExitMu.Unlock()
 }

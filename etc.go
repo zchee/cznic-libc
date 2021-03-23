@@ -37,7 +37,9 @@ var (
 	CoveredC = map[string]struct{}{}
 	fToken   uintptr
 	tid      int32
+
 	atExit   []func()
+	atExitMu sync.Mutex
 
 	signals   [signal.NSIG]uintptr
 	signalsMu sync.Mutex
@@ -683,7 +685,20 @@ out:
 }
 
 func strToFloatt64(t *TLS, s uintptr, bits int) (n float64, errno int32) {
+	var b []byte
 	var neg bool
+
+	defer func() {
+		var err error
+		if n, err = strconv.ParseFloat(string(b), bits); err != nil {
+			panic(todo(""))
+		}
+
+		if neg {
+			n = -n
+		}
+	}()
+
 	var c byte
 out:
 	for {
@@ -702,7 +717,6 @@ out:
 			break out
 		}
 	}
-	var b []byte
 	for {
 		c = *(*byte)(unsafe.Pointer(s))
 		switch {
@@ -731,16 +745,7 @@ out:
 								case c >= '0' && c <= '9':
 									b = append(b, c)
 								default:
-									var err error
-									n, err = strconv.ParseFloat(string(b), bits)
-									if err != nil {
-										panic(todo(""))
-									}
-
-									if neg {
-										n = -n
-									}
-									return n, 0
+									return
 								}
 
 								s++
@@ -750,7 +755,7 @@ out:
 						}
 					}
 				default:
-					panic(todo("%q %q", b, string(c)))
+					return
 				}
 
 				s++
