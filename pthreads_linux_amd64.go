@@ -66,12 +66,14 @@ type pthreadData struct {
 	done   chan struct{}
 	kv     map[pthread.Pthread_key_t]uintptr
 	retVal uintptr
+	wait   chan struct{} // cond var interaction
 
 	detached bool
 }
 
 func (d *pthreadData) init(t *TLS, detached bool) {
 	d.detached = detached
+	d.wait = make(chan struct{}, 1)
 	if detached {
 		return
 	}
@@ -113,17 +115,35 @@ func Xpthread_attr_setstacksize(t *TLS, attr uintptr, stackSize types.Size_t) in
 
 // Go side data of pthread_cond_t.
 type cond struct {
-	ch chan struct{}
-
-	waiters int
-
-	closed int32
+	sync.Mutex
+	waiters map[*TLS]struct{}
 }
 
 func newCond() *cond {
 	return &cond{
-		ch: make(chan struct{}, 1),
+		waiters: map[*TLS]struct{}{},
 	}
+}
+
+func (c *cond) signal(all bool) int32 {
+	if c == nil {
+		return errno.EINVAL
+	}
+
+	c.Lock()
+
+	defer c.Unlock()
+
+	// The pthread_cond_broadcast() and pthread_cond_signal() functions shall have
+	// no effect if there are no threads currently blocked on cond.
+	for tls := range c.waiters {
+		tls.wait <- struct{}{}
+		delete(c.waiters, tls)
+		if !all {
+			break
+		}
+	}
+	return 0
 }
 
 // The pthread_cond_init() function shall initialize the condition variable
@@ -170,7 +190,11 @@ func Xpthread_cond_destroy(t *TLS, pCond uintptr) int32 {
 		return errno.EINVAL
 	}
 
-	if cond.waiters != 0 {
+	cond.Lock()
+
+	defer cond.Unlock()
+
+	if len(cond.waiters) != 0 {
 		return errno.EBUSY
 	}
 
@@ -178,58 +202,54 @@ func Xpthread_cond_destroy(t *TLS, pCond uintptr) int32 {
 	return 0
 }
 
-// int pthread_cond_broadcast(pthread_cond_t *cond);
-func Xpthread_cond_broadcast(t *TLS, pCond uintptr) int32 {
-	if pCond == 0 {
-		return errno.EINVAL
-	}
-
-	condsMu.Lock()
-	cond := conds[pCond]
-
-	defer condsMu.Unlock()
-
-	if cond == nil {
-		return errno.EINVAL
-	}
-
-	// The pthread_cond_broadcast() and pthread_cond_signal() functions shall have
-	// no effect if there are no threads currently blocked on cond.
-	if cond.waiters == 0 {
-		return 0
-	}
-
-	if atomic.CompareAndSwapInt32(&cond.closed, 0, 1) {
-		close(conds[pCond].ch)
-	}
-	cond.waiters = 0
-	return 0
-}
-
 // int pthread_cond_signal(pthread_cond_t *cond);
 func Xpthread_cond_signal(t *TLS, pCond uintptr) int32 {
+	return condSignal(pCond, false)
+}
+
+// int pthread_cond_broadcast(pthread_cond_t *cond);
+func Xpthread_cond_broadcast(t *TLS, pCond uintptr) int32 {
+	return condSignal(pCond, true)
+}
+
+func condSignal(pCond uintptr, all bool) int32 {
 	if pCond == 0 {
 		return errno.EINVAL
 	}
 
 	condsMu.Lock()
 	cond := conds[pCond]
+	condsMu.Unlock()
 
-	if cond == nil {
-		condsMu.Unlock()
+	return cond.signal(all)
+}
+
+// int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex);
+func Xpthread_cond_wait(t *TLS, pCond, pMutex uintptr) int32 {
+	if pCond == 0 {
 		return errno.EINVAL
 	}
 
-	// The pthread_cond_broadcast() and pthread_cond_signal() functions shall have
-	// no effect if there are no threads currently blocked on cond.
-	if cond.waiters == 0 {
-		condsMu.Unlock()
-		return 0
+	condsMu.Lock()
+	cond := conds[pCond]
+	if cond == nil { // static initialized condition variables are valid
+		cond = newCond()
+		conds[pCond] = cond
 	}
 
-	cond.waiters--
+	cond.Lock()
+	cond.waiters[t] = struct{}{}
+	cond.Unlock()
+
 	condsMu.Unlock()
-	cond.ch <- struct{}{}
+
+	mutexesMu.Lock()
+	mu := mutexes[pMutex]
+	mutexesMu.Unlock()
+
+	mu.Unlock()
+	<-t.wait
+	mu.Lock()
 	return 0
 }
 
@@ -245,7 +265,11 @@ func Xpthread_cond_timedwait(t *TLS, pCond, pMutex, pAbsTime uintptr) int32 {
 		cond = newCond()
 		conds[pCond] = cond
 	}
-	cond.waiters++
+
+	cond.Lock()
+	cond.waiters[t] = struct{}{}
+	cond.Unlock()
+
 	condsMu.Unlock()
 
 	mutexesMu.Lock()
@@ -266,37 +290,17 @@ func Xpthread_cond_timedwait(t *TLS, pCond, pMutex, pAbsTime uintptr) int32 {
 		defer mu.Lock()
 
 		select {
-		case <-cond.ch:
+		case <-t.wait:
 			return 0
 		case <-to:
+			cond.Lock()
+
+			defer cond.Unlock()
+
+			delete(cond.waiters, t)
 			return errno.ETIMEDOUT
 		}
 	}
-}
-
-// int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex);
-func Xpthread_cond_wait(t *TLS, pCond, pMutex uintptr) int32 {
-	if pCond == 0 {
-		return errno.EINVAL
-	}
-
-	condsMu.Lock()
-	cond := conds[pCond]
-	if cond == nil { // static initialized condition variables are valid
-		cond = newCond()
-		conds[pCond] = cond
-	}
-	cond.waiters++
-	condsMu.Unlock()
-
-	mutexesMu.Lock()
-	mu := mutexes[pMutex]
-	mutexesMu.Unlock()
-
-	mu.Unlock()
-	<-cond.ch
-	mu.Lock()
-	return 0
 }
 
 // Go side data of pthread_mutex_t
