@@ -91,3 +91,27 @@ func TestStrtod(t *testing.T) {
 		}
 	}
 }
+
+func TestParseZone(t *testing.T) {
+	for itest, test := range []struct {
+		in, out string
+		off     int
+	}{
+		{"America/Los_Angeles", "America/Los_Angeles", 0},
+		{"America/Los_Angeles+12", "America/Los_Angeles", 43200},
+		{"America/Los_Angeles-12", "America/Los_Angeles", -43200},
+		{"UTC", "UTC", 0},
+		{"UTC+1", "UTC", 3600},
+		{"UTC+10", "UTC", 36000},
+		{"UTC-1", "UTC", -3600},
+		{"UTC-10", "UTC", -36000},
+	} {
+		out, off := parseZone(test.in)
+		if g, e := out, test.out; g != e {
+			t.Errorf("%d: %+v %v %v", itest, test, g, e)
+		}
+		if g, e := off, test.off; g != e {
+			t.Errorf("%d: %+v %v %v", itest, test, g, e)
+		}
+	}
+}

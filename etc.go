@@ -778,7 +778,7 @@ func parseZoneOffset(s string, offOpt bool) (string, string, int, bool) {
 	name := s
 	for len(s) != 0 {
 		switch c := s[0]; {
-		case c >= 'A' && c <= 'Z':
+		case c >= 'A' && c <= 'Z', c >= 'a' && c <= 'z', c == '_', c == '/':
 			s = s[1:]
 		default:
 			name = name[:len(name)-len(s)]
@@ -800,7 +800,7 @@ func parseZoneOffset(s string, offOpt bool) (string, string, int, bool) {
 			return s, name, off, true
 		}
 	}
-	panic(todo("%q", s0))
+	return "", s0, 0, true
 }
 
 //  [+|-]hh[:mm[:ss]]
