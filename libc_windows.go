@@ -30,8 +30,8 @@ import (
 
 // Keep these outside of the var block otherwise go generate will miss them.
 
-var X__imp__environ = uintptr(unsafe.Pointer(&Xenviron))
-var X_imp___environ = uintptr(unsafe.Pointer(&Xenviron))
+var X__imp__environ = EnvironP()
+var X_imp___environ = EnvironP()
 
 var Xtimezone long // extern long timezone;
 

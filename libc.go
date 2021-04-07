@@ -43,8 +43,9 @@ type (
 )
 
 var (
-	allocMu   sync.Mutex
-	isWindows bool
+	allocMu        sync.Mutex
+	isWindows      bool
+	setEnvironOnce sync.Once
 )
 
 // Keep these outside of the var block otherwise go generate will miss them.
@@ -53,11 +54,17 @@ var Xstdin = newFile(nil, unistd.STDIN_FILENO)
 var Xstdout = newFile(nil, unistd.STDOUT_FILENO)
 var Xstderr = newFile(nil, unistd.STDERR_FILENO)
 
+func setEnviron() {
+	SetEnviron(nil, os.Environ())
+}
+
 func Environ() uintptr {
+	setEnvironOnce.Do(setEnviron)
 	return Xenviron
 }
 
 func EnvironP() uintptr {
+	setEnvironOnce.Do(setEnviron)
 	return uintptr(unsafe.Pointer(&Xenviron))
 }
 
@@ -152,7 +159,7 @@ func SetEnviron(t *TLS, env []string) {
 		panic("OOM")
 	}
 
-	*(*uintptr)(unsafe.Pointer(EnvironP())) = p
+	Xenviron = p
 	for _, v := range env {
 		s := Xcalloc(t, 1, types.Size_t(len(v)+1))
 		if s == 0 {
@@ -828,19 +835,9 @@ func X__builtin___memmove_chk(t *TLS, dest, src uintptr, n, os types.Size_t) uin
 	return Xmemmove(t, dest, src, n)
 }
 
-var getenvOnce sync.Once
-
 // char *getenv(const char *name);
 func Xgetenv(t *TLS, name uintptr) uintptr {
-	p := Environ()
-	if p == 0 {
-		getenvOnce.Do(func() {
-			SetEnviron(t, os.Environ())
-			p = Environ()
-		})
-	}
-
-	return getenv(p, GoString(name))
+	return getenv(Environ(), GoString(name))
 }
 
 func getenv(p uintptr, nm string) uintptr {
