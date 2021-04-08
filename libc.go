@@ -43,9 +43,9 @@ type (
 )
 
 var (
-	allocMu        sync.Mutex
-	isWindows      bool
-	setEnvironOnce sync.Once
+	allocMu            sync.Mutex
+	environInitialized bool
+	isWindows          bool
 )
 
 // Keep these outside of the var block otherwise go generate will miss them.
@@ -59,12 +59,16 @@ func setEnviron() {
 }
 
 func Environ() uintptr {
-	setEnvironOnce.Do(setEnviron)
+	if !environInitialized {
+		SetEnviron(nil, os.Environ())
+	}
 	return Xenviron
 }
 
 func EnvironP() uintptr {
-	setEnvironOnce.Do(setEnviron)
+	if !environInitialized {
+		SetEnviron(nil, os.Environ())
+	}
 	return uintptr(unsafe.Pointer(&Xenviron))
 }
 
@@ -154,6 +158,7 @@ func X_exit(_ *TLS, status int32) {
 }
 
 func SetEnviron(t *TLS, env []string) {
+	environInitialized = true
 	p := Xcalloc(t, 1, types.Size_t((len(env)+1)*(int(uintptrSize))))
 	if p == 0 {
 		panic("OOM")
