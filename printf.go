@@ -385,10 +385,11 @@ more:
 			switch {
 			case hasPrecision:
 				f = fmt.Sprintf("%s.%ds", spec, prec)
+				str = fmt.Sprintf(f, GoBytes(arg, prec))
 			default:
 				f = spec + "s"
+				str = fmt.Sprintf(f, GoString(arg))
 			}
-			str = fmt.Sprintf(f, GoString(arg))
 		default:
 			panic(todo(""))
 		}

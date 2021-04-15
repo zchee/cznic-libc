@@ -115,7 +115,6 @@ edit:
 editor:
 	GO111MODULE=off go generate 2>&1 | tee log
 	gofmt -l -s -w *.go
-	GO111MODULE=off go test -i
 	GO111MODULE=off go test -short 2>&1 | tee -a log
 	GO111MODULE=off go install -v ./...
 

@@ -34,6 +34,7 @@ var (
 	valist       [256]byte
 	formatString [256]byte
 	srcString    [256]byte
+	testPrintfS1 = [...]byte{'X', 'Y', 0}
 )
 
 func TestPrintf(t *testing.T) {
@@ -48,6 +49,16 @@ func TestPrintf(t *testing.T) {
 			"%I64x %I32x %I64x %I32x",
 			[]interface{}{int64(i), int32(i), int64(i), int32(i)},
 			"123456787abcdef8 7abcdef8 123456787abcdef8 7abcdef8",
+		},
+		{
+			"%.1s\n",
+			[]interface{}{uintptr(unsafe.Pointer(&testPrintfS1[0]))},
+			"X\n",
+		},
+		{
+			"%.2s\n",
+			[]interface{}{uintptr(unsafe.Pointer(&testPrintfS1[0]))},
+			"XY\n",
 		},
 	} {
 		copy(formatString[:], test.fmt+"\x00")
