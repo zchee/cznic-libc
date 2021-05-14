@@ -352,6 +352,8 @@ func makeMuslLinux(goos, goarch string) {
 		arch = "arm"
 	case "arm64":
 		arch = "aarch64"
+	case "s390x":
+		arch = "s390x"
 	default:
 		fail(fmt.Errorf("unknown/unsupported GOARCH: %q", goarch))
 	}
