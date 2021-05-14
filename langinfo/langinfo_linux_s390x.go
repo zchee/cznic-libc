@@ -36,7 +36,7 @@ const (
 )
 
 // Definition of locale category symbol values.
-//    Copyright (C) 2001-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2001-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -82,7 +82,8 @@ const ( /* langinfo.h:41:1: */
 	DAY_6 = 131084 // Friday
 	DAY_7 = 131085 // Saturday
 
-	// Abbreviated month names.
+	// Abbreviated month names, in the grammatical form used when the month
+	//      is a part of a complete date.
 	ABMON_1  = 131086 // Jan
 	ABMON_2  = 131087
 	ABMON_3  = 131088
@@ -96,7 +97,8 @@ const ( /* langinfo.h:41:1: */
 	ABMON_11 = 131096
 	ABMON_12 = 131097
 
-	// Long month names.
+	// Long month names, in the grammatical form used when the month
+	//      is a part of a complete date.
 	MON_1  = 131098 // January
 	MON_2  = 131099
 	MON_3  = 131100
@@ -145,7 +147,8 @@ const ( /* langinfo.h:41:1: */
 	X_NL_WDAY_6 = 131136 // Friday
 	X_NL_WDAY_7 = 131137 // Saturday
 
-	// Abbreviated month names.
+	// Abbreviated month names, in the grammatical form used when the month
+	//      is a part of a complete date.
 	X_NL_WABMON_1  = 131138 // Jan
 	X_NL_WABMON_2  = 131139
 	X_NL_WABMON_3  = 131140
@@ -159,7 +162,8 @@ const ( /* langinfo.h:41:1: */
 	X_NL_WABMON_11 = 131148
 	X_NL_WABMON_12 = 131149
 
-	// Long month names.
+	// Long month names, in the grammatical form used when the month
+	//      is a part of a complete date.
 	X_NL_WMON_1  = 131150 // January
 	X_NL_WMON_2  = 131151
 	X_NL_WMON_3  = 131152
@@ -200,7 +204,67 @@ const ( /* langinfo.h:41:1: */
 
 	X_NL_TIME_CODESET = 131182
 
-	X_NL_NUM_LC_TIME = 131183 // Number of indices in LC_TIME category.
+	// Long month names, in the grammatical form used when the month
+	//      is named by itself.
+	X__ALTMON_1  = 131183 // January
+	X__ALTMON_2  = 131184
+	X__ALTMON_3  = 131185
+	X__ALTMON_4  = 131186
+	X__ALTMON_5  = 131187
+	X__ALTMON_6  = 131188
+	X__ALTMON_7  = 131189
+	X__ALTMON_8  = 131190
+	X__ALTMON_9  = 131191
+	X__ALTMON_10 = 131192
+	X__ALTMON_11 = 131193
+	X__ALTMON_12 = 131194
+
+	// Long month names, in the grammatical form used when the month
+	//      is named by itself.
+	X_NL_WALTMON_1  = 131195 // January
+	X_NL_WALTMON_2  = 131196
+	X_NL_WALTMON_3  = 131197
+	X_NL_WALTMON_4  = 131198
+	X_NL_WALTMON_5  = 131199
+	X_NL_WALTMON_6  = 131200
+	X_NL_WALTMON_7  = 131201
+	X_NL_WALTMON_8  = 131202
+	X_NL_WALTMON_9  = 131203
+	X_NL_WALTMON_10 = 131204
+	X_NL_WALTMON_11 = 131205
+	X_NL_WALTMON_12 = 131206
+
+	// Abbreviated month names, in the grammatical form used when the month
+	//      is named by itself.
+	X_NL_ABALTMON_1  = 131207 // Jan
+	X_NL_ABALTMON_2  = 131208
+	X_NL_ABALTMON_3  = 131209
+	X_NL_ABALTMON_4  = 131210
+	X_NL_ABALTMON_5  = 131211
+	X_NL_ABALTMON_6  = 131212
+	X_NL_ABALTMON_7  = 131213
+	X_NL_ABALTMON_8  = 131214
+	X_NL_ABALTMON_9  = 131215
+	X_NL_ABALTMON_10 = 131216
+	X_NL_ABALTMON_11 = 131217
+	X_NL_ABALTMON_12 = 131218
+
+	// Abbreviated month names, in the grammatical form used when the month
+	//      is named by itself.
+	X_NL_WABALTMON_1  = 131219 // Jan
+	X_NL_WABALTMON_2  = 131220
+	X_NL_WABALTMON_3  = 131221
+	X_NL_WABALTMON_4  = 131222
+	X_NL_WABALTMON_5  = 131223
+	X_NL_WABALTMON_6  = 131224
+	X_NL_WABALTMON_7  = 131225
+	X_NL_WABALTMON_8  = 131226
+	X_NL_WABALTMON_9  = 131227
+	X_NL_WABALTMON_10 = 131228
+	X_NL_WABALTMON_11 = 131229
+	X_NL_WABALTMON_12 = 131230
+
+	X_NL_NUM_LC_TIME = 131231 // Number of indices in LC_TIME category.
 
 	// LC_COLLATE category: text sorting.
 	//      This information is accessed by the strcoll and strxfrm functions.
@@ -469,7 +533,7 @@ type X__builtin_va_list = uintptr /* <builtin>:46:14 */
 type X__float128 = float64        /* <builtin>:47:21 */
 
 // Access to locale-dependent parameters.
-//    Copyright (C) 1995-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1995-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -487,7 +551,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    <http://www.gnu.org/licenses/>.
 
 // Get the type definition.
-// Copyright (C) 1996-2017 Free Software Foundation, Inc.
+// Copyright (C) 1996-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -504,7 +568,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    License along with the GNU C Library; if not, see
 //    <http://www.gnu.org/licenses/>.
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -579,6 +643,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    __USE_ISOC11		Define ISO C11 things.
 //    __USE_ISOC99		Define ISO C99 things.
 //    __USE_ISOC95		Define ISO C90 AMD1 (C95) things.
+//    __USE_ISOCXX11	Define ISO C++11 things.
 //    __USE_POSIX		Define IEEE Std 1003.1 things.
 //    __USE_POSIX2		Define IEEE Std 1003.2 things.
 //    __USE_POSIX199309	Define IEEE Std 1003.1, and .1b things.
@@ -652,11 +717,6 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // This is to enable the ISO C90 Amendment 1:1995 extension.
 
-// This is to enable compatibility for ISO C++11.
-//
-//    So far g++ does not provide a macro.  Check the temporary macro for
-//    now, too.
-
 // If none of the ANSI/POSIX macros are defined, or if _DEFAULT_SOURCE
 //    is defined, use POSIX.1-2008 (or another version depending on
 //    _XOPEN_SOURCE).
@@ -675,7 +735,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // Get definitions of __STDC_* predefined macros, if the compiler has
 //    not preincluded this header automatically.
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -703,7 +763,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    these macros to test for features in specific releases.
 
 // This is here only because every header file already includes this one.
-// Copyright (C) 1992-2017 Free Software Foundation, Inc.
+// Copyright (C) 1992-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -850,10 +910,14 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //      array_name[restrict]
 //    GCC 3.1 supports this.
 
+// Describes a char array whose address can safely be passed as the first
+//    argument to strncpy and strncat, as the char array is not necessarily
+//    a NUL-terminated string.
+
 // Determine the wordsize from the preprocessor defines.
 
 // Properties of long double type.  ldbl-opt version.
-//    Copyright (C) 2016-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2016-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -916,7 +980,7 @@ type Nl_item = int32 /* nl_types.h:36:13 */
 
 // POSIX.1-2008 extended locale interface (see locale.h).
 // Definition of locale_t.
-//    Copyright (C) 2017 Free Software Foundation, Inc.
+//    Copyright (C) 2017-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -934,7 +998,7 @@ type Nl_item = int32 /* nl_types.h:36:13 */
 //    <http://www.gnu.org/licenses/>.
 
 // Definition of struct __locale_struct and __locale_t.
-//    Copyright (C) 1997-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1997-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //    Contributed by Ulrich Drepper <drepper@cygnus.com>, 1997.
 //

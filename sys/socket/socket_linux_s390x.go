@@ -123,6 +123,7 @@ const (
 	SCM_TIMESTAMPING_OPT_STATS       = 54
 	SCM_TIMESTAMPING_PKTINFO         = 58
 	SCM_TIMESTAMPNS                  = 35
+	SCM_TXTIME                       = 61
 	SCM_WIFI_STATUS                  = 41
 	SIOCATMARK                       = 0x8905
 	SIOCGPGRP                        = 0x8904
@@ -151,6 +152,7 @@ const (
 	SOL_RXRPC                        = 272
 	SOL_SOCKET                       = 1
 	SOL_TIPC                         = 271
+	SOL_TLS                          = 282
 	SOL_X25                          = 262
 	SOMAXCONN                        = 128
 	SO_ACCEPTCONN                    = 30
@@ -210,6 +212,7 @@ const (
 	SO_TIMESTAMP                     = 29
 	SO_TIMESTAMPING                  = 37
 	SO_TIMESTAMPNS                   = 35
+	SO_TXTIME                        = 61
 	SO_TYPE                          = 3
 	SO_WIFI_STATUS                   = 41
 	SO_ZEROCOPY                      = 60
@@ -220,7 +223,6 @@ const (
 	X_BITS_PTHREADTYPES_COMMON_H     = 1
 	X_BITS_SOCKADDR_H                = 1
 	X_BITS_STDINT_INTN_H             = 1
-	X_BITS_SYSMACROS_H               = 1
 	X_BITS_TYPESIZES_H               = 1
 	X_BITS_TYPES_H                   = 1
 	X_BITS_UINTN_IDENTITY_H          = 1
@@ -242,11 +244,11 @@ const (
 	X_SIZE_T_DEFINED_                = 0
 	X_SS_SIZE                        = 128
 	X_STDC_PREDEF_H                  = 1
+	X_STRUCT_TIMESPEC                = 1
 	X_SYS_CDEFS_H                    = 1
 	X_SYS_SELECT_H                   = 1
 	X_SYS_SIZE_T_H                   = 0
 	X_SYS_SOCKET_H                   = 1
-	X_SYS_SYSMACROS_H                = 1
 	X_SYS_TYPES_H                    = 1
 	X_THREAD_SHARED_TYPES_H          = 1
 	X_T_SIZE                         = 0
@@ -256,7 +258,7 @@ const (
 )
 
 // Bits in the FLAGS argument to `send', `recv', et al.
-const ( /* socket.h:196:1: */
+const ( /* socket.h:197:1: */
 	MSG_OOB        = 1  // Process out-of-band data.
 	MSG_PEEK       = 2  // Peek at incoming messages.
 	MSG_DONTROUTE  = 4  // Don't use local routing.
@@ -275,6 +277,7 @@ const ( /* socket.h:196:1: */
 	MSG_MORE       = 32768     // Sender will send more.
 	MSG_WAITFORONE = 65536     // Wait for at least one packet to return.
 	MSG_BATCH      = 262144    // sendmmsg: more messages coming.
+	MSG_ZEROCOPY   = 67108864  // Use user data in kernel path.
 	MSG_FASTOPEN   = 536870912 // Send data in TCP SYN.
 
 	MSG_CMSG_CLOEXEC = 1073741824
@@ -282,13 +285,13 @@ const ( /* socket.h:196:1: */
 
 // Socket level message types.  This must match the definitions in
 //    <linux/socket.h>.
-const ( /* socket.h:326:1: */
+const ( /* socket.h:329:1: */
 	SCM_RIGHTS = 1
 )
 
 // Get the architecture-dependent definition of enum __socket_type.
 // Define enum __socket_type for generic Linux.
-//    Copyright (C) 1991-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -375,7 +378,7 @@ type Iovec = struct {
 	Fiov_len  Size_t
 } /* struct_iovec.h:26:1 */
 
-// Copyright (C) 1989-2017 Free Software Foundation, Inc.
+// Copyright (C) 1989-2018 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //
@@ -461,7 +464,7 @@ type Iovec = struct {
 //    AF_*, MSG_*, SOL_*, and SO_* constants, and the `struct sockaddr',
 //    `struct msghdr', and `struct linger' types.
 // System-specific socket constants and types.  Linux version.
-//    Copyright (C) 1991-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -478,7 +481,7 @@ type Iovec = struct {
 //    License along with the GNU C Library; if not, see
 //    <http://www.gnu.org/licenses/>.
 
-// Copyright (C) 1989-2017 Free Software Foundation, Inc.
+// Copyright (C) 1989-2018 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //
@@ -560,7 +563,7 @@ type Iovec = struct {
 
 // A null pointer constant.
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -579,7 +582,7 @@ type Iovec = struct {
 
 //	POSIX Standard: 2.6 Primitive System Data Types	<sys/types.h>
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -597,7 +600,7 @@ type Iovec = struct {
 //    <http://www.gnu.org/licenses/>.
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -616,7 +619,7 @@ type Iovec = struct {
 
 // Never include this file directly; use <sys/types.h> instead.
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -651,13 +654,23 @@ type X__uint32_t = uint32 /* types.h:41:22 */
 type X__int64_t = int64   /* types.h:43:25 */
 type X__uint64_t = uint64 /* types.h:44:27 */
 
+// Smallest types with at least a given width.
+type X__int_least8_t = X__int8_t     /* types.h:51:18 */
+type X__uint_least8_t = X__uint8_t   /* types.h:52:19 */
+type X__int_least16_t = X__int16_t   /* types.h:53:19 */
+type X__uint_least16_t = X__uint16_t /* types.h:54:20 */
+type X__int_least32_t = X__int32_t   /* types.h:55:19 */
+type X__uint_least32_t = X__uint32_t /* types.h:56:20 */
+type X__int_least64_t = X__int64_t   /* types.h:57:19 */
+type X__uint_least64_t = X__uint64_t /* types.h:58:20 */
+
 // quad_t is also 64 bits.
-type X__quad_t = int64    /* types.h:52:18 */
-type X__u_quad_t = uint64 /* types.h:53:27 */
+type X__quad_t = int64    /* types.h:62:18 */
+type X__u_quad_t = uint64 /* types.h:63:27 */
 
 // Largest integral types.
-type X__intmax_t = int64   /* types.h:61:18 */
-type X__uintmax_t = uint64 /* types.h:62:27 */
+type X__intmax_t = int64   /* types.h:71:18 */
+type X__uintmax_t = uint64 /* types.h:72:27 */
 
 // The machine-dependent file <bits/typesizes.h> defines __*_T_TYPE
 //    macros for each of the OS types we define below.  The definitions
@@ -690,7 +703,7 @@ type X__uintmax_t = uint64 /* types.h:62:27 */
 
 // No need to mark the typedef with __extension__.
 // bits/typesizes.h -- underlying types for *_t.  Linux/s390 version.
-//    Copyright (C) 2003-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2003-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -722,77 +735,76 @@ type X__uintmax_t = uint64 /* types.h:62:27 */
 
 // Number of descriptors that can fit in an `fd_set'.
 
-type X__dev_t = uint64                     /* types.h:133:25 */ // Type of device numbers.
-type X__uid_t = uint32                     /* types.h:134:25 */ // Type of user identifications.
-type X__gid_t = uint32                     /* types.h:135:25 */ // Type of group identifications.
-type X__ino_t = uint64                     /* types.h:136:25 */ // Type of file serial numbers.
-type X__ino64_t = uint64                   /* types.h:137:27 */ // Type of file serial numbers (LFS).
-type X__mode_t = uint32                    /* types.h:138:26 */ // Type of file attribute bitmasks.
-type X__nlink_t = uint64                   /* types.h:139:27 */ // Type of file link counts.
-type X__off_t = int64                      /* types.h:140:25 */ // Type of file sizes and offsets.
-type X__off64_t = int64                    /* types.h:141:27 */ // Type of file sizes and offsets (LFS).
-type X__pid_t = int32                      /* types.h:142:25 */ // Type of process identifications.
-type X__fsid_t = struct{ F__val [2]int32 } /* types.h:143:26 */ // Type of file system IDs.
-type X__clock_t = int64                    /* types.h:144:27 */ // Type of CPU usage counts.
-type X__rlim_t = uint64                    /* types.h:145:26 */ // Type for resource measurement.
-type X__rlim64_t = uint64                  /* types.h:146:28 */ // Type for resource measurement (LFS).
-type X__id_t = uint32                      /* types.h:147:24 */ // General type for IDs.
-type X__time_t = int64                     /* types.h:148:26 */ // Seconds since the Epoch.
-type X__useconds_t = uint32                /* types.h:149:30 */ // Count of microseconds.
-type X__suseconds_t = int64                /* types.h:150:31 */ // Signed count of microseconds.
+type X__dev_t = uint64                     /* types.h:143:25 */ // Type of device numbers.
+type X__uid_t = uint32                     /* types.h:144:25 */ // Type of user identifications.
+type X__gid_t = uint32                     /* types.h:145:25 */ // Type of group identifications.
+type X__ino_t = uint64                     /* types.h:146:25 */ // Type of file serial numbers.
+type X__ino64_t = uint64                   /* types.h:147:27 */ // Type of file serial numbers (LFS).
+type X__mode_t = uint32                    /* types.h:148:26 */ // Type of file attribute bitmasks.
+type X__nlink_t = uint64                   /* types.h:149:27 */ // Type of file link counts.
+type X__off_t = int64                      /* types.h:150:25 */ // Type of file sizes and offsets.
+type X__off64_t = int64                    /* types.h:151:27 */ // Type of file sizes and offsets (LFS).
+type X__pid_t = int32                      /* types.h:152:25 */ // Type of process identifications.
+type X__fsid_t = struct{ F__val [2]int32 } /* types.h:153:26 */ // Type of file system IDs.
+type X__clock_t = int64                    /* types.h:154:27 */ // Type of CPU usage counts.
+type X__rlim_t = uint64                    /* types.h:155:26 */ // Type for resource measurement.
+type X__rlim64_t = uint64                  /* types.h:156:28 */ // Type for resource measurement (LFS).
+type X__id_t = uint32                      /* types.h:157:24 */ // General type for IDs.
+type X__time_t = int64                     /* types.h:158:26 */ // Seconds since the Epoch.
+type X__useconds_t = uint32                /* types.h:159:30 */ // Count of microseconds.
+type X__suseconds_t = int64                /* types.h:160:31 */ // Signed count of microseconds.
 
-type X__daddr_t = int32 /* types.h:152:27 */ // The type of a disk address.
-type X__key_t = int32   /* types.h:153:25 */ // Type of an IPC key.
+type X__daddr_t = int32 /* types.h:162:27 */ // The type of a disk address.
+type X__key_t = int32   /* types.h:163:25 */ // Type of an IPC key.
 
 // Clock ID used in clock and timer functions.
-type X__clockid_t = int32 /* types.h:156:29 */
+type X__clockid_t = int32 /* types.h:166:29 */
 
 // Timer ID returned by `timer_create'.
-type X__timer_t = uintptr /* types.h:159:12 */
+type X__timer_t = uintptr /* types.h:169:12 */
 
 // Type to represent block size.
-type X__blksize_t = int64 /* types.h:162:29 */
+type X__blksize_t = int64 /* types.h:172:29 */
 
 // Types from the Large File Support interface.
 
 // Type to count number of disk blocks.
-type X__blkcnt_t = int64   /* types.h:167:28 */
-type X__blkcnt64_t = int64 /* types.h:168:30 */
+type X__blkcnt_t = int64   /* types.h:177:28 */
+type X__blkcnt64_t = int64 /* types.h:178:30 */
 
 // Type to count file system blocks.
-type X__fsblkcnt_t = uint64   /* types.h:171:30 */
-type X__fsblkcnt64_t = uint64 /* types.h:172:32 */
+type X__fsblkcnt_t = uint64   /* types.h:181:30 */
+type X__fsblkcnt64_t = uint64 /* types.h:182:32 */
 
 // Type to count file system nodes.
-type X__fsfilcnt_t = uint64   /* types.h:175:30 */
-type X__fsfilcnt64_t = uint64 /* types.h:176:32 */
+type X__fsfilcnt_t = uint64   /* types.h:185:30 */
+type X__fsfilcnt64_t = uint64 /* types.h:186:32 */
 
 // Type of miscellaneous file system fields.
-type X__fsword_t = int64 /* types.h:179:28 */
+type X__fsword_t = int64 /* types.h:189:28 */
 
-type X__ssize_t = int64 /* types.h:181:27 */ // Type of a byte count, or error.
+type X__ssize_t = int64 /* types.h:191:27 */ // Type of a byte count, or error.
 
 // Signed long type used in system calls.
-type X__syscall_slong_t = int64 /* types.h:184:33 */
+type X__syscall_slong_t = int64 /* types.h:194:33 */
 // Unsigned long type used in system calls.
-type X__syscall_ulong_t = uint64 /* types.h:186:33 */
+type X__syscall_ulong_t = uint64 /* types.h:196:33 */
 
 // These few don't really vary by system, they always correspond
 //    to one of the other defined types.
-type X__loff_t = X__off64_t /* types.h:190:19 */ // Type of file sizes and offsets (LFS).
-type X__qaddr_t = uintptr   /* types.h:191:18 */
-type X__caddr_t = uintptr   /* types.h:192:14 */
+type X__loff_t = X__off64_t /* types.h:200:19 */ // Type of file sizes and offsets (LFS).
+type X__caddr_t = uintptr   /* types.h:201:14 */
 
 // Duplicates info from stdint.h but this is used in unistd.h.
-type X__intptr_t = int64 /* types.h:195:25 */
+type X__intptr_t = int64 /* types.h:204:25 */
 
 // Duplicate info from sys/socket.h.
-type X__socklen_t = uint32 /* types.h:198:23 */
+type X__socklen_t = uint32 /* types.h:207:23 */
 
 // C99: An integer type that can be accessed as an atomic entity,
 //    even in the presence of asynchronous interrupts.
 //    It is not currently necessary for this to be machine-specific.
-type X__sig_atomic_t = int32 /* types.h:203:13 */
+type X__sig_atomic_t = int32 /* types.h:212:13 */
 
 type U_char = X__u_char     /* types.h:33:18 */
 type U_short = X__u_short   /* types.h:34:19 */
@@ -801,36 +813,35 @@ type U_long = X__u_long     /* types.h:36:18 */
 type Quad_t = X__quad_t     /* types.h:37:18 */
 type U_quad_t = X__u_quad_t /* types.h:38:20 */
 type Fsid_t = X__fsid_t     /* types.h:39:18 */
+type Loff_t = X__loff_t     /* types.h:42:18 */
 
-type Loff_t = X__loff_t /* types.h:44:18 */
+type Ino_t = X__ino64_t /* types.h:49:19 */
 
-type Ino_t = X__ino64_t /* types.h:50:19 */
+type Dev_t = X__dev_t /* types.h:59:17 */
 
-type Dev_t = X__dev_t /* types.h:60:17 */
+type Gid_t = X__gid_t /* types.h:64:17 */
 
-type Gid_t = X__gid_t /* types.h:65:17 */
+type Mode_t = X__mode_t /* types.h:69:18 */
 
-type Mode_t = X__mode_t /* types.h:70:18 */
+type Nlink_t = X__nlink_t /* types.h:74:19 */
 
-type Nlink_t = X__nlink_t /* types.h:75:19 */
+type Uid_t = X__uid_t /* types.h:79:17 */
 
-type Uid_t = X__uid_t /* types.h:80:17 */
+type Off_t = X__off64_t /* types.h:87:19 */
 
-type Off_t = X__off64_t /* types.h:88:19 */
+type Pid_t = X__pid_t /* types.h:97:17 */
 
-type Pid_t = X__pid_t /* types.h:98:17 */
+type Id_t = X__id_t /* types.h:103:16 */
 
-type Id_t = X__id_t /* types.h:104:16 */
+type Ssize_t = X__ssize_t /* types.h:108:19 */
 
-type Ssize_t = X__ssize_t /* types.h:109:19 */
+type Daddr_t = X__daddr_t /* types.h:114:19 */
+type Caddr_t = X__caddr_t /* types.h:115:19 */
 
-type Daddr_t = X__daddr_t /* types.h:115:19 */
-type Caddr_t = X__caddr_t /* types.h:116:19 */
-
-type Key_t = X__key_t /* types.h:122:17 */
+type Key_t = X__key_t /* types.h:121:17 */
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -853,7 +864,7 @@ type Key_t = X__key_t /* types.h:122:17 */
 type Clock_t = X__clock_t /* clock_t.h:7:19 */
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -876,7 +887,7 @@ type Clock_t = X__clock_t /* clock_t.h:7:19 */
 type Clockid_t = X__clockid_t /* clockid_t.h:7:21 */
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -899,7 +910,7 @@ type Clockid_t = X__clockid_t /* clockid_t.h:7:21 */
 type Time_t = X__time_t /* time_t.h:7:18 */
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -921,7 +932,7 @@ type Time_t = X__time_t /* time_t.h:7:18 */
 // Timer ID returned by `timer_create'.
 type Timer_t = X__timer_t /* timer_t.h:7:19 */
 
-// Copyright (C) 1989-2017 Free Software Foundation, Inc.
+// Copyright (C) 1989-2018 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //
@@ -1004,14 +1015,14 @@ type Timer_t = X__timer_t /* timer_t.h:7:19 */
 // A null pointer constant.
 
 // Old compatibility names for C types.
-type Ulong = uint64  /* types.h:149:27 */
-type Ushort = uint16 /* types.h:150:28 */
-type Uint = uint32   /* types.h:151:22 */
+type Ulong = uint64  /* types.h:148:27 */
+type Ushort = uint16 /* types.h:149:28 */
+type Uint = uint32   /* types.h:150:22 */
 
 // These size-specific names are used by some of the inet code.
 
 // Define intN_t types.
-//    Copyright (C) 2017 Free Software Foundation, Inc.
+//    Copyright (C) 2017-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1029,7 +1040,7 @@ type Uint = uint32   /* types.h:151:22 */
 //    <http://www.gnu.org/licenses/>.
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1055,16 +1066,16 @@ type Int64_t = X__int64_t /* stdint-intn.h:27:19 */
 
 // For GCC 2.7 and later, we can use specific type-size attributes.
 
-type U_int8_t = uint32  /* types.h:178:1 */
-type U_int16_t = uint32 /* types.h:179:1 */
-type U_int32_t = uint32 /* types.h:180:1 */
-type U_int64_t = uint32 /* types.h:181:1 */
+type U_int8_t = uint32  /* types.h:177:1 */
+type U_int16_t = uint32 /* types.h:178:1 */
+type U_int32_t = uint32 /* types.h:179:1 */
+type U_int64_t = uint32 /* types.h:180:1 */
 
-type Register_t = int32 /* types.h:183:13 */
+type Register_t = int32 /* types.h:182:13 */
 
 // It also defines `fd_set' and the FD_* macros for `select'.
 // `fd_set' type and related macros, and `select'/`pselect' declarations.
-//    Copyright (C) 1996-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1996-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1083,7 +1094,7 @@ type Register_t = int32 /* types.h:183:13 */
 
 //	POSIX 1003.1g: 6.2 Select from File Descriptor Sets <sys/select.h>
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1102,7 +1113,7 @@ type Register_t = int32 /* types.h:183:13 */
 
 // Get definition of needed basic types.
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1122,7 +1133,7 @@ type Register_t = int32 /* types.h:183:13 */
 // Never include this file directly; use <sys/types.h> instead.
 
 // Get __FD_* definitions.
-// Copyright (C) 1997-2017 Free Software Foundation, Inc.
+// Copyright (C) 1997-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1152,7 +1163,7 @@ type Sigset_t = X__sigset_t /* sigset_t.h:7:20 */
 // Get definition of timer specification structures.
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1178,8 +1189,10 @@ type Timeval = struct {
 	Ftv_usec X__suseconds_t
 } /* struct_timeval.h:8:1 */
 
+// NB: Include guard matches what <linux/time.h> uses.
+
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1203,7 +1216,7 @@ type Timeval = struct {
 type Timespec = struct {
 	Ftv_sec  X__time_t
 	Ftv_nsec X__syscall_slong_t
-} /* struct_timespec.h:8:1 */
+} /* struct_timespec.h:9:1 */
 
 type Suseconds_t = X__suseconds_t /* select.h:43:23 */
 
@@ -1221,16 +1234,18 @@ type Fd_set = struct{ F__fds_bits [16]X__fd_mask } /* select.h:70:5 */
 // Sometimes the fd_set member is assumed to have this type.
 type Fd_mask = X__fd_mask /* select.h:77:19 */
 
-type Blksize_t = X__blksize_t /* types.h:212:21 */
+// Define some inlines helping to catch common problems.
+
+type Blksize_t = X__blksize_t /* types.h:202:21 */
 
 // Types from the Large File Support interface.
-type Blkcnt_t = X__blkcnt64_t     /* types.h:232:22 */ // Type to count number of disk blocks.
-type Fsblkcnt_t = X__fsblkcnt64_t /* types.h:236:24 */ // Type to count file system blocks.
-type Fsfilcnt_t = X__fsfilcnt64_t /* types.h:240:24 */ // Type to count file system inodes.
+type Blkcnt_t = X__blkcnt64_t     /* types.h:222:22 */ // Type to count number of disk blocks.
+type Fsblkcnt_t = X__fsblkcnt64_t /* types.h:226:24 */ // Type to count file system blocks.
+type Fsfilcnt_t = X__fsfilcnt64_t /* types.h:230:24 */ // Type to count file system inodes.
 
 // Now add the thread types.
 // Declaration of common pthread types for all architectures.
-//    Copyright (C) 2017 Free Software Foundation, Inc.
+//    Copyright (C) 2017-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1249,7 +1264,7 @@ type Fsfilcnt_t = X__fsfilcnt64_t /* types.h:240:24 */ // Type to count file sys
 
 // For internal mutex and condition variable definitions.
 // Common threading primitives definitions for both POSIX and C11.
-//    Copyright (C) 2017 Free Software Foundation, Inc.
+//    Copyright (C) 2017-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1289,6 +1304,25 @@ type Fsfilcnt_t = X__fsfilcnt64_t /* types.h:240:24 */ // Type to count file sys
 // 				    the internal structure.
 //    __PTHREAD_MUTEX_LOCK_ELISION   - 1 if the architecture supports lock
 // 				    elision or 0 otherwise.
+//    __PTHREAD_MUTEX_NUSERS_AFTER_KIND - control where to put __nusers.  The
+// 				       preferred value for new architectures
+// 				       is 0.
+//    __PTHREAD_MUTEX_USE_UNION      - control whether internal __spins and
+// 				    __list will be place inside a union for
+// 				    linuxthreads compatibility.
+// 				    The preferred value for new architectures
+// 				    is 0.
+//
+//    For a new port the preferred values for the required defines are:
+//
+//    #define __PTHREAD_COMPAT_PADDING_MID
+//    #define __PTHREAD_COMPAT_PADDING_END
+//    #define __PTHREAD_MUTEX_LOCK_ELISION         0
+//    #define __PTHREAD_MUTEX_NUSERS_AFTER_KIND    0
+//    #define __PTHREAD_MUTEX_USE_UNION            0
+//
+//    __PTHREAD_MUTEX_LOCK_ELISION can be set to 1 if the hardware plans to
+//    eventually support lock elision using transactional memory.
 //
 //    The additional macro defines any constraint for the lock alignment
 //    inside the thread structures:
@@ -1302,7 +1336,7 @@ type Fsfilcnt_t = X__fsfilcnt64_t /* types.h:240:24 */ // Type to count file sys
 //    And finally the internal pthread_rwlock_t (struct __pthread_rwlock_arch_t)
 //    must be defined.
 //
-// Copyright (C) 2003-2017 Free Software Foundation, Inc.
+// Copyright (C) 2003-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1336,31 +1370,31 @@ type X__pthread_rwlock_arch_t = struct {
 	F__pad2          uint64
 	F__flags         uint32
 	_                [4]byte
-} /* pthreadtypes-arch.h:52:1 */
+} /* pthreadtypes-arch.h:50:1 */
 
 // Common definition of pthread_mutex_t.
 
 type X__pthread_internal_list = struct {
 	F__prev uintptr
 	F__next uintptr
-} /* thread-shared-types.h:63:9 */
+} /* thread-shared-types.h:82:9 */
 
 // Common definition of pthread_mutex_t.
 
-type X__pthread_list_t = X__pthread_internal_list /* thread-shared-types.h:67:3 */
+type X__pthread_list_t = X__pthread_internal_list /* thread-shared-types.h:86:3 */
 
 // Lock elision support.
-// Mutex __spins initializer used by PTHREAD_MUTEX_INITIALIZER.
 
 type X__pthread_mutex_s = struct {
-	F__lock   int32
-	F__count  uint32
-	F__owner  int32
-	F__nusers uint32
-	F__kind   int32
-	F__spins  int32
-	F__list   X__pthread_list_t
-} /* thread-shared-types.h:99:1 */
+	F__lock    int32
+	F__count   uint32
+	F__owner   int32
+	F__nusers  uint32
+	F__kind    int32
+	F__spins   int16
+	F__elision int16
+	F__list    X__pthread_list_t
+} /* thread-shared-types.h:118:1 */
 
 // Common definition of pthread_cond_t.
 
@@ -1372,7 +1406,7 @@ type X__pthread_cond_s = struct {
 	F__g1_orig_size uint32
 	F__wrefs        uint32
 	F__g_signals    [2]uint32
-} /* thread-shared-types.h:149:1 */
+} /* thread-shared-types.h:171:1 */
 
 // Thread identifiers.  The structure of the attribute type is not
 //    exposed on purpose.
@@ -1449,7 +1483,7 @@ type Socklen_t = X__socklen_t /* socket.h:33:21 */
 
 // Get the definition of the macro to define the common sockaddr members.
 // Definition of struct sockaddr_* common members and sizes, generic version.
-//    Copyright (C) 1995-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1995-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1481,7 +1515,7 @@ type Sa_family_t = uint16 /* sockaddr.h:28:28 */
 type Sockaddr = struct {
 	Fsa_family Sa_family_t
 	Fsa_data   [14]int8
-} /* socket.h:174:1 */
+} /* socket.h:175:1 */
 
 // Structure large enough to hold any socket address (with the historical
 //    exception of AF_UNIX).
@@ -1490,7 +1524,7 @@ type Sockaddr_storage = struct {
 	Fss_family    Sa_family_t
 	F__ss_padding [118]int8
 	F__ss_align   uint64
-} /* socket.h:187:1 */
+} /* socket.h:188:1 */
 
 // Structure describing messages sent by
 //    `sendmsg' and received by `recvmsg'.
@@ -1504,7 +1538,7 @@ type Msghdr = struct {
 	Fmsg_controllen Size_t
 	Fmsg_flags      int32
 	_               [4]byte
-} /* socket.h:251:1 */
+} /* socket.h:254:1 */
 
 // Structure used for storage of ancillary data object information.
 type Cmsghdr = struct {
@@ -1512,7 +1546,7 @@ type Cmsghdr = struct {
 	Fcmsg_len   Size_t
 	Fcmsg_level int32
 	Fcmsg_type  int32
-} /* socket.h:269:1 */
+} /* socket.h:272:1 */
 
 // Ugly workaround for unclean kernel headers.
 
@@ -1538,7 +1572,7 @@ type Cmsghdr = struct {
 type Linger = struct {
 	Fl_onoff  int32
 	Fl_linger int32
-} /* socket.h:441:1 */
+} /* socket.h:444:1 */
 
 // This is the 4.3 BSD `struct sockaddr' format, which is used as wire
 //    format in the grotty old 4.3 `talk' protocol.

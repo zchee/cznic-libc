@@ -143,7 +143,7 @@ type X__uint128_t = struct {
 type X__builtin_va_list = uintptr /* <builtin>:46:14 */
 type X__float128 = float64        /* <builtin>:47:21 */
 
-// Copyright (C) 1992-2017 Free Software Foundation, Inc.
+// Copyright (C) 1992-2018 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //
@@ -178,7 +178,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    If fixincludes fixes it, then the fixed version is installed
 //    instead of this text.
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -198,7 +198,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //	ISO C99 Standard: 7.10/5.2.4.2.1 Sizes of integer types	<limits.h>
 
 // Handle feature test macros at the start of a header.
-//    Copyright (C) 2016-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2016-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -223,7 +223,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    header is included, not when the first system header is
 //    included.
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -298,6 +298,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    __USE_ISOC11		Define ISO C11 things.
 //    __USE_ISOC99		Define ISO C99 things.
 //    __USE_ISOC95		Define ISO C90 AMD1 (C95) things.
+//    __USE_ISOCXX11	Define ISO C++11 things.
 //    __USE_POSIX		Define IEEE Std 1003.1 things.
 //    __USE_POSIX2		Define IEEE Std 1003.2 things.
 //    __USE_POSIX199309	Define IEEE Std 1003.1, and .1b things.
@@ -371,11 +372,6 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // This is to enable the ISO C90 Amendment 1:1995 extension.
 
-// This is to enable compatibility for ISO C++11.
-//
-//    So far g++ does not provide a macro.  Check the temporary macro for
-//    now, too.
-
 // If none of the ANSI/POSIX macros are defined, or if _DEFAULT_SOURCE
 //    is defined, use POSIX.1-2008 (or another version depending on
 //    _XOPEN_SOURCE).
@@ -394,7 +390,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // Get definitions of __STDC_* predefined macros, if the compiler has
 //    not preincluded this header automatically.
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -422,7 +418,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    these macros to test for features in specific releases.
 
 // This is here only because every header file already includes this one.
-// Copyright (C) 1992-2017 Free Software Foundation, Inc.
+// Copyright (C) 1992-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -569,10 +565,14 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //      array_name[restrict]
 //    GCC 3.1 supports this.
 
+// Describes a char array whose address can safely be passed as the first
+//    argument to strncpy and strncat, as the char array is not necessarily
+//    a NUL-terminated string.
+
 // Determine the wordsize from the preprocessor defines.
 
 // Properties of long double type.  ldbl-opt version.
-//    Copyright (C) 2016-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2016-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -657,7 +657,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    __STDC_WANT_IEC_60559_BFP_EXT__ is used to enable this feature.
 
 // POSIX adds things to <limits.h>.
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -677,6 +677,8 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //	POSIX Standard: 2.9.2 Minimum Values	Added to <limits.h>
 //
 //	Never include this file directly; use <limits.h> instead.
+
+// Determine the wordsize from the preprocessor defines.
 
 // These are the standard-mandated minimum values.
 
@@ -746,7 +748,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // Get the implementation-specific values for the above.
 // Minimum guaranteed maximum values for system limits.  Linux version.
-//    Copyright (C) 1993-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1993-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -803,10 +805,14 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // Maximum value the semaphore can have.
 
+// ssize_t is not formally required to be the signed type
+//    corresponding to size_t, but it is for all configurations supported
+//    by glibc.
+
 // This value is a guaranteed minimum maximum.
 //    The current maximum can be got from `sysconf'.
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -853,7 +859,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // This value is defined like this in regex.h.
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //

@@ -72,6 +72,7 @@ const (
 	X_ATFILE_SOURCE              = 1
 	X_BITS_PTHREADTYPES_ARCH_H   = 1
 	X_BITS_PTHREADTYPES_COMMON_H = 1
+	X_BITS_SIGACTION_H           = 1
 	X_BITS_SIGCONTEXT_H          = 1
 	X_BITS_SIGEVENT_CONSTS_H     = 1
 	X_BITS_SIGINFO_ARCH_H        = 1
@@ -107,6 +108,7 @@ const (
 	X_SIZE_T_DEFINED             = 0
 	X_SIZE_T_DEFINED_            = 0
 	X_STDC_PREDEF_H              = 1
+	X_STRUCT_TIMESPEC            = 1
 	X_SYS_CDEFS_H                = 1
 	X_SYS_SIZE_T_H               = 0
 	X_SYS_UCONTEXT_H             = 1
@@ -120,7 +122,7 @@ const (
 // POSIX names to access some of the members.
 
 // sigevent constants.  Linux version.
-//    Copyright (C) 1997-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1997-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -149,11 +151,13 @@ const ( /* sigevent-consts.h:27:1: */
 // `si_code' values for SIGSEGV signal.
 const ( /* siginfo-consts.h:110:1: */
 	SEGV_MAPERR = 1 // Address not mapped to object.
-	SEGV_ACCERR = 2
+	SEGV_ACCERR = 2 // Invalid permissions for mapped object.
+	SEGV_BNDERR = 3 // Bounds checking failure.
+	SEGV_PKUERR = 4
 )
 
 // `si_code' values for SIGBUS signal.
-const ( /* siginfo-consts.h:119:1: */
+const ( /* siginfo-consts.h:123:1: */
 	BUS_ADRALN    = 1 // Invalid address alignment.
 	BUS_ADRERR    = 2 // Non-existant physical address.
 	BUS_OBJERR    = 3 // Object specific hardware error.
@@ -162,7 +166,7 @@ const ( /* siginfo-consts.h:119:1: */
 )
 
 // `si_code' values for SIGCHLD signal.
-const ( /* siginfo-consts.h:147:1: */
+const ( /* siginfo-consts.h:151:1: */
 	CLD_EXITED    = 1 // Child has exited.
 	CLD_KILLED    = 2 // Child was killed.
 	CLD_DUMPED    = 3 // Child terminated abnormally.
@@ -172,7 +176,7 @@ const ( /* siginfo-consts.h:147:1: */
 )
 
 // `si_code' values for SIGPOLL signal.
-const ( /* siginfo-consts.h:164:1: */
+const ( /* siginfo-consts.h:168:1: */
 	POLL_IN  = 1 // Data input available.
 	POLL_OUT = 2 // Output buffers available.
 	POLL_MSG = 3 // Input message available.
@@ -184,7 +188,7 @@ const ( /* siginfo-consts.h:164:1: */
 // X/Open requires some more fields with fixed names.
 
 // siginfo constants.  Linux version.
-//    Copyright (C) 1997-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1997-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -244,7 +248,7 @@ const ( /* siginfo-consts.h:89:1: */
 )
 
 // sigstack, sigaltstack definitions.
-//    Copyright (C) 1998-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1998-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -266,7 +270,7 @@ const ( /* siginfo-consts.h:89:1: */
 // System default stack size.
 
 // ss_flags values for stack_t.  Linux version.
-//    Copyright (C) 1998-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1998-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -307,7 +311,7 @@ type X__uint128_t = struct {
 type X__builtin_va_list = uintptr /* <builtin>:46:14 */
 type X__float128 = float64        /* <builtin>:47:21 */
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -326,7 +330,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 //	ISO C99 Standard: 7.14 Signal handling <signal.h>
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -401,6 +405,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    __USE_ISOC11		Define ISO C11 things.
 //    __USE_ISOC99		Define ISO C99 things.
 //    __USE_ISOC95		Define ISO C90 AMD1 (C95) things.
+//    __USE_ISOCXX11	Define ISO C++11 things.
 //    __USE_POSIX		Define IEEE Std 1003.1 things.
 //    __USE_POSIX2		Define IEEE Std 1003.2 things.
 //    __USE_POSIX199309	Define IEEE Std 1003.1, and .1b things.
@@ -474,11 +479,6 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // This is to enable the ISO C90 Amendment 1:1995 extension.
 
-// This is to enable compatibility for ISO C++11.
-//
-//    So far g++ does not provide a macro.  Check the temporary macro for
-//    now, too.
-
 // If none of the ANSI/POSIX macros are defined, or if _DEFAULT_SOURCE
 //    is defined, use POSIX.1-2008 (or another version depending on
 //    _XOPEN_SOURCE).
@@ -497,7 +497,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // Get definitions of __STDC_* predefined macros, if the compiler has
 //    not preincluded this header automatically.
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -525,7 +525,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    these macros to test for features in specific releases.
 
 // This is here only because every header file already includes this one.
-// Copyright (C) 1992-2017 Free Software Foundation, Inc.
+// Copyright (C) 1992-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -672,10 +672,14 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //      array_name[restrict]
 //    GCC 3.1 supports this.
 
+// Describes a char array whose address can safely be passed as the first
+//    argument to strncpy and strncat, as the char array is not necessarily
+//    a NUL-terminated string.
+
 // Determine the wordsize from the preprocessor defines.
 
 // Properties of long double type.  ldbl-opt version.
-//    Copyright (C) 2016-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2016-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -727,7 +731,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //    every time called, usually setting errno to ENOSYS.
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -746,7 +750,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // Never include this file directly; use <sys/types.h> instead.
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -781,13 +785,23 @@ type X__uint32_t = uint32 /* types.h:41:22 */
 type X__int64_t = int64   /* types.h:43:25 */
 type X__uint64_t = uint64 /* types.h:44:27 */
 
+// Smallest types with at least a given width.
+type X__int_least8_t = X__int8_t     /* types.h:51:18 */
+type X__uint_least8_t = X__uint8_t   /* types.h:52:19 */
+type X__int_least16_t = X__int16_t   /* types.h:53:19 */
+type X__uint_least16_t = X__uint16_t /* types.h:54:20 */
+type X__int_least32_t = X__int32_t   /* types.h:55:19 */
+type X__uint_least32_t = X__uint32_t /* types.h:56:20 */
+type X__int_least64_t = X__int64_t   /* types.h:57:19 */
+type X__uint_least64_t = X__uint64_t /* types.h:58:20 */
+
 // quad_t is also 64 bits.
-type X__quad_t = int64    /* types.h:52:18 */
-type X__u_quad_t = uint64 /* types.h:53:27 */
+type X__quad_t = int64    /* types.h:62:18 */
+type X__u_quad_t = uint64 /* types.h:63:27 */
 
 // Largest integral types.
-type X__intmax_t = int64   /* types.h:61:18 */
-type X__uintmax_t = uint64 /* types.h:62:27 */
+type X__intmax_t = int64   /* types.h:71:18 */
+type X__uintmax_t = uint64 /* types.h:72:27 */
 
 // The machine-dependent file <bits/typesizes.h> defines __*_T_TYPE
 //    macros for each of the OS types we define below.  The definitions
@@ -820,7 +834,7 @@ type X__uintmax_t = uint64 /* types.h:62:27 */
 
 // No need to mark the typedef with __extension__.
 // bits/typesizes.h -- underlying types for *_t.  Linux/s390 version.
-//    Copyright (C) 2003-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2003-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -852,80 +866,79 @@ type X__uintmax_t = uint64 /* types.h:62:27 */
 
 // Number of descriptors that can fit in an `fd_set'.
 
-type X__dev_t = uint64                     /* types.h:133:25 */ // Type of device numbers.
-type X__uid_t = uint32                     /* types.h:134:25 */ // Type of user identifications.
-type X__gid_t = uint32                     /* types.h:135:25 */ // Type of group identifications.
-type X__ino_t = uint64                     /* types.h:136:25 */ // Type of file serial numbers.
-type X__ino64_t = uint64                   /* types.h:137:27 */ // Type of file serial numbers (LFS).
-type X__mode_t = uint32                    /* types.h:138:26 */ // Type of file attribute bitmasks.
-type X__nlink_t = uint64                   /* types.h:139:27 */ // Type of file link counts.
-type X__off_t = int64                      /* types.h:140:25 */ // Type of file sizes and offsets.
-type X__off64_t = int64                    /* types.h:141:27 */ // Type of file sizes and offsets (LFS).
-type X__pid_t = int32                      /* types.h:142:25 */ // Type of process identifications.
-type X__fsid_t = struct{ F__val [2]int32 } /* types.h:143:26 */ // Type of file system IDs.
-type X__clock_t = int64                    /* types.h:144:27 */ // Type of CPU usage counts.
-type X__rlim_t = uint64                    /* types.h:145:26 */ // Type for resource measurement.
-type X__rlim64_t = uint64                  /* types.h:146:28 */ // Type for resource measurement (LFS).
-type X__id_t = uint32                      /* types.h:147:24 */ // General type for IDs.
-type X__time_t = int64                     /* types.h:148:26 */ // Seconds since the Epoch.
-type X__useconds_t = uint32                /* types.h:149:30 */ // Count of microseconds.
-type X__suseconds_t = int64                /* types.h:150:31 */ // Signed count of microseconds.
+type X__dev_t = uint64                     /* types.h:143:25 */ // Type of device numbers.
+type X__uid_t = uint32                     /* types.h:144:25 */ // Type of user identifications.
+type X__gid_t = uint32                     /* types.h:145:25 */ // Type of group identifications.
+type X__ino_t = uint64                     /* types.h:146:25 */ // Type of file serial numbers.
+type X__ino64_t = uint64                   /* types.h:147:27 */ // Type of file serial numbers (LFS).
+type X__mode_t = uint32                    /* types.h:148:26 */ // Type of file attribute bitmasks.
+type X__nlink_t = uint64                   /* types.h:149:27 */ // Type of file link counts.
+type X__off_t = int64                      /* types.h:150:25 */ // Type of file sizes and offsets.
+type X__off64_t = int64                    /* types.h:151:27 */ // Type of file sizes and offsets (LFS).
+type X__pid_t = int32                      /* types.h:152:25 */ // Type of process identifications.
+type X__fsid_t = struct{ F__val [2]int32 } /* types.h:153:26 */ // Type of file system IDs.
+type X__clock_t = int64                    /* types.h:154:27 */ // Type of CPU usage counts.
+type X__rlim_t = uint64                    /* types.h:155:26 */ // Type for resource measurement.
+type X__rlim64_t = uint64                  /* types.h:156:28 */ // Type for resource measurement (LFS).
+type X__id_t = uint32                      /* types.h:157:24 */ // General type for IDs.
+type X__time_t = int64                     /* types.h:158:26 */ // Seconds since the Epoch.
+type X__useconds_t = uint32                /* types.h:159:30 */ // Count of microseconds.
+type X__suseconds_t = int64                /* types.h:160:31 */ // Signed count of microseconds.
 
-type X__daddr_t = int32 /* types.h:152:27 */ // The type of a disk address.
-type X__key_t = int32   /* types.h:153:25 */ // Type of an IPC key.
+type X__daddr_t = int32 /* types.h:162:27 */ // The type of a disk address.
+type X__key_t = int32   /* types.h:163:25 */ // Type of an IPC key.
 
 // Clock ID used in clock and timer functions.
-type X__clockid_t = int32 /* types.h:156:29 */
+type X__clockid_t = int32 /* types.h:166:29 */
 
 // Timer ID returned by `timer_create'.
-type X__timer_t = uintptr /* types.h:159:12 */
+type X__timer_t = uintptr /* types.h:169:12 */
 
 // Type to represent block size.
-type X__blksize_t = int64 /* types.h:162:29 */
+type X__blksize_t = int64 /* types.h:172:29 */
 
 // Types from the Large File Support interface.
 
 // Type to count number of disk blocks.
-type X__blkcnt_t = int64   /* types.h:167:28 */
-type X__blkcnt64_t = int64 /* types.h:168:30 */
+type X__blkcnt_t = int64   /* types.h:177:28 */
+type X__blkcnt64_t = int64 /* types.h:178:30 */
 
 // Type to count file system blocks.
-type X__fsblkcnt_t = uint64   /* types.h:171:30 */
-type X__fsblkcnt64_t = uint64 /* types.h:172:32 */
+type X__fsblkcnt_t = uint64   /* types.h:181:30 */
+type X__fsblkcnt64_t = uint64 /* types.h:182:32 */
 
 // Type to count file system nodes.
-type X__fsfilcnt_t = uint64   /* types.h:175:30 */
-type X__fsfilcnt64_t = uint64 /* types.h:176:32 */
+type X__fsfilcnt_t = uint64   /* types.h:185:30 */
+type X__fsfilcnt64_t = uint64 /* types.h:186:32 */
 
 // Type of miscellaneous file system fields.
-type X__fsword_t = int64 /* types.h:179:28 */
+type X__fsword_t = int64 /* types.h:189:28 */
 
-type X__ssize_t = int64 /* types.h:181:27 */ // Type of a byte count, or error.
+type X__ssize_t = int64 /* types.h:191:27 */ // Type of a byte count, or error.
 
 // Signed long type used in system calls.
-type X__syscall_slong_t = int64 /* types.h:184:33 */
+type X__syscall_slong_t = int64 /* types.h:194:33 */
 // Unsigned long type used in system calls.
-type X__syscall_ulong_t = uint64 /* types.h:186:33 */
+type X__syscall_ulong_t = uint64 /* types.h:196:33 */
 
 // These few don't really vary by system, they always correspond
 //    to one of the other defined types.
-type X__loff_t = X__off64_t /* types.h:190:19 */ // Type of file sizes and offsets (LFS).
-type X__qaddr_t = uintptr   /* types.h:191:18 */
-type X__caddr_t = uintptr   /* types.h:192:14 */
+type X__loff_t = X__off64_t /* types.h:200:19 */ // Type of file sizes and offsets (LFS).
+type X__caddr_t = uintptr   /* types.h:201:14 */
 
 // Duplicates info from stdint.h but this is used in unistd.h.
-type X__intptr_t = int64 /* types.h:195:25 */
+type X__intptr_t = int64 /* types.h:204:25 */
 
 // Duplicate info from sys/socket.h.
-type X__socklen_t = uint32 /* types.h:198:23 */
+type X__socklen_t = uint32 /* types.h:207:23 */
 
 // C99: An integer type that can be accessed as an atomic entity,
 //    even in the presence of asynchronous interrupts.
 //    It is not currently necessary for this to be machine-specific.
-type X__sig_atomic_t = int32 /* types.h:203:13 */
+type X__sig_atomic_t = int32 /* types.h:212:13 */
 
 // Signal number definitions.  Linux version.
-//    Copyright (C) 1995-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1995-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -943,7 +956,7 @@ type X__sig_atomic_t = int32 /* types.h:203:13 */
 //    <http://www.gnu.org/licenses/>.
 
 // Signal number constants.  Generic template.
-//    Copyright (C) 1991-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -997,7 +1010,7 @@ type X__sig_atomic_t = int32 /* types.h:203:13 */
 //    most Linux systems.
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1029,9 +1042,10 @@ type Pid_t = X__pid_t /* signal.h:40:17 */
 type Uid_t = X__uid_t /* signal.h:46:17 */
 
 // We need `struct timespec' later on.
+// NB: Include guard matches what <linux/time.h> uses.
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1055,12 +1069,12 @@ type Uid_t = X__uid_t /* signal.h:46:17 */
 type Timespec = struct {
 	Ftv_sec  X__time_t
 	Ftv_nsec X__syscall_slong_t
-} /* struct_timespec.h:8:1 */
+} /* struct_timespec.h:9:1 */
 
 // Determine the wordsize from the preprocessor defines.
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1079,14 +1093,32 @@ type Timespec = struct {
 
 // Never include this file directly; use <sys/types.h> instead.
 
+// Define __sigval_t.
+//    Copyright (C) 1997-2018 Free Software Foundation, Inc.
+//    This file is part of the GNU C Library.
+//
+//    The GNU C Library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    The GNU C Library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with the GNU C Library; if not, see
+//    <http://www.gnu.org/licenses/>.
+
 // Type for data associated with a signal.
 type Sigval = struct {
 	_          [0]uint64
 	Fsival_int int32
 	_          [4]byte
-} /* sigval_t.h:5:1 */
+} /* __sigval_t.h:24:1 */
 
-type Sigval_t = Sigval /* sigval_t.h:11:22 */
+type X__sigval_t = Sigval /* __sigval_t.h:30:22 */
 
 // Some fields of siginfo_t have architecture-specific variations.
 // Architecture-specific adjustments to siginfo_t.
@@ -1107,10 +1139,37 @@ type Siginfo_t = struct {
 // Architectures might also add architecture-specific constants.
 //    These are all considered GNU extensions.
 
+// Define __sigval_t.
+//    Copyright (C) 1997-2018 Free Software Foundation, Inc.
+//    This file is part of the GNU C Library.
+//
+//    The GNU C Library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    The GNU C Library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with the GNU C Library; if not, see
+//    <http://www.gnu.org/licenses/>.
+
+// To avoid sigval_t (not a standard type name) having C++ name
+//    mangling depending on whether the selected standard includes union
+//    sigval, it should not be defined at all when using a standard for
+//    which the sigval name is not reserved; in that case, headers should
+//    not include <bits/types/sigval_t.h> and should use only the
+//    internal __sigval_t name.
+
+type Sigval_t = X__sigval_t /* sigval_t.h:16:20 */
+
 // Determine the wordsize from the preprocessor defines.
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1128,6 +1187,24 @@ type Siginfo_t = struct {
 //    <http://www.gnu.org/licenses/>.
 
 // Never include this file directly; use <sys/types.h> instead.
+
+// Define __sigval_t.
+//    Copyright (C) 1997-2018 Free Software Foundation, Inc.
+//    This file is part of the GNU C Library.
+//
+//    The GNU C Library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    The GNU C Library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with the GNU C Library; if not, see
+//    <http://www.gnu.org/licenses/>.
 
 // Forward declaration.
 type Pthread_attr_t1 = struct {
@@ -1135,13 +1212,10 @@ type Pthread_attr_t1 = struct {
 	F__size [56]int8
 } /* sigevent_t.h:17:9 */
 
-// Architectures might also add architecture-specific constants.
-//    These are all considered GNU extensions.
-
 // Determine the wordsize from the preprocessor defines.
 
 // bits/types.h -- definitions of __*_t types underlying *_t types.
-//    Copyright (C) 2002-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2002-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1160,12 +1234,30 @@ type Pthread_attr_t1 = struct {
 
 // Never include this file directly; use <sys/types.h> instead.
 
+// Define __sigval_t.
+//    Copyright (C) 1997-2018 Free Software Foundation, Inc.
+//    This file is part of the GNU C Library.
+//
+//    The GNU C Library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    The GNU C Library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with the GNU C Library; if not, see
+//    <http://www.gnu.org/licenses/>.
+
 // Forward declaration.
 type Pthread_attr_t = Pthread_attr_t1 /* sigevent_t.h:17:30 */
 
 // Structure to transport application-defined values with signals.
 type Sigevent = struct {
-	Fsigev_value  Sigval_t
+	Fsigev_value  X__sigval_t
 	Fsigev_signo  int32
 	Fsigev_notify int32
 	F_sigev_un    struct {
@@ -1178,15 +1270,15 @@ type Sigevent = struct {
 type Sigevent_t = Sigevent /* sigevent_t.h:42:5 */
 
 // Type of a signal handler.
-type X__sighandler_t = uintptr /* signal.h:68:14 */
+type X__sighandler_t = uintptr /* signal.h:72:14 */
 
 // 4.4 BSD uses the name `sig_t' for this.
-type Sig_t = X__sighandler_t /* signal.h:186:24 */
+type Sig_t = X__sighandler_t /* signal.h:190:24 */
 
 // Get the system-specific definitions of `struct sigaction'
 //    and the `SA_*' and `SIG_*'. constants.
 // Definitions for 31 & 64 bit S/390 sigaction.
-//    Copyright (C) 2001-2017 Free Software Foundation, Inc.
+//    Copyright (C) 2001-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1212,10 +1304,10 @@ type Sigaction = struct {
 	Fsa_flags            int32
 	Fsa_restorer         uintptr
 	Fsa_mask             X__sigset_t
-} /* sigaction.h:27:1 */
+} /* sigaction.h:30:1 */
 
 // Get machine-dependent `struct sigcontext' and signal subcodes.
-// Copyright (C) 1996-2017 Free Software Foundation, Inc.
+// Copyright (C) 1996-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1364,12 +1456,13 @@ type X__kernel_fsid_t = struct{ Fval [2]int32 } /* posix_types.h:81:3 */
 type X__kernel_off_t = X__kernel_long_t   /* posix_types.h:87:25 */
 type X__kernel_loff_t = int64             /* posix_types.h:88:19 */
 type X__kernel_time_t = X__kernel_long_t  /* posix_types.h:89:25 */
-type X__kernel_clock_t = X__kernel_long_t /* posix_types.h:90:25 */
-type X__kernel_timer_t = int32            /* posix_types.h:91:14 */
-type X__kernel_clockid_t = int32          /* posix_types.h:92:14 */
-type X__kernel_caddr_t = uintptr          /* posix_types.h:93:14 */
-type X__kernel_uid16_t = uint16           /* posix_types.h:94:24 */
-type X__kernel_gid16_t = uint16           /* posix_types.h:95:24 */
+type X__kernel_time64_t = int64           /* posix_types.h:90:19 */
+type X__kernel_clock_t = X__kernel_long_t /* posix_types.h:91:25 */
+type X__kernel_timer_t = int32            /* posix_types.h:92:14 */
+type X__kernel_clockid_t = int32          /* posix_types.h:93:14 */
+type X__kernel_caddr_t = uintptr          /* posix_types.h:94:14 */
+type X__kernel_uid16_t = uint16           /* posix_types.h:95:24 */
+type X__kernel_gid16_t = uint16           /* posix_types.h:96:24 */
 
 // Below are truly Linux-specific types that should never collide with
 // any application/library that wants linux/types.h.
@@ -1391,6 +1484,8 @@ type X__wsum = X__u32  /* types.h:32:25 */
 // aligned_64 type enforces 8-byte alignment so that structs containing
 // aligned_64 values have the same alignment on 32-bit and 64-bit architectures.
 // No conversions are necessary between 32-bit user-space and a 64-bit kernel.
+
+type X__poll_t = uint32 /* types.h:47:28 */
 
 // Has to be at least _NSIG_WORDS from asm/signal.h
 // Size of stack frame allocated when calling signal handler.
@@ -1444,7 +1539,7 @@ type Sigcontext = struct {
 // A null pointer constant.
 
 // Define stack_t.  Linux version.
-//    Copyright (C) 1998-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1998-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1461,7 +1556,7 @@ type Sigcontext = struct {
 //    License along with the GNU C Library; if not, see
 //    <http://www.gnu.org/licenses/>.
 
-// Copyright (C) 1989-2017 Free Software Foundation, Inc.
+// Copyright (C) 1989-2018 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //
@@ -1552,7 +1647,7 @@ type Stack_t = struct {
 } /* stack_t.h:31:5 */
 
 // This will define `ucontext_t' and `mcontext_t'.
-// Copyright (C) 2000-2017 Free Software Foundation, Inc.
+// Copyright (C) 2000-2018 Free Software Foundation, Inc.
 //    Contributed by Denis Joseph Barrow (djbarrow@de.ibm.com).
 //    This file is part of the GNU C Library.
 //
@@ -1570,24 +1665,7 @@ type Stack_t = struct {
 //    License along with the GNU C Library; if not, see
 //    <http://www.gnu.org/licenses/>.
 
-// Copyright (C) 1991-2017 Free Software Foundation, Inc.
-//    This file is part of the GNU C Library.
-//
-//    The GNU C Library is free software; you can redistribute it and/or
-//    modify it under the terms of the GNU Lesser General Public
-//    License as published by the Free Software Foundation; either
-//    version 2.1 of the License, or (at your option) any later version.
-//
-//    The GNU C Library is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//    Lesser General Public License for more details.
-//
-//    You should have received a copy of the GNU Lesser General Public
-//    License along with the GNU C Library; if not, see
-//    <http://www.gnu.org/licenses/>.
-
-// Copyright (C) 1996-2017 Free Software Foundation, Inc.
+// Copyright (C) 1991-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1605,7 +1683,7 @@ type Stack_t = struct {
 //    <http://www.gnu.org/licenses/>.
 
 // Define stack_t.  Linux version.
-//    Copyright (C) 1998-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1998-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1626,10 +1704,10 @@ type Stack_t = struct {
 type X__psw_t = struct {
 	Fmask uint64
 	Faddr uint64
-} /* ucontext.h:40:36 */
+} /* ucontext.h:39:36 */
 
 // Type for a general-purpose register.
-type Greg_t = uint64 /* ucontext.h:43:23 */
+type Greg_t = uint64 /* ucontext.h:42:23 */
 
 // And the whole bunch of them.  We should have used `struct s390_regs',
 //    but to avoid name space pollution and since the tradition says that
@@ -1637,16 +1715,16 @@ type Greg_t = uint64 /* ucontext.h:43:23 */
 //    that has the same size as s390_regs.  This is needed for the
 //    elf_prstatus structure.
 // Must match kernels psw_t alignment.
-type Gregset_t = [27]Greg_t /* ucontext.h:59:16 */
+type Gregset_t = [27]Greg_t /* ucontext.h:58:16 */
 
-type Fpreg_t = struct{ Fd float64 } /* ucontext.h:65:5 */
+type Fpreg_t = struct{ Fd float64 } /* ucontext.h:64:5 */
 
 // Register set for the floating-point registers.
 type Fpregset_t = struct {
 	Ffpc  uint32
 	_     [4]byte
 	Ffprs [16]Fpreg_t
-} /* ucontext.h:72:5 */
+} /* ucontext.h:71:5 */
 
 // Context to describe whole processor state.
 type Mcontext_t = struct {
@@ -1654,7 +1732,7 @@ type Mcontext_t = struct {
 	Fgregs  [16]uint64
 	Faregs  [16]uint32
 	Ffpregs Fpregset_t
-} /* ucontext.h:81:5 */
+} /* ucontext.h:80:5 */
 
 // Userlevel context.
 type Ucontext_t1 = struct {
@@ -1663,13 +1741,13 @@ type Ucontext_t1 = struct {
 	Fuc_stack    Stack_t
 	Fuc_mcontext Mcontext_t
 	Fuc_sigmask  Sigset_t
-} /* ucontext.h:86:9 */
+} /* ucontext.h:83:9 */
 
 // Userlevel context.
-type Ucontext_t = Ucontext_t1 /* ucontext.h:93:5 */
+type Ucontext_t = Ucontext_t1 /* ucontext.h:90:5 */
 
 // Define struct sigstack.
-//    Copyright (C) 1998-2017 Free Software Foundation, Inc.
+//    Copyright (C) 1998-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1696,7 +1774,7 @@ type Sigstack = struct {
 // Some of the functions for handling signals in threaded programs must
 //    be defined here.
 // Declaration of common pthread types for all architectures.
-//    Copyright (C) 2017 Free Software Foundation, Inc.
+//    Copyright (C) 2017-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1715,7 +1793,7 @@ type Sigstack = struct {
 
 // For internal mutex and condition variable definitions.
 // Common threading primitives definitions for both POSIX and C11.
-//    Copyright (C) 2017 Free Software Foundation, Inc.
+//    Copyright (C) 2017-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1755,6 +1833,25 @@ type Sigstack = struct {
 // 				    the internal structure.
 //    __PTHREAD_MUTEX_LOCK_ELISION   - 1 if the architecture supports lock
 // 				    elision or 0 otherwise.
+//    __PTHREAD_MUTEX_NUSERS_AFTER_KIND - control where to put __nusers.  The
+// 				       preferred value for new architectures
+// 				       is 0.
+//    __PTHREAD_MUTEX_USE_UNION      - control whether internal __spins and
+// 				    __list will be place inside a union for
+// 				    linuxthreads compatibility.
+// 				    The preferred value for new architectures
+// 				    is 0.
+//
+//    For a new port the preferred values for the required defines are:
+//
+//    #define __PTHREAD_COMPAT_PADDING_MID
+//    #define __PTHREAD_COMPAT_PADDING_END
+//    #define __PTHREAD_MUTEX_LOCK_ELISION         0
+//    #define __PTHREAD_MUTEX_NUSERS_AFTER_KIND    0
+//    #define __PTHREAD_MUTEX_USE_UNION            0
+//
+//    __PTHREAD_MUTEX_LOCK_ELISION can be set to 1 if the hardware plans to
+//    eventually support lock elision using transactional memory.
 //
 //    The additional macro defines any constraint for the lock alignment
 //    inside the thread structures:
@@ -1768,7 +1865,7 @@ type Sigstack = struct {
 //    And finally the internal pthread_rwlock_t (struct __pthread_rwlock_arch_t)
 //    must be defined.
 //
-// Copyright (C) 2003-2017 Free Software Foundation, Inc.
+// Copyright (C) 2003-2018 Free Software Foundation, Inc.
 //    This file is part of the GNU C Library.
 //
 //    The GNU C Library is free software; you can redistribute it and/or
@@ -1802,31 +1899,31 @@ type X__pthread_rwlock_arch_t = struct {
 	F__pad2          uint64
 	F__flags         uint32
 	_                [4]byte
-} /* pthreadtypes-arch.h:52:1 */
+} /* pthreadtypes-arch.h:50:1 */
 
 // Common definition of pthread_mutex_t.
 
 type X__pthread_internal_list = struct {
 	F__prev uintptr
 	F__next uintptr
-} /* thread-shared-types.h:63:9 */
+} /* thread-shared-types.h:82:9 */
 
 // Common definition of pthread_mutex_t.
 
-type X__pthread_list_t = X__pthread_internal_list /* thread-shared-types.h:67:3 */
+type X__pthread_list_t = X__pthread_internal_list /* thread-shared-types.h:86:3 */
 
 // Lock elision support.
-// Mutex __spins initializer used by PTHREAD_MUTEX_INITIALIZER.
 
 type X__pthread_mutex_s = struct {
-	F__lock   int32
-	F__count  uint32
-	F__owner  int32
-	F__nusers uint32
-	F__kind   int32
-	F__spins  int32
-	F__list   X__pthread_list_t
-} /* thread-shared-types.h:99:1 */
+	F__lock    int32
+	F__count   uint32
+	F__owner   int32
+	F__nusers  uint32
+	F__kind    int32
+	F__spins   int16
+	F__elision int16
+	F__list    X__pthread_list_t
+} /* thread-shared-types.h:118:1 */
 
 // Common definition of pthread_cond_t.
 
@@ -1838,7 +1935,7 @@ type X__pthread_cond_s = struct {
 	F__g1_orig_size uint32
 	F__wrefs        uint32
 	F__g_signals    [2]uint32
-} /* thread-shared-types.h:149:1 */
+} /* thread-shared-types.h:171:1 */
 
 // Thread identifiers.  The structure of the attribute type is not
 //    exposed on purpose.
