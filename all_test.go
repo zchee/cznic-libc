@@ -39,7 +39,10 @@ var (
 
 func TestPrintf(t *testing.T) {
 	isWindows = true
-	i := uint64(0x123456787abcdef8)
+	i := uint64(0x123456789abcdef)
+	j := uint64(0xf123456789abcde)
+	k := uint64(0x23456789abcdef1)
+	l := uint64(0xef123456789abcd)
 	for itest, test := range []struct {
 		fmt    string
 		args   []interface{}
@@ -47,8 +50,13 @@ func TestPrintf(t *testing.T) {
 	}{
 		{
 			"%I64x %I32x %I64x %I32x",
-			[]interface{}{int64(i), int32(i), int64(i), int32(i)},
-			"123456787abcdef8 7abcdef8 123456787abcdef8 7abcdef8",
+			[]interface{}{int64(i), int32(j), int64(k), int32(l)},
+			"123456789abcdef 789abcde 23456789abcdef1 6789abcd",
+		},
+		{
+			"%llx %x %llx %x",
+			[]interface{}{int64(i), int32(j), int64(k), int32(l)},
+			"123456789abcdef 789abcde 23456789abcdef1 6789abcd",
 		},
 		{
 			"%.1s\n",
