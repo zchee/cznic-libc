@@ -238,6 +238,10 @@ func Xfree(t *TLS, p uintptr) {
 }
 
 func UsableSize(p uintptr) types.Size_t {
+	allocMu.Lock()
+
+	defer allocMu.Unlock()
+
 	if memAuditEnabled {
 		pc, _, _, ok := runtime.Caller(1)
 		if !ok {
