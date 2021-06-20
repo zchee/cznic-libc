@@ -167,7 +167,7 @@ type X__uint128_t = struct {
 type X__builtin_va_list = uintptr /* <builtin>:46:14 */
 type X__float128 = float64        /* <builtin>:47:21 */
 
-// Copyright (C) 1992-2020 Free Software Foundation, Inc.
+// Copyright (C) 1992-2021 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //
@@ -873,7 +873,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 
 // NZERO to be defined here. TBD. See also sys/param.h
 
-// Copyright (C) 1991-2020 Free Software Foundation, Inc.
+// Copyright (C) 1991-2021 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //

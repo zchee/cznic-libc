@@ -1069,6 +1069,4 @@ type Uuid_t = X__darwin_uuid_t /* _uuid_t.h:31:25 */
 
 type Uuid_string_t = X__darwin_uuid_string_t /* uuid.h:43:33 */
 
-var sUUID_NULL = Uuid_t{uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0), uint8(0)} /* uuid.h:49:1 */
-
 var _ int8 /* gen.c:2:13: */
