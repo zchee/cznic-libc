@@ -440,6 +440,7 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	default:
 		panic(m)
 	}
+	//TODO- flags |= fcntl.O_LARGEFILE
 	fd, _, err := unix.Syscall(unix.SYS_OPEN, pathname, uintptr(flags|unix.O_LARGEFILE), 0666)
 	if err != 0 {
 		t.setErrno(err)
@@ -453,4 +454,13 @@ func Xfopen64(t *TLS, pathname, mode uintptr) uintptr {
 	Xclose(t, int32(fd))
 	t.setErrno(errno.ENOMEM)
 	return 0
+}
+
+// int sscanf(const char *str, const char *format, ...);
+func Xsscanf(t *TLS, str, format, va uintptr) int32 {
+	r := scanf(strings.NewReader(GoString(str)), format, va)
+	// if dmesgs {
+	// 	dmesg("%v: %q %q: %d", origin(1), GoString(str), GoString(format), r)
+	// }
+	return r
 }

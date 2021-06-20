@@ -99,7 +99,7 @@ type X__float128 = float64        /* <builtin>:47:21 */
 //     This had to be done to correct non-standard usages in the
 //     original, manufacturer supplied header file.
 
-// Copyright (C) 1989-2021 Free Software Foundation, Inc.
+// Copyright (C) 1989-2020 Free Software Foundation, Inc.
 //
 // This file is part of GCC.
 //

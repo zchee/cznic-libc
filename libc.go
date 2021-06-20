@@ -10,6 +10,8 @@
 // implements selected parts of the C standard library.
 package libc // import "modernc.org/libc"
 
+//TODO use O_RDONLY etc. from fcntl header
+
 //TODO use t.Alloc/Free where appropriate
 
 import (
