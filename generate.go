@@ -61,8 +61,9 @@ func main() {
 	switch goos {
 	case "linux":
 		g = append(g, "libc_unix.go")
-		if goarch == "amd64" {
-			g = append(g, "pthreads_linux_amd64.go")
+		switch goarch {
+		case "amd64", "386":
+			g = append(g, "pthreads.go")
 		}
 		makeMuslLinux(goos, goarch)
 	case "darwin":

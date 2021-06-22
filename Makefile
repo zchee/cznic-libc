@@ -119,10 +119,10 @@ edit:
 	@if [ -f "Session.vim" ]; then gvim -S & else gvim -p Makefile *.go & fi
 
 editor:
-	GO111MODULE=off go generate 2>&1 | tee log
+	go generate 2>&1 | tee log
 	gofmt -l -s -w *.go
-	GO111MODULE=off go test -short 2>&1 | tee -a log
-	GO111MODULE=off go install -v ./...
+	go test -short 2>&1 | tee -a log
+	go install -v ./...
 
 later:
 	@grep -n $(grep) LATER * || true

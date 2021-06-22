@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !amd64 !linux
+// +build windows darwin linux,arm linux,s390x
 
 package libc // import "modernc.org/libc"
 

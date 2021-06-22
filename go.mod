@@ -7,6 +7,6 @@ require (
 	golang.org/x/sys v0.0.0-20201126233918-771906719818
 	modernc.org/cc/v3 v3.33.6 // indirect
 	modernc.org/ccgo/v3 v3.9.5 // indirect
-	modernc.org/mathutil v1.4.0
+	modernc.org/mathutil v1.4.1
 	modernc.org/memory v1.0.4
 )

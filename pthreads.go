@@ -2,6 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//TODO darwin,amd64
+//TODO darwin,arm64
+//TODO linux,s390x
+
+// +build linux,amd64 linux,386 linux,arm64
+
 package libc // import "modernc.org/libc"
 
 import (
